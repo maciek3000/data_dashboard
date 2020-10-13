@@ -10,7 +10,10 @@ class ModelFinder:
     def __init__(self, models_grid, X, y, scoring, gridsearch_kwargs=None, logs=True, random_state=None):
         """
         ModelFinder object, designed to find the best model for provided X and y datasets.
-        It uses GridSearchCV to
+        It uses GridSearchCV to go through different parameters for different models.
+        After exhaustive gridsearch, best_chosen model is fitted and its score is calculated with a provided scoring
+        function (average from 5 different fittings to try to negate randomness of models).
+        At the end, the model which got the best score is returned.
 
         :param models_grid: should be a dictionary with Model Class - param_grid collection of parameters
         :param X: DataFrame WITHOUT classification target
@@ -52,6 +55,7 @@ class ModelFinder:
                     model(random_state=self.random_state),
                     self.models_grid[model],
                     scoring=make_scorer(self.scoring),
+                    cv=5
                 )
 
                 clf.fit(X_train, y_train)
@@ -78,6 +82,3 @@ class ModelFinder:
         best_model = max(models_scores, key=lambda x: x[1])
 
         return best_model
-
-
-
