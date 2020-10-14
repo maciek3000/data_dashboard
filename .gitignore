@@ -130,12 +130,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# PyCharm project settings
 /.idea/
-
 inspection/
 codestyles/
 _windows/
-
 colors.scheme.xml
 debugger.xml
 editor.xml
@@ -145,3 +144,7 @@ ui.lnf.xml
 vcs.xml
 Default.xml
 baseRefactoring.xml
+
+# Kaggle data
+data/
+output/
