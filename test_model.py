@@ -1,4 +1,5 @@
 from create_model.model_finder import ModelFinder
+from create_model.data_transformer import Transformer
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -22,12 +23,16 @@ if __name__ == "__main__":
     train_df = pd.read_csv(train_file)
     test_df = pd.read_csv(test_file)
 
+
+
     target = "Survived"
 
     features = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Embarked"]
 
     X = train_df[features]
     y = train_df[target]
+
+    transformer = Transformer(X, y)
 
     imp = SimpleImputer(strategy="most_frequent")
     imp.fit(X)
@@ -69,24 +74,24 @@ if __name__ == "__main__":
         # "min_samples_leaf": [1, 2]
     }
 
-    model_lr = LogisticRegression
-    param_grid_lr = {
-        "penalty": ["l1", "l2", "elasticnet"],
-        "solver": ["liblinear", "lbfgs", "saga"],
-        "C": [0.1, 0.5, 1.0]
-    }
-
-    model_svc = SVC
-    param_grid_svc = {
-        "C": [0.1, 0.5, 1.0],
-        "kernel": ["linear", "poly", "rbf"]
-    }
+    # model_lr = LogisticRegression
+    # param_grid_lr = {
+    #     "penalty": ["l1", "l2", "elasticnet"],
+    #     "solver": ["liblinear", "lbfgs", "saga"],
+    #     "C": [0.1, 0.5, 1.0]
+    # }
+    #
+    # model_svc = SVC
+    # param_grid_svc = {
+    #     "C": [0.1, 0.5, 1.0],
+    #     "kernel": ["linear", "poly", "rbf"]
+    # }
 
 
     models_grid = {
         model_rfc: param_grid_rfc,
-        model_lr: param_grid_lr,
-        model_svc: param_grid_svc,
+        # model_lr: param_grid_lr,
+        # model_svc: param_grid_svc,
     }
 
     random_state = 2862
@@ -101,4 +106,5 @@ if __name__ == "__main__":
     # predictions from test dataset
     predictions = clf.predict(X_test)
     output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
-    output.to_csv(os.path.join(output_directory, "submission.csv"), index=False)
+
+    # output.to_csv(os.path.join(output_directory, "submission.csv"), index=False)
