@@ -1,9 +1,12 @@
 from sklearn.pipeline import make_pipeline
-
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.impute import SimpleImputer
 import pandas as pd
 
 class Transformer:
     """Wrapper for pipeline for transformations of input and output data."""
+
+    # https://scikit-learn.org/stable/auto_examples/compose/plot_column_transformer_mixed_types.html
 
     def __init__(self, X, y):
         self.X = X
@@ -15,6 +18,7 @@ class Transformer:
 
         self.numerical_columns = None
         self.categorical_columns = None
+        self.date_columns = None
 
         self.__analyze_data()
 
@@ -31,28 +35,27 @@ class Transformer:
 
         for col in self.X.columns:
 
-            # datetime columns
-            try:
-                self.X[col].astype("datetime64[ns]")
-                date_cols.append(col)
-            except ValueError:
-
-                # numerical columns
+            if self.X[col].dtype == "bool":
+                cat_cols.append(col)
+            else:
                 try:
                     self.X[col].astype("float64")
                     num_cols.append(col)
-                except ValueError:
-                    pass
-
-                # datetime columns
-                # TODO: just a prototype
-                try:
-                    pd.to_datetime(self.X[col])
+                except TypeError:
                     date_cols.append(col)
-                except ValueError as e:
-                    pass
+                except ValueError:
+                    cat_cols.append(col)
+                except:
+                    raise
 
         self.numerical_columns = num_cols
+        self.date_columns = date_cols
+        self.categorical_columns = cat_cols
 
     def __create_pipeline(self):
-        pass
+        imputer = self.__create_imputer()
+
+
+    def __create_imputer(self):
+        return SimpleImputer(strategy="most_frequent")
+

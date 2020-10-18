@@ -8,4 +8,6 @@ def test_transformer_analyze_data(test_data_classification_balanced):
 
     transf = Transformer(X, y)
 
-    assert transf.numerical_columns == ["Age", "Height", "Date", "Price"]
+    assert set(transf.numerical_columns) == set(["Age", "Height", "Price"])
+    assert set(transf.categorical_columns) == set(["Sex", "Product", "bool"])
+    assert set(transf.date_columns) == set(["Date"])

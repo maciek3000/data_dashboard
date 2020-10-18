@@ -10,7 +10,7 @@ def test_data_classification_balanced():
 
     random_seed = 56
 
-    columns = ["Sex", "Age", "Height", "Date", "Product", "Price", "Target"]
+    columns = ["Sex", "Age", "Height", "Date", "Product", "Price", "bool", "Target"]
     length = 100
 
     random.seed(random_seed)
@@ -43,11 +43,15 @@ def test_data_classification_balanced():
     # Price
     price_data = random.choices(skewnorm(1).rvs(length), k=length)
 
+    # bool column
+    bool_data = random.choices([True, False], k=length)
+
     # Target
     target_data = random.choices([1, 0], k=length)
 
     data = {
-        col: series for col, series in zip(columns, [sex_data, age_data, height_data, date_data, product_data, price_data, target_data])
+        col: series for col, series in zip(columns,
+        [sex_data, age_data, height_data, date_data, product_data, price_data, bool_data, target_data])
     }
     df = pd.DataFrame(data=data)
 
