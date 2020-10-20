@@ -27,43 +27,46 @@ if __name__ == "__main__":
 
     target = "Survived"
 
-    features = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Embarked"]
+    features = list(set(train_df.columns) - set([target]))
 
     X = train_df[features]
     y = train_df[target]
 
-    transformer = Transformer(X, y)
+    t = Transformer(X, y).fit()
+    new_X = t.transform()
 
-    imp = SimpleImputer(strategy="most_frequent")
-    imp.fit(X)
-    X = pd.DataFrame(imp.transform(X), columns=X.columns)
+    X_test = t.transform(test_df[features])
 
-    X_test = test_df[features]
-    X_test = pd.DataFrame(imp.transform(X_test), columns=X_test.columns)
+    # imp = SimpleImputer(strategy="most_frequent")
+    # imp.fit(X)
+    # X = pd.DataFrame(imp.transform(X), columns=X.columns)
+    #
+    # X_test = test_df[features]
+    # X_test = pd.DataFrame(imp.transform(X_test), columns=X_test.columns)
 
-    def transform_df(dataframe):
-        dataframe["SibSp_bool"] = np.where(dataframe["SibSp"] != 0, 1, 0)
-        dataframe["Parch_bool"] = np.where(dataframe["Parch"] != 0, 1, 0)
+    # def transform_df(dataframe):
+    #     dataframe["SibSp_bool"] = np.where(dataframe["SibSp"] != 0, 1, 0)
+    #     dataframe["Parch_bool"] = np.where(dataframe["Parch"] != 0, 1, 0)
+    #
+    #     gender_map = {"female": 1, "male": 0}
+    #     dataframe["Sex_bool"] = dataframe["Sex"].map(gender_map)
+    #
+    #     dataframe = dataframe.drop(["SibSp", "Parch", "Sex"], axis=1)
+    #
+    #     return dataframe
 
-        gender_map = {"female": 1, "male": 0}
-        dataframe["Sex_bool"] = dataframe["Sex"].map(gender_map)
-
-        dataframe = dataframe.drop(["SibSp", "Parch", "Sex"], axis=1)
-
-        return dataframe
-
-    X = transform_df(X)
-    X_test = transform_df(X_test)
-
-    # fitting only to train_df
-    enc = OneHotEncoder(handle_unknown="ignore")
-    enc.fit(X["Embarked"].to_numpy().reshape(-1, 1))
-
-    X = pd.concat([X, pd.DataFrame(enc.transform(X["Embarked"].to_numpy().reshape(-1, 1)).toarray())], axis=1)
-    X_test = pd.concat([X_test, pd.DataFrame(enc.transform(X_test["Embarked"].to_numpy().reshape(-1, 1)).toarray())], axis=1)
-
-    X = X.drop(["Embarked"], axis=1)
-    X_test = X_test.drop(["Embarked"], axis=1)
+    # X = transform_df(X)
+    # X_test = transform_df(X_test)
+    #
+    # # fitting only to train_df
+    # enc = OneHotEncoder(handle_unknown="ignore")
+    # enc.fit(X["Embarked"].to_numpy().reshape(-1, 1))
+    #
+    # X = pd.concat([X, pd.DataFrame(enc.transform(X["Embarked"].to_numpy().reshape(-1, 1)).toarray())], axis=1)
+    # X_test = pd.concat([X_test, pd.DataFrame(enc.transform(X_test["Embarked"].to_numpy().reshape(-1, 1)).toarray())], axis=1)
+    #
+    # X = X.drop(["Embarked"], axis=1)
+    # X_test = X_test.drop(["Embarked"], axis=1)
 
     model_rfc = RandomForestClassifier
     param_grid_rfc = {
@@ -96,13 +99,13 @@ if __name__ == "__main__":
 
     random_state = 2862
 
-    finder = ModelFinder(models_grid, X, y, accuracy_score, random_state=random_state)
+    finder = ModelFinder(models_grid, new_X, y, accuracy_score, random_state=random_state)
     model, score, params = finder.find_best_model()
 
     print("Model: {}\nScore: {}\nParams: {}".format(model.__name__, score, params))
 
     clf = model(**params)
-    clf.fit(X, y)
+    clf.fit(new_X, y)
     # predictions from test dataset
     predictions = clf.predict(X_test)
     output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})

@@ -1,5 +1,6 @@
+from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 import pandas as pd
 
@@ -12,7 +13,7 @@ class Transformer:
         self.X = X
         self.y = y
 
-        self.pipeline = None
+        self.preprocessor = None
         self.transformed_X = None
         self.transformed_y = None
 
@@ -20,14 +21,19 @@ class Transformer:
         self.categorical_columns = None
         self.date_columns = None
 
-        self.__analyze_data()
+        self._analyze_data()
+        self.preprocessor = self._create_preprocessor()
 
-    def transform(self):
+    def fit(self):
+        self.preprocessor = self.preprocessor.fit(self.X)
+        return self
 
-        if not self.pipeline:
-            self.__create_pipeline()
+    def transform(self, X=None):
+        if X is None:
+            X = self.X
+        return self.preprocessor.transform(X)
 
-    def __analyze_data(self):
+    def _analyze_data(self):
 
         num_cols = []
         date_cols = []
@@ -52,10 +58,29 @@ class Transformer:
         self.date_columns = date_cols
         self.categorical_columns = cat_cols
 
-    def __create_pipeline(self):
-        imputer = self.__create_imputer()
+    def _create_preprocessor(self):
+        numeric_transformer = self._create_numeric_transformer()
+        categorical_transformer = self._create_categorical_transformer()
 
+        col_transformer = ColumnTransformer(
+            transformers=[
+                ("numerical", numeric_transformer, self.numerical_columns),
+                ("categorical", categorical_transformer, self.categorical_columns)
+            ]
+        )
+        return col_transformer
 
-    def __create_imputer(self):
-        return SimpleImputer(strategy="most_frequent")
+    def _create_numeric_transformer(self):
+        transformer = make_pipeline(
+            SimpleImputer(strategy="median"),
+            StandardScaler()
+        )
+        return transformer
+
+    def _create_categorical_transformer(self):
+        transformer = make_pipeline(
+            SimpleImputer(strategy="most_frequent"),
+            OneHotEncoder(handle_unknown="ignore")
+        )
+        return transformer
 
