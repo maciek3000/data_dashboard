@@ -1,6 +1,6 @@
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, QuantileTransformer
 from sklearn.impute import SimpleImputer
 import pandas as pd
 
@@ -73,6 +73,7 @@ class Transformer:
     def _create_numeric_transformer(self):
         transformer = make_pipeline(
             SimpleImputer(strategy="median"),
+            QuantileTransformer(output_distribution="normal"),
             StandardScaler()
         )
         return transformer

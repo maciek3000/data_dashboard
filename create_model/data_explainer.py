@@ -1,4 +1,8 @@
+import seaborn as sns
+import os
+from pathlib import Path
 
+from jinja2 import Environment, FileSystemLoader
 
 class DataExplainer:
 
@@ -11,10 +15,16 @@ class DataExplainer:
         self.create_html()
 
     def analyze(self):
-
-        for col in self.X.columns:
-            pass
+        plot = sns.pairplot(self.X)
+        return plot.fig
 
     def create_html(self):
-        pass
+        print(os.path.join(os.getcwd(), "templates"))
+        env = Environment(loader=FileSystemLoader(os.path.join(os.getcwd(), "create_model", "templates")))
+        template = env.get_template("test.html")
+        rendered = template.render(title="Test Title", content=self.X.to_html())
+        output_directory = os.path.join(Path(os.getcwd()), "output")
+        with open(os.path.join(output_directory, "output.html"), "w") as f:
+            f.write(rendered)
+
 

@@ -2,9 +2,11 @@ from create_model.model_finder import ModelFinder
 from create_model.data_transformer import Transformer
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
+
+from create_model.data_explainer import DataExplainer
 
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
@@ -23,14 +25,17 @@ if __name__ == "__main__":
     train_df = pd.read_csv(train_file)
     test_df = pd.read_csv(test_file)
 
-
-
     target = "Survived"
 
     features = list(set(train_df.columns) - set([target]))
 
     X = train_df[features]
     y = train_df[target]
+
+    explainer = DataExplainer(X, y)
+    explainer.create_html()
+
+    # fig.savefig(os.path.join(os.getcwd(), "output", "titanic", "pairplot.png"))
 
     t = Transformer(X, y).fit()
     new_X = t.transform()
@@ -77,24 +82,32 @@ if __name__ == "__main__":
         # "min_samples_leaf": [1, 2]
     }
 
-    # model_lr = LogisticRegression
-    # param_grid_lr = {
-    #     "penalty": ["l1", "l2", "elasticnet"],
-    #     "solver": ["liblinear", "lbfgs", "saga"],
-    #     "C": [0.1, 0.5, 1.0]
-    # }
-    #
-    # model_svc = SVC
-    # param_grid_svc = {
-    #     "C": [0.1, 0.5, 1.0],
-    #     "kernel": ["linear", "poly", "rbf"]
-    # }
+    model_gbc = GradientBoostingClassifier
+    param_grid_gbc = {
+        "learning_rate": [0.1, 0.5, 0.9],
+        "n_estimators": [10, 100],
+        "min_samples_split": [2, 5, 10]
+    }
+
+    model_lr = LogisticRegression
+    param_grid_lr = {
+        "penalty": ["l1", "l2", "elasticnet"],
+        "solver": ["liblinear", "lbfgs", "saga"],
+        "C": [0.1, 0.5, 1.0]
+    }
+
+    model_svc = SVC
+    param_grid_svc = {
+        "C": [0.1, 0.5, 1.0, 2.0, 5.0],
+        "kernel": ["linear", "poly", "rbf"]
+    }
 
 
     models_grid = {
         model_rfc: param_grid_rfc,
         # model_lr: param_grid_lr,
         # model_svc: param_grid_svc,
+        # model_gbc: param_grid_gbc
     }
 
     random_state = 2862
@@ -110,4 +123,4 @@ if __name__ == "__main__":
     predictions = clf.predict(X_test)
     output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
 
-    # output.to_csv(os.path.join(output_directory, "submission.csv"), index=False)
+    output.to_csv(os.path.join(output_directory, "submission.csv"), index=False)
