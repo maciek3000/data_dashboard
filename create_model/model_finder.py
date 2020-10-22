@@ -1,13 +1,17 @@
 import random
 import numpy as np
 
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.svm import SVC
+
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import GridSearchCV, train_test_split
 
 
 class ModelFinder:
 
-    def __init__(self, models_grid, X, y, scoring, gridsearch_kwargs=None, logs=True, random_state=None):
+    def __init__(self, X, y, scoring, models_grid=None, gridsearch_kwargs=None, logs=True, random_state=None):
         """
         ModelFinder object, designed to find the best model for provided X and y datasets.
         It uses GridSearchCV to go through different parameters for different models.
@@ -24,13 +28,11 @@ class ModelFinder:
         :param random_state:
         """
 
-        self.models_grid = models_grid
-        self.models = models_grid.keys()
-
         self.X = X
         self.y = y
         self.scoring = scoring
 
+        self.models_grid = models_grid
         self.gridsearch_kwargs = gridsearch_kwargs
 
         self.logs = logs
@@ -42,18 +44,24 @@ class ModelFinder:
 
     def find_best_model(self):
 
+        if self.models_grid is None:
+            models_grid = self.__get_default_grid()
+        else:
+            models_grid = self.models_grid
+
         X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, random_state=self.random_state)
 
+        models = models_grid.keys()
         models_scores = []
 
         # TODO: logging
-        for model in self.models:
+        for model in models:
             # Continues with another params and models if some params are incompatible
             # TODO: decide if needed
             try:
                 clf = GridSearchCV(
                     model(random_state=self.random_state),
-                    self.models_grid[model],
+                    models_grid[model],
                     scoring=make_scorer(self.scoring),
                     cv=5
                 )
@@ -82,3 +90,44 @@ class ModelFinder:
         best_model = max(models_scores, key=lambda x: x[1])
 
         return best_model
+
+    def __get_default_grid(self):
+
+        model_rfc = RandomForestClassifier
+        param_grid_rfc = {
+            "n_estimators": [10, 100],
+            "max_depth": [5, 10, 50],
+            "criterion": ["gini", "entropy"],
+            "min_samples_split": [2, 5, 10],
+            # "min_samples_leaf": [1, 2]
+        }
+
+        model_gbc = GradientBoostingClassifier
+        param_grid_gbc = {
+            "learning_rate": [0.1, 0.5, 0.9],
+            "n_estimators": [10, 100],
+            "min_samples_split": [2, 5, 10]
+        }
+
+        model_lr = LogisticRegression
+        param_grid_lr = {
+            "penalty": ["l1", "l2", "elasticnet"],
+            "solver": ["liblinear", "lbfgs", "saga"],
+            "C": [0.1, 0.5, 1.0]
+        }
+
+        model_svc = SVC
+        param_grid_svc = {
+            "C": [0.1, 0.5, 1.0, 2.0, 5.0],
+            "kernel": ["linear", "poly", "rbf"]
+        }
+
+
+        models_grid = {
+            model_rfc: param_grid_rfc,
+            # model_lr: param_grid_lr,
+            # model_svc: param_grid_svc,
+            # model_gbc: param_grid_gbc
+        }
+
+        return models_grid

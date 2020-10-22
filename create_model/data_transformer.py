@@ -2,7 +2,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, QuantileTransformer
 from sklearn.impute import SimpleImputer
-import pandas as pd
+
 
 class Transformer:
     """Wrapper for pipeline for transformations of input and output data."""
@@ -31,6 +31,9 @@ class Transformer:
     def transform(self, X=None):
         if X is None:
             X = self.X
+
+        # TODO: transformer should transform y as well when applicable
+        # however, API shouldn't be broken here otherwise pipeline will stop working
         return self.preprocessor.transform(X)
 
     def _analyze_data(self):
@@ -84,4 +87,3 @@ class Transformer:
             OneHotEncoder(handle_unknown="ignore")
         )
         return transformer
-
