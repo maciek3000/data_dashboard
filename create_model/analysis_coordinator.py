@@ -8,6 +8,8 @@ import os
 
 class Coordinator:
 
+    name = "create_model"
+
     def __init__(self, X, y, scoring=None, root_path=None):
 
         # copy original dataframes to avoid changing the originals
@@ -23,7 +25,7 @@ class Coordinator:
             self.root_path = root_path
 
         self.explainer = DataExplainer(self.X, self.y)
-        self.output = Output(self.root_path)
+        self.output = Output(self.root_path, data_name="test", package_name=self.name)
         self.transformer = Transformer(self.X, self.y)
         self.scoring = scoring
 
@@ -31,6 +33,7 @@ class Coordinator:
     def eda(self):
         output = self.explainer.analyze()
         self.output.create_html_output(output)
+        print("Created output at {directory}".format(directory=self.output.output_directory))
 
     def find_model(self):
         if not self.transformed_X:

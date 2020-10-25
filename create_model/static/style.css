@@ -1,0 +1,100 @@
+/* base color: #19529c */
+
+:root {
+    --base-color: #19529c;
+    --contrary-color: #9c2b19;
+    --normal-text-color: #8C8C8C;
+    --normal-link-color: #8CA8CD;
+    --hover-link-color: white;
+    --background-link-color: #5E85B9;
+    --settings-link-color: #c6d4e6;
+    --gray-title: #808080;
+    --light-gray: #DCDCDC;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    font-family: "Lato", sans-serif;
+    background: white;
+    padding: 8px;
+}
+
+.main {
+    max-width: 95%;
+    margin: 0 auto;
+    color: var(--normal-text-color);
+    background: white;
+    border-width: 2px 2px 2px 2px;
+    border-color: #D1DCEB;
+    border-style: solid;
+    box-shadow: -4px 4px 2px #E8EDF5;
+    overflow: auto;
+}
+
+/* Navigation Menu Bar */
+
+.menu {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    border-style: solid;
+    border-width: 0px 0px 2px 0px;
+    border-color: var(--background-link-color);
+    font-size: 1.5em;
+    padding: 0px 5px;
+    background: #FCFCFC;
+}
+
+.menu div {
+    border: 0px solid black;
+    margin: 0px 0px;
+}
+
+.menu div:first-child {
+    margin-right: auto; /* moves the element to the left */
+    font-size: 2em;
+    color: var(--base-color);
+    padding: 4px;
+    font-weight: bold;
+}
+
+.menu div:not(:first-child):hover {
+    background: var(--background-link-color);
+    border-radius: 6px;
+}
+
+.menu a {
+    color: var(--normal-link-color);
+    text-decoration: none;
+    padding: 4px 4px;
+}
+
+.menu a:visited {
+    color: var(--normal-link-color);
+    text-decoration: none;
+}
+
+.menu a:hover {
+    color: var(--hover-link-color);
+}
+
+/* Content */
+
+.content {
+    padding: 12px 18px;
+    margin-bottom: 16px;
+}
+
+/* Footer */
+
+.footer {
+    color: var(--gray-title);
+    font-weight: italic;
+    font-size: 0.75em;
+    padding: 4px 4px;
+    text-align: right;
+}

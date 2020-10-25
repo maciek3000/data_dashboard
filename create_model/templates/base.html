@@ -1,0 +1,20 @@
+<!doctype html>
+<title>{% block title %}{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css?family=Lato&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ base_css }}">
+<body>
+    <div class="main">
+        <div class="menu">
+            <div>{% block header %}{% endblock %}</div>
+            <div><a href="">Overview</a></div>
+            <div><a href="">Choice 1</a></div>
+            <div><a href="">Choice 2</a></div>
+        </div>
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+        <div class="footer">
+            {{ created_on }}
+        </div>
+    </div>
+</body>

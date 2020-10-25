@@ -24,9 +24,9 @@ if __name__ == "__main__":
     coord = Coordinator(X, y, accuracy_score, os.getcwd())
     coord.eda()
 
-    model = coord.find_model()
-
-    predictions = model.predict(coord.transform(test_df[features]))
-    output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
-
-    output.to_csv(os.path.join(output_directory, "submission.csv"), index=False)
+    # model = coord.find_model()
+    #
+    # predictions = model.predict(coord.transform(test_df[features]))
+    # output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
+    #
+    # output.to_csv(os.path.join(output_directory, "submission.csv"), index=False)
