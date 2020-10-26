@@ -21,6 +21,7 @@ class Output:
         template = self.env.get_template("overview.html")
 
         params["base_css"] = os.path.join(self.static_path, "style.css")
+        params["overview_css"] = os.path.join(self.static_path, "overview.css")
         time = datetime.datetime.now().strftime("%d-%b-%Y %H:%M:%S")
         params["created_on"] = "Created on {time}".format(time=time)
 
@@ -31,12 +32,10 @@ class Output:
     def _analyze_data_output(self, output_dict):
 
         fig_dict = output_dict["figures"]
-        html_dict = output_dict["html"]
-        params = html_dict
+        tables_dict = output_dict["tables"]
+        params = {key: arg.to_html() for key, arg in tables_dict.items()}
 
-        for fig in fig_dict:
-            name = fig
-            plot = fig_dict[fig]
+        for name, plot in fig_dict.items():
             path = os.path.join(self.output_directory, "assets", (name + ".png"))
             params[name] = "<img src={path}></img>".format(path=path)
             plot.savefig(path)
