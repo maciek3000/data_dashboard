@@ -87,6 +87,7 @@ html {
 .content {
     padding: 12px 18px;
     margin-bottom: 16px;
+    width: 100%;
 }
 
 /* Footer */

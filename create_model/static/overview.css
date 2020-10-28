@@ -1,0 +1,15 @@
+table {
+    border-collapse: collapse;
+}
+
+.flex-tables {
+    display: flex;
+}
+
+.head {
+    width: 50%;
+}
+
+.describe {
+
+}

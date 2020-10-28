@@ -1,8 +1,11 @@
-import os, datetime
+import os, datetime, copy
 from jinja2 import Environment, FileSystemLoader
 
 
 class Output:
+
+    time_format = "%d-%b-%Y %H:%M:%S"
+    footer_note = "Created on {time}"
 
     def __init__(self, root_path, data_name, package_name):
 
@@ -16,20 +19,38 @@ class Output:
         self.static_path = os.path.join(self.root_path, package_name, "static")
         self.env = Environment(loader=FileSystemLoader(self.templates_path))
 
-    def create_html_output(self, output):
-        params = self._analyze_data_output(output)
+    def create_html_output(self, data_objects):
+        templates = {
+            "overview": self._overview_template,
+        }
+        rendered_templates = []
+
+        # params dict encompasses shared arguments for all templates
+        # it's up to the template to decide which they want to use and which not
+        params = self._get_standard_variables(data_objects)
+        for template, method in templates.items():
+            rendered_templates.append((template, method(copy.copy(params))))
+
+        self._write_html(rendered_templates)
+
+    def _get_standard_variables(self, data_objects):
+        current_time = datetime.datetime.now().strftime(self.time_format)
+        html_dict = self._convert_data_to_web_elements(data_objects)
+        html_dict["created_on"] = self.footer_note.format(time=current_time)
+        html_dict["base_css"] = os.path.join(self.static_path, "style.css")
+        return html_dict
+
+    def _overview_template(self, base_dict):
+        base_dict["overview_css"] = os.path.join(self.static_path, "overview.css")
         template = self.env.get_template("overview.html")
+        return template.render(**base_dict)
 
-        params["base_css"] = os.path.join(self.static_path, "style.css")
-        params["overview_css"] = os.path.join(self.static_path, "overview.css")
-        time = datetime.datetime.now().strftime("%d-%b-%Y %H:%M:%S")
-        params["created_on"] = "Created on {time}".format(time=time)
+    def _write_html(self, html_templates):
+        for name, html in html_templates:
+            with open(os.path.join(self.output_directory, (name + ".html")), "w") as f:
+                f.write(html)
 
-        rendered = template.render(**params)
-        with open(os.path.join(self.output_directory, "output.html"), "w") as f:
-            f.write(rendered)
-
-    def _analyze_data_output(self, output_dict):
+    def _convert_data_to_web_elements(self, output_dict):
 
         fig_dict = output_dict["figures"]
         tables_dict = output_dict["tables"]
