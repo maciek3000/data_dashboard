@@ -51,11 +51,20 @@ class Output:
                 f.write(html)
 
     def _convert_data_to_web_elements(self, output_dict):
+        # TODO: change to separate functions
+        tables_dict = output_dict["tables"]
+        params = {key: arg.to_html(float_format="{:.2f}".format) for key, arg in tables_dict.items()}
+
+        list_dict = output_dict["lists"]
+        # TODO: redesign
+        for key, l in list_dict.items():
+            _ = ""
+            for x in l:
+                _ += "<li>" + x + "</li>"
+            list_dict[key] = _
+        params.update(list_dict)
 
         fig_dict = output_dict["figures"]
-        tables_dict = output_dict["tables"]
-        params = {key: arg.to_html() for key, arg in tables_dict.items()}
-
         for name, plot in fig_dict.items():
             path = os.path.join(self.output_directory, "assets", (name + ".png"))
             params[name] = "<img src={path}></img>".format(path=path)
