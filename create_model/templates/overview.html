@@ -7,14 +7,27 @@
 
 {% block content %}
 <div class="flex-tables">
+    <div class="describe_tables">
+        <div class="describe">
+            <div class="section_title">Numeric</div>
+            <div>{{ described_numeric }}</div>
+        </div>
+        <div class="describe">
+            <div class="section_title">Categorical</div>
+        </div>
+        <div class="describe_unused">
+            <div class="section_title">Unused Columns</div>
+        </div>
+    </div>
+
     <div class="head">
-        {{ head }}
+        <div class="section_title">First 5 rows of data (transposed)</div>
+        <div>{{ head }}</div>
     </div>
-    <div class="describe">
-        {{ described_numeric }}
-    </div>
+
 </div>
 <div class="pairplot">
-    {{ pairplot }}
+    <div class="section_title">Pairplot of Features</div>
+    <div>{{ pairplot }}</div>
 </div>
 {% endblock %}

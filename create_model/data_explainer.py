@@ -9,10 +9,40 @@ class DataExplainer:
 
     def analyze(self):
         output = {
+            "columns": self._analyze_columns(),
             "figures": self._create_figures(),
             "tables": self._create_tables()
         }
         return output
+
+    def _analyze_columns(self):
+
+        num_cols = []
+        date_cols = []
+        cat_cols = []
+
+        for col in self.X.columns:
+
+            if self.X[col].dtype == "bool":
+                cat_cols.append(col)
+            else:
+                try:
+                    self.X[col].astype("float64")
+                    num_cols.append(col)
+                except TypeError:
+                    date_cols.append(col)
+                except ValueError:
+                    cat_cols.append(col)
+                except:
+                    raise
+
+        cols = {
+            "numerical": num_cols,
+            "date": date_cols,
+            "categorical": cat_cols
+        }
+
+        return cols
 
     def _create_tables(self):
         d = {
@@ -21,8 +51,10 @@ class DataExplainer:
         }
         return d
 
+
+
     def __describe_df(self):
-        return self.X.describe()
+        return self.X.describe().T
 
     def __create_df_head(self):
         return self.X.head().T

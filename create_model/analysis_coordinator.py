@@ -25,13 +25,17 @@ class Coordinator:
             self.root_path = root_path
 
         self.explainer = DataExplainer(self.X, self.y)
+        self.data_explained = self.explainer.analyze()
+
+        # TODO: consider lazy instancing
         self.output = Output(self.root_path, data_name="test", package_name=self.name)
-        self.transformer = Transformer(self.X, self.y)
+        self.transformer = Transformer(self.X, self.y, self.data_explained["columns"])
         self.scoring = scoring
 
-
     def eda(self):
-        output = self.explainer.analyze()
+        # output = self.explainer.analyze()
+        output_keys = ["figures", "tables"]
+        output = {key: self.data_explained[key] for key in output_keys}
         self.output.create_html_output(output)
         print("Created output at {directory}".format(directory=self.output.output_directory))
 

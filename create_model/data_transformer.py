@@ -9,7 +9,7 @@ class Transformer:
 
     # https://scikit-learn.org/stable/auto_examples/compose/plot_column_transformer_mixed_types.html
 
-    def __init__(self, X, y):
+    def __init__(self, X, y, columns):
         self.X = X
         self.y = y
 
@@ -17,11 +17,10 @@ class Transformer:
         self.transformed_X = None
         self.transformed_y = None
 
-        self.numerical_columns = None
-        self.categorical_columns = None
-        self.date_columns = None
+        self.numerical_columns = columns["numerical"]
+        self.categorical_columns = columns["categorical"]
+        self.date_columns = columns["date"]
 
-        self._analyze_data()
         self.preprocessor = self._create_preprocessor()
 
     def fit(self):
@@ -36,30 +35,30 @@ class Transformer:
         # however, API shouldn't be broken here otherwise pipeline will stop working
         return self.preprocessor.transform(X)
 
-    def _analyze_data(self):
-
-        num_cols = []
-        date_cols = []
-        cat_cols = []
-
-        for col in self.X.columns:
-
-            if self.X[col].dtype == "bool":
-                cat_cols.append(col)
-            else:
-                try:
-                    self.X[col].astype("float64")
-                    num_cols.append(col)
-                except TypeError:
-                    date_cols.append(col)
-                except ValueError:
-                    cat_cols.append(col)
-                except:
-                    raise
-
-        self.numerical_columns = num_cols
-        self.date_columns = date_cols
-        self.categorical_columns = cat_cols
+    # def _analyze_data(self):
+    #
+    #     num_cols = []
+    #     date_cols = []
+    #     cat_cols = []
+    #
+    #     for col in self.X.columns:
+    #
+    #         if self.X[col].dtype == "bool":
+    #             cat_cols.append(col)
+    #         else:
+    #             try:
+    #                 self.X[col].astype("float64")
+    #                 num_cols.append(col)
+    #             except TypeError:
+    #                 date_cols.append(col)
+    #             except ValueError:
+    #                 cat_cols.append(col)
+    #             except:
+    #                 raise
+    #
+    #     self.numerical_columns = num_cols
+    #     self.date_columns = date_cols
+    #     self.categorical_columns = cat_cols
 
     def _create_preprocessor(self):
         numeric_transformer = self._create_numeric_transformer()
