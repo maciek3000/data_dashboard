@@ -67,7 +67,7 @@ class Output:
         fig_dict = output_dict["figures"]
         for name, plot in fig_dict.items():
             path = os.path.join(self.output_directory, "assets", (name + ".png"))
-            params[name] = "<img src={path}></img>".format(path=path)
+            params[name] = "<a href={path}><img src={path} title='Click to open larger version'></img></a>".format(path=path)
             plot.savefig(path)
 
         return params

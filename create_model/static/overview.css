@@ -37,3 +37,11 @@
     border-width: 0px 0px 1px 0px;
     border-color: var(--light-gray);
 }
+
+.pairplot {
+    width: 100%;
+}
+
+.pairplot_img img {
+    width: 100%;
+}

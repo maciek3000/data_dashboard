@@ -35,31 +35,6 @@ class Transformer:
         # however, API shouldn't be broken here otherwise pipeline will stop working
         return self.preprocessor.transform(X)
 
-    # def _analyze_data(self):
-    #
-    #     num_cols = []
-    #     date_cols = []
-    #     cat_cols = []
-    #
-    #     for col in self.X.columns:
-    #
-    #         if self.X[col].dtype == "bool":
-    #             cat_cols.append(col)
-    #         else:
-    #             try:
-    #                 self.X[col].astype("float64")
-    #                 num_cols.append(col)
-    #             except TypeError:
-    #                 date_cols.append(col)
-    #             except ValueError:
-    #                 cat_cols.append(col)
-    #             except:
-    #                 raise
-    #
-    #     self.numerical_columns = num_cols
-    #     self.date_columns = date_cols
-    #     self.categorical_columns = cat_cols
-
     def _create_preprocessor(self):
         numeric_transformer = self._create_numeric_transformer()
         categorical_transformer = self._create_categorical_transformer()

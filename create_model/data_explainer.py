@@ -12,10 +12,23 @@ class DataExplainer:
     categorical = "categorical"
     date = "date"
 
+    plot_text_color = "#8C8C8C"
+    plot_color = "#19529c"
+
     def __init__(self, X, y):
+        sns.set_style("white", {
+            "axes.edgecolor": self.plot_text_color,
+            "axes.labelcolor": self.plot_text_color,
+            "text.color": self.plot_text_color,
+            "font.sans-serif": ["Lato"],
+            "xtick.color": self.plot_text_color,
+            "ytick.color": self.plot_text_color,
+        })
+
         self.X = X
         self.y = y
         self.full_table = pd.concat([self.X, self.y], axis=1)
+
         self.columns = self._analyze_columns()
         self.numerical_columns = self.columns["columns"][self.numerical]
         self.categorical_columns = self.columns["columns"][self.categorical]
@@ -57,7 +70,7 @@ class DataExplainer:
 
     def __column_type(self, col):
         if self.full_table[col].dtype == "bool":
-            return self.categorical
+            return self.numerical
         else:
             try:
                 self.full_table[col].astype("float64")
@@ -79,16 +92,23 @@ class DataExplainer:
 
     def _numeric_describe(self):
         ds = self.full_table[self.numerical_columns].describe().astype("float64").T
-        ds["missing"] = self.full_table.isna().sum() / self.full_table.count()
+        ds["missing"] = self.full_table.isna().sum() / max(self.full_table.count())
         return ds
 
     def _categorical_describe(self):
-        # TODO: decide if encoder is needed
-        # TODO: decide what to do with NaN values
-        df = self.full_table[self.categorical_columns].fillna("NAN")
-        enc = OrdinalEncoder()
-        new_df = pd.DataFrame(data=enc.fit_transform(df), columns=df.columns)
-        return new_df.describe().T
+        df = self._categorical_to_ordinal(self.full_table[self.categorical_columns]).describe().astype("float64").T
+        df["missing"] = self.full_table.isna().sum() / max(self.full_table.count())
+        return df
+
+    def _categorical_to_ordinal(self, df):
+        _ = {}
+        for col in df.columns:
+            vals = df[col].unique()
+            mapped = {val: x+1 for val, x in zip(vals, range(len(vals))) if not pd.isna(val)}  # count starts at 1
+            _[col] = mapped
+
+        new_df = df.replace(_)
+        return new_df
 
     def __create_df_head(self):
         cols = sorted(self.full_table.columns)
@@ -109,6 +129,10 @@ class DataExplainer:
         return d
 
     def __create_pairplot(self):
-        cols = sorted(self.full_table.columns)
-        p = sns.pairplot(self.full_table[cols])
+        num = self.full_table[self.numerical_columns]
+        cat = self.full_table[self.categorical_columns]
+        df = pd.concat([num, self._categorical_to_ordinal(cat)], axis=1)
+        df = df[sorted(df.columns)]
+        colors = {"color": self.plot_color}
+        p = sns.pairplot(df, plot_kws=colors, diag_kws=colors)
         return p
