@@ -2,6 +2,7 @@ import pytest
 import random
 
 import pandas as pd
+import numpy as np
 from scipy.stats import truncnorm, skewnorm
 
 
@@ -14,6 +15,7 @@ def test_data_classification_balanced():
     length = 100
 
     random.seed(random_seed)
+    np.random.seed(seed=random_seed)
 
     # 50/50 gender randomness
     sex_data = random.choices(["Male", "Female"], k=length)
@@ -31,6 +33,7 @@ def test_data_classification_balanced():
         return truncnorm(
             (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd
         )
+
     height_data = trunc_normal(mean=180, sd=5, low=150, upp=210).rvs(length)
 
     # Dates between 01-Jan-2020 and 31-Dec-2020
@@ -41,7 +44,7 @@ def test_data_classification_balanced():
     product_data = random.choices(product_list, k=length)
 
     # Price
-    price_data = random.choices(skewnorm(1).rvs(length), k=length)
+    price_data = map(lambda x: abs(x) * 50, random.choices(skewnorm(1).rvs(length), k=length))
 
     # bool column
     bool_data = random.choices([True, False], k=length)
@@ -54,6 +57,13 @@ def test_data_classification_balanced():
         [sex_data, age_data, height_data, date_data, product_data, price_data, bool_data, target_data])
     }
     df = pd.DataFrame(data=data)
+
+    # random missing data
+    np_rows = random.choices(range(length), k=10)
+    np_cols = random.choices(range(len(df.columns) - 1), k=10)
+
+    for row, col in zip(np_rows, np_cols):
+        df.iloc[row, col] = np.nan
 
     X = df[columns[:-1]]
     y = df[columns[-1]]
