@@ -8,4 +8,4 @@ def test_transformer_analyze_data(test_data_classification_balanced):
 
     transformer = Transformer(X, y)
 
-    pass
+    assert False

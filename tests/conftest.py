@@ -11,7 +11,7 @@ def test_data_classification_balanced():
 
     random_seed = 56
 
-    columns = ["Sex", "Age", "Height", "Date", "Product", "Price", "bool", "Target"]
+    columns = ["Sex", "AgeGroup", "Height", "Date", "Product", "Price", "bool", "Target"]
     length = 100
 
     random.seed(random_seed)
@@ -21,6 +21,7 @@ def test_data_classification_balanced():
     sex_data = random.choices(["Male", "Female"], k=length)
 
     # 9 different Age groups, more younger people
+    # Age is treated here as a Categorical Variable, because there are only 9 unique values presented
     age_data = random.choices(
         range(18, 63, 5),
         weights=([0.12]*5) + ([0.1]*4),

@@ -1,5 +1,4 @@
 import copy
-
 import seaborn as sns
 import pandas as pd
 
@@ -15,6 +14,8 @@ class DataExplainer:
     key_numerical = "numerical"
     key_categorical = "categorical"
     key_date = "date"
+
+    max_categories = 10
 
     plot_text_color = "#8C8C8C"
     plot_color = "#19529c"
@@ -79,13 +80,16 @@ class DataExplainer:
             return self.key_numerical
         else:
             try:
-                self.full_table[col].astype("float64")
-                return self.key_numerical
+                _ = self.full_table[col].astype("float64")
+                if len(_.unique()) <= self.max_categories:
+                    return self.key_categorical
+                else:
+                    return self.key_numerical
             except TypeError:
                 return self.key_date
             except ValueError:
                 return self.key_categorical
-            except:
+            except Exception:
                 raise
 
     def _create_tables(self):

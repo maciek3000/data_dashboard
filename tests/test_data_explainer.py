@@ -10,12 +10,12 @@ def test_data_explainer_analyze_columns(test_data_classification_balanced):
     cols = explainer.columns[explainer.key_cols]
     cols_wo_target = explainer.columns[explainer.key_cols_wo_target]
 
-    assert cols[explainer.key_numerical] == ["Age", "bool", "Height", "Price", "Target"]
-    assert cols[explainer.key_categorical] == ["Product", "Sex"]
+    assert cols[explainer.key_numerical] == ["Height", "Price"]
+    assert cols[explainer.key_categorical] == ["AgeGroup", "bool", "Product", "Sex", "Target"]
     assert cols[explainer.key_date] == ["Date"]
 
-    assert cols_wo_target[explainer.key_numerical] == ["Age", "bool", "Height", "Price"]
-    assert cols_wo_target[explainer.key_categorical] == ["Product", "Sex"]
+    assert cols_wo_target[explainer.key_numerical] == ["Height", "Price"]
+    assert cols_wo_target[explainer.key_categorical] == ["AgeGroup", "bool", "Product", "Sex"]
     assert cols_wo_target[explainer.key_date] == ["Date"]
 
 def test_data_explainer_numeric_describe(test_data_classification_balanced):
@@ -23,22 +23,24 @@ def test_data_explainer_numeric_describe(test_data_classification_balanced):
     y = test_data_classification_balanced[1]
 
     # debugging purposes
-    # _ = pd.concat([X, y], axis=1)[["Age", "bool", "Height", "Price", "Target"]].describe().T
+    # _ = X[["Height", "Price"]].describe().T
 
     expected_df = pd.DataFrame({
-        "count": [100.0, 98, 99, 98, 100],
-        "mean": [36.65, 0.52, 179.98, 40, 0.60],
-        "std": [12.75, 0.5, 5.40, 30, 0.49],
-        "min": [18, 0, 165.30, 1.53, 0],
-        "25%": [26.75, 0, 176.18, 18.16, 0],
-        "50%": [35.5, 1, 179.84, 35.62, 1],
-        "75%": [44.25, 1, 183.23, 51.93, 1],
-        "max": [58, 1, 191.67, 131.87, 1],
-        "missing": [0, 0.02, 0.01, 0.02, 0]
-    }, index=["Age", "bool", "Height", "Price", "Target"])
+        "count": [99.0, 98],
+        "mean": [179.98, 40],
+        "std": [5.40, 30],
+        "min": [165.30, 1.53],
+        "25%": [176.18, 18.16],
+        "50%": [179.84, 35.62],
+        "75%": [183.23, 51.93],
+        "max": [191.67, 131.87],
+        "missing": [0.01, 0.02]
+    }, index=["Height", "Price"])
 
     explainer = DataExplainer(X, y)
     actual_df = explainer._numeric_describe().round(2)
+
+    _ = expected_df[expected_df != actual_df]
 
     assert expected_df.equals(actual_df)
 
@@ -47,9 +49,9 @@ def test_data_explainer_categorical_to_ordinal(test_data_classification_balanced
     y = test_data_classification_balanced[1]
 
     # debugging purposes
-    # _ = X[["Product", "Sex"]]
+    _ = pd.concat([X, y], axis=1)[["AgeGroup", "bool", "Product", "Sex", "Target"]]
 
-    cat_cols = ["Product", "Sex"]
+    cat_cols = ["AgeGroup", "bool", "Product", "Sex", "Target"]
     replace_dict = {
         "Product": {
             "Oranges": 1,
@@ -66,15 +68,33 @@ def test_data_explainer_categorical_to_ordinal(test_data_classification_balanced
         "Sex": {
             "Male": 2,
             "Female": 1
+        },
+        "AgeGroup": {
+            23: 1,
+            38: 2,
+            48: 3,
+            53: 4,
+            58: 5,
+            33: 6,
+            18: 7,
+            43: 8,
+            28: 9
+        },
+        "bool": {
+            0: 1,
+            1: 2
+        },
+        "Target": {
+            0: 1,
+            1: 2
         }
     }
 
-    expected_df = pd.DataFrame(X[cat_cols].replace(replace_dict))
+    concated_df = pd.concat([X, y], axis=1)
+    expected_df = pd.DataFrame(concated_df[cat_cols].replace(replace_dict))
 
     explainer = DataExplainer(X, y)
-    actual_df = explainer._categorical_to_ordinal(X[cat_cols])
-
-    print(expected_df[(expected_df["Product"] != actual_df["Product"])])
+    actual_df = explainer._categorical_to_ordinal(concated_df[cat_cols])
 
     assert expected_df.equals(actual_df)
 
@@ -85,19 +105,21 @@ def test_data_explainer_categorical_describe(test_data_classification_balanced):
     explainer = DataExplainer(X, y)
 
     # debugging purposes
-    _ = explainer._categorical_to_ordinal(X[["Product", "Sex"]]).describe().T
+    # _ = explainer._categorical_to_ordinal(pd.concat([X, y], axis=1)[
+    #                                           ["AgeGroup", "bool", "Product", "Sex", "Target"]]
+    #                                       ).describe().T
 
     expected_df = pd.DataFrame({
-        "count": [99.0, 99.0],
-        "mean": [5.19, 1.51],
-        "std": [2.76, 0.50],
-        "min": [1.0, 1.0],
-        "25%": [3.0, 1.0],
-        "50%": [5.0, 2.0],
-        "75%": [8.0, 2.0],
-        "max": [10.0, 2.0],
-        "missing": [0.01, 0.01]
-    }, index=["Product", "Sex"])
+        "count": [100.0, 98, 99.0, 99.0, 100],
+        "mean": [5.05, 1.52, 5.19, 1.51, 1.60],
+        "std": [2.66, 0.5, 2.76, 0.50, 0.49],
+        "min": [1, 1, 1.0, 1.0, 1],
+        "25%": [2, 1, 3.0, 1.0, 1],
+        "50%": [5.0, 2, 5.0, 2.0, 2],
+        "75%": [7.0, 2, 8.0, 2.0, 2],
+        "max": [9.0, 2, 10.0, 2.0, 2],
+        "missing": [0, 0.02, 0.01, 0.01, 0.0]
+    }, index=["AgeGroup", "bool", "Product", "Sex", "Target"])
 
     actual_df = explainer._categorical_describe().round(2)
 
