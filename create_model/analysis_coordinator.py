@@ -2,6 +2,7 @@ from .data_explainer import DataExplainer
 from .output import Output
 from .data_transformer import Transformer
 from .model_finder import ModelFinder
+from .feature_descriptor import FeatureDescriptor
 
 import os
 
@@ -10,7 +11,7 @@ class Coordinator:
 
     name = "create_model"
 
-    def __init__(self, X, y, scoring=None, root_path=None):
+    def __init__(self, X, y, scoring=None, feature_json=None, root_path=None):
 
         # copy original dataframes to avoid changing the originals
         self.X = X.copy()
@@ -30,6 +31,7 @@ class Coordinator:
         # TODO: consider lazy instancing
         self.output = Output(self.root_path, data_name="test", package_name=self.name)
         self.transformer = Transformer(self.X, self.y, self.data_explained["columns"]["columns_without_target"])
+        self.features = FeatureDescriptor(feature_json)
         self.scoring = scoring
 
     def eda(self):

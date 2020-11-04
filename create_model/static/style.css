@@ -10,6 +10,7 @@
     --settings-link-color: #c6d4e6;
     --gray-title: #808080;
     --light-gray: #DCDCDC;
+    --table-text: #3d3d3d;
 }
 
 * {
@@ -95,7 +96,7 @@ html {
 table {
     border-collapse: collapse;
     border: 0px solid black;
-    color: #3d3d3d;
+    color: var(--table-text);
     font-size: 13px;
     width: 100%;
 }
@@ -124,6 +125,66 @@ tbody tr:nth-child(odd) {
 
 tbody tr:hover {
     background-color: #ebd5d1;
+}
+
+/* Description box */
+
+
+tbody tr th p {
+    position: relative;
+    display: inline;
+}
+
+tbody tr th p span {
+    position: absolute;
+    display:none;
+    background: #EEEEEE;
+    border: 1px solid var(--gray-title);
+    font-size: 0.8em;
+    color: var(--table-text);
+    margin: 12px;
+    padding: 8px;
+    right: -100px;
+    top: -10px;
+    max-width: 120px;
+    z-index: 2;
+    font-weight: normal;
+/*
+    background:#F8F8F8;
+    border: 5px solid #DFDFDF;
+    color: #717171;
+    font-size: 13px;
+    letter-spacing: 1px;
+    line-height: 30px;
+
+    text-align: center;
+    top: -80px;
+    left:-30px;
+
+    padding:0 20px;
+*/
+}
+
+tbody th p:hover span {
+    display: block;
+}
+
+/*
+tbody th tr p span:after {
+    content:'';
+    position:absolute;
+
+    bottom:-10px;
+    width:10px;
+    height:10px;
+    border-bottom:5px solid #dfdfdf;
+    border-right:5px solid #dfdfdf;
+    background:#f8f8f8;
+    left:50%;
+    margin-left:-10px;
+    -moz-transform:rotate(45deg);
+    -webkit-transform:rotate(45deg);
+
 }
 
 /* Footer */

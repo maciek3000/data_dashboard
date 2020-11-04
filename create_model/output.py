@@ -1,5 +1,6 @@
 import os, datetime, copy
 from jinja2 import Environment, FileSystemLoader
+from bs4 import BeautifulSoup
 
 
 class Output:
@@ -51,23 +52,58 @@ class Output:
                 f.write(html)
 
     def _convert_data_to_web_elements(self, output_dict):
-        # TODO: change to separate functions
-        tables_dict = output_dict["tables"]
-        params = {key: arg.to_html(float_format="{:.2f}".format) for key, arg in tables_dict.items()}
 
-        list_dict = output_dict["lists"]
-        # TODO: redesign
-        for key, l in list_dict.items():
-            _ = ""
-            for x in l:
-                _ += "<li>" + x + "</li>"
-            list_dict[key] = _
-        params.update(list_dict)
+        tables = self.__create_tables_html(output_dict["tables"])
+        lists = self.__create_lists_html((output_dict["lists"]))
+        figures = self.__create_figures(output_dict["figures"])
+        html = [tables, lists, figures]
 
-        fig_dict = output_dict["figures"]
-        for name, plot in fig_dict.items():
-            path = os.path.join(self.output_directory, "assets", (name + ".png"))
-            params[name] = "<a href={path}><img src={path} title='Click to open larger version'></img></a>".format(path=path)
-            plot.savefig(path)
+        params = {}
+        for d in html:
+            params.update(d)  # might consider checking for duplicate keys
 
         return params
+
+    def __create_tables_html(self, tables):
+        params = {}
+        for key, arg in tables.items():
+            html_table = arg.to_html(float_format="{:.2f}".format)
+            html_table = self.__append_description(html_table)
+            params[key] = html_table
+
+        return params
+
+    def __create_lists_html(self, lists):
+        d = {}
+
+        # Was thinking of redesigning it with bs4, but its a very simple structure so it would be an overkill
+        for key, l in lists.items():
+            _ = "<ul>"
+            for x in l:
+                _ += "<li>" + x + "</li>"
+            _ += "</ul>"
+            d[key] = _
+        return d
+
+    def __create_figures(self, figures):
+        d = {}
+        for name, plot in figures.items():
+            path = os.path.join(self.output_directory, "assets", (name + ".png"))
+            d[name] = "<a href={path}><img src={path} title='Click to open larger version'></img></a>".format(path=path)
+            plot.savefig(path)
+        return d
+
+    def __append_description(self, html_table):
+
+        placeholder_names = ["Age", "Fare", "PassengerId", "Cabin", "Embarked"]
+        placeholder_desc = " - Test Description"
+
+        table = BeautifulSoup(html_table, "html.parser")
+        headers = table.select("table tbody tr th")
+        for header in headers:
+            if header.string in placeholder_names:
+                header.string.wrap(table.new_tag("p"))
+                new_tag = table.new_tag("span", class_="hover-box")
+                new_tag.string = placeholder_desc
+                header.p.append(new_tag)
+        return str(table)

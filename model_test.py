@@ -21,8 +21,11 @@ if __name__ == "__main__":
     X = train_df[features]
     y = train_df[target]
 
-    coord = Coordinator(X, y, accuracy_score, os.getcwd())
+    descriptions = open(os.path.join(data_directory, "feature_descriptions.json"))
+
+    coord = Coordinator(X, y, accuracy_score, descriptions, os.getcwd())
     coord.eda()
+
 
     # model = coord.find_model()
     #

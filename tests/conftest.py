@@ -1,10 +1,74 @@
 import pytest
 import random
+import json
+import tempfile, os, io
 
 import pandas as pd
 import numpy as np
 from scipy.stats import truncnorm, skewnorm
 
+
+@pytest.fixture
+def feature_descriptions():
+    d = "description"
+    m = "mapping"
+    descriptions = {
+        "Sex": {
+            d: "Sex of the Participant"
+        },
+        "AgeGroup": {
+            d: "Age Group of the Participant",
+            m: {
+                "18": "Between 18 and 22",
+                "23": "Between 23 and 27",
+                "28": "Between 28 and 32",
+                "33": "Between 33 and 37",
+                "38": "Between 38 and 42",
+                "43": "Between 43 and 47",
+                "48": "Between 48 and 52",
+                "53": "Between 53 and 57",
+                "58": "Between 58 and 62"
+            }
+        },
+        "Height": {
+            d: "Height of the Participant"
+        },
+        "Date": {
+            d: "Date of the Transaction"
+        },
+        "Product": {
+            d: "Product bought within the Transaction"
+        },
+        "Price": {
+            d: "Price of the Product"
+        },
+        "bool": {
+            d: "Random Flag"
+        },
+        "Target": {
+            d: "Was the Transaction satisfactory",
+            m: {
+                "0": "Yes",
+                "1": "No"
+            }
+        }
+    }
+
+    return descriptions
+
+@pytest.fixture
+def temp_json_file(feature_descriptions):
+
+    fd, path = tempfile.mkstemp()
+    with open(path, "w") as tmp:
+        json.dump(feature_descriptions, tmp)
+        tmp.flush()
+
+    with open(path, "r") as f:
+        yield f
+
+    os.close(fd)
+    os.unlink(path)
 
 @pytest.fixture
 def test_data_classification_balanced():
