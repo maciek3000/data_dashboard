@@ -44,15 +44,15 @@ def test_data_explainer_numeric_describe(test_data_classification_balanced):
 
     assert expected_df.equals(actual_df)
 
-def test_data_explainer_categorical_to_ordinal(test_data_classification_balanced):
+def test_data_explainer_categorical_mapping(test_data_classification_balanced):
     X = test_data_classification_balanced[0]
     y = test_data_classification_balanced[1]
 
     # debugging purposes
-    _ = pd.concat([X, y], axis=1)[["AgeGroup", "bool", "Product", "Sex", "Target"]]
+    # _ = pd.concat([X, y], axis=1)[["AgeGroup", "bool", "Product", "Sex", "Target"]]
 
     cat_cols = ["AgeGroup", "bool", "Product", "Sex", "Target"]
-    replace_dict = {
+    expected_mapping = {
         "Product": {
             "Oranges": 1,
             "Butter": 2,
@@ -90,13 +90,10 @@ def test_data_explainer_categorical_to_ordinal(test_data_classification_balanced
         }
     }
 
-    concated_df = pd.concat([X, y], axis=1)
-    expected_df = pd.DataFrame(concated_df[cat_cols].replace(replace_dict))
-
     explainer = DataExplainer(X, y)
-    actual_df = explainer._categorical_to_ordinal(concated_df[cat_cols])
+    actual_mapping = explainer._create_categorical_mapping()
 
-    assert expected_df.equals(actual_df)
+    assert actual_mapping == expected_mapping
 
 def test_data_explainer_categorical_describe(test_data_classification_balanced):
     X = test_data_classification_balanced[0]

@@ -27,15 +27,16 @@ class Coordinator:
 
         self.explainer = DataExplainer(self.X, self.y)
         self.data_explained = self.explainer.analyze()
+        self.explainer_mapping = self.explainer.mapping
+
+        self.features = FeatureDescriptor(feature_json)
 
         # TODO: consider lazy instancing
-        self.output = Output(self.root_path, data_name="test", package_name=self.name)
+        self.output = Output(self.root_path, features=self.features, naive_mapping=self.explainer_mapping, data_name="test", package_name=self.name)
         self.transformer = Transformer(self.X, self.y, self.data_explained["columns"]["columns_without_target"])
-        self.features = FeatureDescriptor(feature_json)
         self.scoring = scoring
 
     def eda(self):
-        # output = self.explainer.analyze()
         output_keys = ["figures", "tables", "lists"]
         output = {key: self.data_explained[key] for key in output_keys}
         self.output.create_html_output(output)

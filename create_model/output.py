@@ -8,13 +8,16 @@ class Output:
     time_format = "%d-%b-%Y %H:%M:%S"
     footer_note = "Created on {time}"
 
-    def __init__(self, root_path, data_name, package_name):
+    def __init__(self, root_path, features, naive_mapping, data_name, package_name):
 
         # TODO:
         # this solution is sufficient right now but nowhere near satisfying
         # if the Coordinator is imported as a package, this whole facade might crumble with directories
         # being created in seemingly random places.
         self.root_path = root_path
+        self.features = features
+        self.naive_mapping = naive_mapping
+
         self.output_directory = os.path.join(self.root_path, "output")
         self.templates_path = os.path.join(self.root_path, package_name, "templates")
         self.static_path = os.path.join(self.root_path, package_name, "static")
@@ -77,6 +80,7 @@ class Output:
         d = {}
 
         # Was thinking of redesigning it with bs4, but its a very simple structure so it would be an overkill
+        # TODO: redesign with bs4 and append descriptions
         for key, l in lists.items():
             _ = "<ul>"
             for x in l:
@@ -94,16 +98,75 @@ class Output:
         return d
 
     def __append_description(self, html_table):
+        if self.features.initialized:
+            table = BeautifulSoup(html_table, "html.parser")
+            headers = table.select("table tbody tr th")
+            for header in headers:
+                try:
+                    description = self.features[header.string]
+                except KeyError:
+                    continue
 
-        placeholder_names = ["Age", "Fare", "PassengerId", "Cabin", "Embarked"]
-        placeholder_desc = " - Test Description"
-
-        table = BeautifulSoup(html_table, "html.parser")
-        headers = table.select("table tbody tr th")
-        for header in headers:
-            if header.string in placeholder_names:
+                # adding <span> that will hold description of a feature
+                # every \n is replaced with <br> tag
                 header.string.wrap(table.new_tag("p"))
-                new_tag = table.new_tag("span", class_="hover-box")
-                new_tag.string = placeholder_desc
+                new_tag = table.new_tag("span")
+                lines = description.split("\n")
+                new_tag.string = lines[0]
+                if len(lines) > 1:
+                    for line in lines[1:]:
+                        new_tag.append(table.new_tag("br"))
+                        new_tag.append(table.new_string("{}".format(line)))
+
+                # appending mappings to descriptions as long as they exist (they are not none)
+                mappings = self._consolidate_mappings(header.string)
+                if mappings:
+                    new_tag.append(table.new_tag("br"))
+                    new_tag.append(table.new_tag("br"))
+                    new_tag.append(table.new_string("Categories:"))
+                    i = 0
+                    for key, val in mappings.items():
+                        new_tag.append(table.new_tag("br"))
+                        new_tag.append(table.new_string("{} - {}".format(key, val)))
+                        if i >= 10:
+                            new_tag.append(table.new_tag("br"))
+                            new_tag.append(table.new_string("(...) Showing only first 10 categories"))
+                            break
+                        i += 1
+
                 header.p.append(new_tag)
-        return str(table)
+            return str(table)
+        else:
+            return html_table
+
+    def _consolidate_mappings(self, feature):
+        # description mapping comes from json so all keys are strings
+        description_mapping = self.features.feature_mapping(feature)
+        try:
+            naive_mapping = self.naive_mapping[feature]
+        except KeyError:
+            naive_mapping = None
+
+        if (description_mapping is None) and (naive_mapping is None):
+            return ""
+
+        # we're expecting naive mapping to be always present in case of categorical values
+        converted_naive_mapping = {str(key): str(val) for key, val in naive_mapping.items()}
+        if description_mapping is None:
+            # changing to strings to accomodate for json keys
+            new_pairs = converted_naive_mapping
+        else:
+            _ = {}
+            for key in converted_naive_mapping:
+                _[converted_naive_mapping[key]] = description_mapping[key]
+            new_pairs = _
+
+        # app = ""
+        # if len(new_pairs) > 10:
+        #     new_pairs = dict(list(new_pairs.items())[:10])
+        #     app = "Showing only first 10 categories"
+        #
+        # mapping_string += "<br>".join((" - ".join([str(key), str(val)]) for key, val in new_pairs.items()))
+        # mapping_string += app
+
+        return new_pairs

@@ -32,13 +32,15 @@ class DataExplainer:
 
         self.X = X
         self.y = y
-        self.full_table = pd.concat([self.X, self.y], axis=1)
+        self.raw_df = pd.concat([self.X, self.y], axis=1)
 
         self.columns = self._analyze_columns()
 
         self.numerical_columns = self.columns[self.key_cols][self.key_numerical]
         self.categorical_columns = self.columns[self.key_cols][self.key_categorical]
         self.date_columns = self.columns[self.key_cols][self.key_date]
+
+        self.transformed_df, self.mapping = self._transform_raw_df()
 
     def analyze(self):
         output = {
@@ -76,11 +78,11 @@ class DataExplainer:
         }
 
     def __column_type(self, col):
-        if self.full_table[col].dtype == "bool":
+        if self.raw_df[col].dtype == "bool":
             return self.key_numerical
         else:
             try:
-                _ = self.full_table[col].astype("float64")
+                _ = self.raw_df[col].astype("float64")
                 if len(_.unique()) <= self.max_categories:
                     return self.key_categorical
                 else:
@@ -92,6 +94,24 @@ class DataExplainer:
             except Exception:
                 raise
 
+    def _transform_raw_df(self):
+        mapping = self._create_categorical_mapping()
+
+        categorical_df = self.raw_df[self.categorical_columns].replace(mapping)
+        other_cols = self.numerical_columns + self.date_columns
+
+        new_df = pd.concat([categorical_df, self.raw_df[other_cols]], axis=1)
+        return new_df, mapping
+
+    def _create_categorical_mapping(self):
+        _ = {}
+        for col in self.categorical_columns:
+            vals = self.raw_df[col].unique()
+            mapped = {val: x+1 for val, x in zip(vals, range(len(vals))) if not pd.isna(val)}  # count starts at 1
+            _[col] = mapped
+
+        return _
+
     def _create_tables(self):
         d = {
             "described_numeric": self._numeric_describe(),
@@ -101,28 +121,18 @@ class DataExplainer:
         return d
 
     def _numeric_describe(self):
-        ds = self.full_table[self.numerical_columns].describe().astype("float64").T
-        ds["missing"] = self.full_table.isna().sum() / max(self.full_table.count())
+        ds = self.transformed_df[self.numerical_columns].describe().astype("float64").T
+        ds["missing"] = self.transformed_df.isna().sum() / max(self.transformed_df.count())
         return ds
 
     def _categorical_describe(self):
-        df = self._categorical_to_ordinal(self.full_table[self.categorical_columns]).describe().astype("float64").T
-        df["missing"] = self.full_table.isna().sum() / max(self.full_table.count())
+        df = self.transformed_df[self.categorical_columns].describe().astype("float64").T
+        df["missing"] = self.transformed_df.isna().sum() / max(self.transformed_df.count())
         return df
 
-    def _categorical_to_ordinal(self, df):
-        _ = {}
-        for col in df.columns:
-            vals = df[col].unique()
-            mapped = {val: x+1 for val, x in zip(vals, range(len(vals))) if not pd.isna(val)}  # count starts at 1
-            _[col] = mapped
-
-        new_df = df.replace(_)
-        return new_df
-
     def __create_df_head(self):
-        cols = sorted(self.full_table.columns)
-        return self.full_table[cols].head().T
+        cols = sorted(self.raw_df.columns)
+        return self.raw_df[cols].head().T
 
     def _create_lists(self):
         return {
@@ -139,9 +149,9 @@ class DataExplainer:
         return d
 
     def __create_pairplot(self):
-        num = self.full_table[self.numerical_columns]
-        cat = self.full_table[self.categorical_columns]
-        df = pd.concat([num, self._categorical_to_ordinal(cat)], axis=1)
+        num = self.transformed_df[self.numerical_columns]
+        cat = self.transformed_df[self.categorical_columns]
+        df = pd.concat([num, cat], axis=1)
         df = df[sorted(df.columns)]
         colors = {"color": self.plot_color}
         p = sns.pairplot(df, plot_kws=colors, diag_kws=colors)

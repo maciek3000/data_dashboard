@@ -13,7 +13,10 @@ class FeatureDescriptor:
     _mapping = "mapping"
 
     def __init__(self, json_file):
-        self.json = json.load(json_file)
+        self.initialized = False
+        if json_file:
+            self.json = json.load(json_file)
+            self.initialized = True
 
     def __getitem__(self, arg):
         if arg not in self.json:
