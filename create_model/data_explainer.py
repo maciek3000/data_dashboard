@@ -106,8 +106,8 @@ class DataExplainer:
     def _create_categorical_mapping(self):
         _ = {}
         for col in self.categorical_columns:
-            vals = self.raw_df[col].unique()
-            mapped = {val: x+1 for val, x in zip(vals, range(len(vals))) if not pd.isna(val)}  # count starts at 1
+            vals = sorted(self.raw_df[col].unique(), key=str)
+            mapped = {val: x for val, x in zip(vals, range(len(vals))) if not pd.isna(val)}  # count starts at 1
             _[col] = mapped
 
         return _

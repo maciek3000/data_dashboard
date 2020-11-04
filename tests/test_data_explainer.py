@@ -51,42 +51,41 @@ def test_data_explainer_categorical_mapping(test_data_classification_balanced):
     # debugging purposes
     # _ = pd.concat([X, y], axis=1)[["AgeGroup", "bool", "Product", "Sex", "Target"]]
 
-    cat_cols = ["AgeGroup", "bool", "Product", "Sex", "Target"]
     expected_mapping = {
         "Product": {
-            "Oranges": 1,
-            "Butter": 2,
-            "Cheese": 3,
-            "Bananas": 4,
-            "Ketchup": 5,
-            "Apples": 6,
-            "Bread": 7,
-            "Honey": 8,
-            "Cookies": 9,
-            "Eggs": 10
+            "Apples": 0,
+            "Bananas": 1,
+            "Bread": 2,
+            "Butter": 3,
+            "Cheese": 4,
+            "Cookies": 5,
+            "Eggs": 6,
+            "Honey": 7,
+            "Ketchup": 8,
+            "Oranges": 9
         },
         "Sex": {
-            "Male": 2,
-            "Female": 1
+            "Female": 0,
+            "Male": 1
         },
         "AgeGroup": {
+            18: 0,
             23: 1,
-            38: 2,
-            48: 3,
-            53: 4,
-            58: 5,
-            33: 6,
-            18: 7,
-            43: 8,
-            28: 9
+            28: 2,
+            33: 3,
+            38: 4,
+            43: 5,
+            48: 6,
+            53: 7,
+            58: 8
         },
         "bool": {
-            0: 1,
-            1: 2
+            0: 0,
+            1: 1
         },
         "Target": {
-            0: 1,
-            1: 2
+            0.0: 0,
+            1.0: 1
         }
     }
 
@@ -102,19 +101,17 @@ def test_data_explainer_categorical_describe(test_data_classification_balanced):
     explainer = DataExplainer(X, y)
 
     # debugging purposes
-    # _ = explainer._categorical_to_ordinal(pd.concat([X, y], axis=1)[
-    #                                           ["AgeGroup", "bool", "Product", "Sex", "Target"]]
-    #                                       ).describe().T
+    _ = pd.concat([X, y], axis=1)[["AgeGroup", "bool", "Product", "Sex", "Target"]].replace(explainer._create_categorical_mapping()).describe().T
 
     expected_df = pd.DataFrame({
         "count": [100.0, 98, 99.0, 99.0, 100],
-        "mean": [5.05, 1.52, 5.19, 1.51, 1.60],
-        "std": [2.66, 0.5, 2.76, 0.50, 0.49],
-        "min": [1, 1, 1.0, 1.0, 1],
-        "25%": [2, 1, 3.0, 1.0, 1],
-        "50%": [5.0, 2, 5.0, 2.0, 2],
-        "75%": [7.0, 2, 8.0, 2.0, 2],
-        "max": [9.0, 2, 10.0, 2.0, 2],
+        "mean": [3.73, 0.52, 4.34, 0.51, 0.60],
+        "std": [2.55, 0.5, 2.84, 0.50, 0.49],
+        "min": [0, 0, 0.0, 0.0, 0],
+        "25%": [1.75, 0.0, 2.0, 0.0, 0],
+        "50%": [3.5, 1, 4.0, 1.0, 1],
+        "75%": [5.25, 1, 7.0, 1.0, 1],
+        "max": [8.0, 1, 9.0, 1.0, 1],
         "missing": [0, 0.02, 0.01, 0.01, 0.0]
     }, index=["AgeGroup", "bool", "Product", "Sex", "Target"])
 

@@ -1,6 +1,6 @@
 import os, datetime, copy
 from jinja2 import Environment, FileSystemLoader
-from bs4 import BeautifulSoup
+from .output_overview import Overview
 
 
 class Output:
@@ -23,150 +23,39 @@ class Output:
         self.static_path = os.path.join(self.root_path, package_name, "static")
         self.env = Environment(loader=FileSystemLoader(self.templates_path))
 
+        # TODO: rethink if the feature mapping should be done in overview / every other view or done here once
+        self.overview = Overview(
+            template=self.env.get_template("overview.html"),
+            css_path=os.path.join(self.static_path, "overview.css"),
+            features=self.features,
+            naive_mapping=self.naive_mapping
+        )
+
     def create_html_output(self, data_objects):
-        templates = {
-            "overview": self._overview_template,
+        # extracting different objects from data_objects that are needed for different templates
+        tables = data_objects["tables"]
+        lists = data_objects["lists"]
+        figures = data_objects["figures"]
+
+        # figure directory is needed for views to save figures if they need to
+        figure_directory = os.path.join(self.output_directory, "assets")
+
+        # base params include dynamic items for the base of templates
+        base_params = self._get_standard_variables()
+        rendered_templates = {
+            "overview": self.overview.render(copy.copy(base_params), tables, lists, figures, figure_directory),
         }
-        rendered_templates = []
-
-        # params dict encompasses shared arguments for all templates
-        # it's up to the template to decide which they want to use and which not
-        params = self._get_standard_variables(data_objects)
-        for template, method in templates.items():
-            rendered_templates.append((template, method(copy.copy(params))))
-
         self._write_html(rendered_templates)
 
-    def _get_standard_variables(self, data_objects):
+    def _get_standard_variables(self):
         current_time = datetime.datetime.now().strftime(self.time_format)
-        html_dict = self._convert_data_to_web_elements(data_objects)
-        html_dict["created_on"] = self.footer_note.format(time=current_time)
-        html_dict["base_css"] = os.path.join(self.static_path, "style.css")
+        html_dict = {
+            "created_on": self.footer_note.format(time=current_time),
+            "base_css": os.path.join(self.static_path, "style.css")
+        }
         return html_dict
 
-    def _overview_template(self, base_dict):
-        base_dict["overview_css"] = os.path.join(self.static_path, "overview.css")
-        template = self.env.get_template("overview.html")
-        return template.render(**base_dict)
-
     def _write_html(self, html_templates):
-        for name, html in html_templates:
+        for name, html in html_templates.items():
             with open(os.path.join(self.output_directory, (name + ".html")), "w") as f:
                 f.write(html)
-
-    def _convert_data_to_web_elements(self, output_dict):
-
-        tables = self.__create_tables_html(output_dict["tables"])
-        lists = self.__create_lists_html((output_dict["lists"]))
-        figures = self.__create_figures(output_dict["figures"])
-        html = [tables, lists, figures]
-
-        params = {}
-        for d in html:
-            params.update(d)  # might consider checking for duplicate keys
-
-        return params
-
-    def __create_tables_html(self, tables):
-        params = {}
-        for key, arg in tables.items():
-            html_table = arg.to_html(float_format="{:.2f}".format)
-            html_table = self.__append_description(html_table)
-            params[key] = html_table
-
-        return params
-
-    def __create_lists_html(self, lists):
-        d = {}
-
-        # Was thinking of redesigning it with bs4, but its a very simple structure so it would be an overkill
-        # TODO: redesign with bs4 and append descriptions
-        for key, l in lists.items():
-            _ = "<ul>"
-            for x in l:
-                _ += "<li>" + x + "</li>"
-            _ += "</ul>"
-            d[key] = _
-        return d
-
-    def __create_figures(self, figures):
-        d = {}
-        for name, plot in figures.items():
-            path = os.path.join(self.output_directory, "assets", (name + ".png"))
-            d[name] = "<a href={path}><img src={path} title='Click to open larger version'></img></a>".format(path=path)
-            plot.savefig(path)
-        return d
-
-    def __append_description(self, html_table):
-        if self.features.initialized:
-            table = BeautifulSoup(html_table, "html.parser")
-            headers = table.select("table tbody tr th")
-            for header in headers:
-                try:
-                    description = self.features[header.string]
-                except KeyError:
-                    continue
-
-                # adding <span> that will hold description of a feature
-                # every \n is replaced with <br> tag
-                header.string.wrap(table.new_tag("p"))
-                new_tag = table.new_tag("span")
-                lines = description.split("\n")
-                new_tag.string = lines[0]
-                if len(lines) > 1:
-                    for line in lines[1:]:
-                        new_tag.append(table.new_tag("br"))
-                        new_tag.append(table.new_string("{}".format(line)))
-
-                # appending mappings to descriptions as long as they exist (they are not none)
-                mappings = self._consolidate_mappings(header.string)
-                if mappings:
-                    new_tag.append(table.new_tag("br"))
-                    new_tag.append(table.new_tag("br"))
-                    new_tag.append(table.new_string("Categories:"))
-                    i = 0
-                    for key, val in mappings.items():
-                        new_tag.append(table.new_tag("br"))
-                        new_tag.append(table.new_string("{} - {}".format(key, val)))
-                        if i >= 10:
-                            new_tag.append(table.new_tag("br"))
-                            new_tag.append(table.new_string("(...) Showing only first 10 categories"))
-                            break
-                        i += 1
-
-                header.p.append(new_tag)
-            return str(table)
-        else:
-            return html_table
-
-    def _consolidate_mappings(self, feature):
-        # description mapping comes from json so all keys are strings
-        description_mapping = self.features.feature_mapping(feature)
-        try:
-            naive_mapping = self.naive_mapping[feature]
-        except KeyError:
-            naive_mapping = None
-
-        if (description_mapping is None) and (naive_mapping is None):
-            return ""
-
-        # we're expecting naive mapping to be always present in case of categorical values
-        converted_naive_mapping = {str(key): str(val) for key, val in naive_mapping.items()}
-        if description_mapping is None:
-            # changing to strings to accomodate for json keys
-            new_pairs = converted_naive_mapping
-        else:
-            _ = {}
-            for key in converted_naive_mapping:
-                _[converted_naive_mapping[key]] = description_mapping[key]
-            new_pairs = _
-
-        # app = ""
-        # if len(new_pairs) > 10:
-        #     new_pairs = dict(list(new_pairs.items())[:10])
-        #     app = "Showing only first 10 categories"
-        #
-        # mapping_string += "<br>".join((" - ".join([str(key), str(val)]) for key, val in new_pairs.items()))
-        # mapping_string += app
-
-        return new_pairs

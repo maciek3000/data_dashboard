@@ -138,17 +138,17 @@ tbody tr th p {
 tbody tr th p span {
     position: absolute;
     display:none;
-    background: #EEEEEE;
+    background: #FAFAFA;
     border: 1px solid var(--gray-title);
-    font-size: 0.8em;
-    color: var(--table-text);
+    font-size: 0.85em;
+    color: var(--normal-text-color);/* var(--table-text); */
     margin: 12px;
     padding: 8px;
     right: -100px;
     top: -10px;
-    max-width: 120px;
     z-index: 2;
     font-weight: normal;
+    text-align: left;
 /*
     background:#F8F8F8;
     border: 5px solid #DFDFDF;
