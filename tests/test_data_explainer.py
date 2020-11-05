@@ -44,50 +44,12 @@ def test_data_explainer_numeric_describe(test_data_classification_balanced):
 
     assert expected_df.equals(actual_df)
 
-def test_data_explainer_categorical_mapping(test_data_classification_balanced):
+def test_data_explainer_categorical_mapping(test_data_classification_balanced, expected_mapping):
     X = test_data_classification_balanced[0]
     y = test_data_classification_balanced[1]
 
     # debugging purposes
     # _ = pd.concat([X, y], axis=1)[["AgeGroup", "bool", "Product", "Sex", "Target"]]
-
-    expected_mapping = {
-        "Product": {
-            "Apples": 0,
-            "Bananas": 1,
-            "Bread": 2,
-            "Butter": 3,
-            "Cheese": 4,
-            "Cookies": 5,
-            "Eggs": 6,
-            "Honey": 7,
-            "Ketchup": 8,
-            "Oranges": 9
-        },
-        "Sex": {
-            "Female": 0,
-            "Male": 1
-        },
-        "AgeGroup": {
-            18: 0,
-            23: 1,
-            28: 2,
-            33: 3,
-            38: 4,
-            43: 5,
-            48: 6,
-            53: 7,
-            58: 8
-        },
-        "bool": {
-            0: 0,
-            1: 1
-        },
-        "Target": {
-            0.0: 0,
-            1.0: 1
-        }
-    }
 
     explainer = DataExplainer(X, y)
     actual_mapping = explainer._create_categorical_mapping()

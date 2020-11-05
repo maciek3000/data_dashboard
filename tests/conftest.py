@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 from scipy.stats import truncnorm, skewnorm
 
+from create_model.feature_descriptor import FeatureDescriptor
+
 
 @pytest.fixture
 def feature_descriptions():
@@ -17,7 +19,7 @@ def feature_descriptions():
             d: "Sex of the Participant"
         },
         "AgeGroup": {
-            d: "Age Group of the Participant",
+            d: "Age Group of the Participant.",
             m: {
                 "18": "Between 18 and 22",
                 "23": "Between 23 and 27",
@@ -46,10 +48,10 @@ def feature_descriptions():
             d: "Random Flag"
         },
         "Target": {
-            d: "Was the Transaction satisfactory",
+            d: "Was the Transaction satisfactory?\nTarget Feature",
             m: {
-                "0": "Yes",
-                "1": "No"
+                "1": "Yes",
+                "0": "No"
             }
         }
     }
@@ -69,6 +71,11 @@ def temp_json_file(feature_descriptions):
 
     os.close(fd)
     os.unlink(path)
+
+@pytest.fixture
+def feature_descriptor(temp_json_file):
+    fd = FeatureDescriptor(temp_json_file)
+    return fd
 
 @pytest.fixture
 def test_data_classification_balanced():
@@ -134,3 +141,58 @@ def test_data_classification_balanced():
     y = df[columns[-1]]
 
     return X, y
+
+@pytest.fixture
+def expected_mapping():
+    expected_mapping = {
+        "Product": {
+            "Apples": 0,
+            "Bananas": 1,
+            "Bread": 2,
+            "Butter": 3,
+            "Cheese": 4,
+            "Cookies": 5,
+            "Eggs": 6,
+            "Honey": 7,
+            "Ketchup": 8,
+            "Oranges": 9
+        },
+        "Sex": {
+            "Female": 0,
+            "Male": 1
+        },
+        "AgeGroup": {
+            18: 0,
+            23: 1,
+            28: 2,
+            33: 3,
+            38: 4,
+            43: 5,
+            48: 6,
+            53: 7,
+            58: 8
+        },
+        "bool": {
+            0: 0,
+            1: 1
+        },
+        "Target": {
+            0: 0,
+            1: 1
+        }
+    }
+    return expected_mapping
+
+@pytest.fixture
+def test_html_table():
+    _ = """
+        <table>
+        <thead><tr><th></th><th></th></tr></thead>
+        <tbody>
+        <tr><th>Sex</th><td></td></tr>
+        <tr><th>Target</th><td></td></tr>
+        <tr><th>Invalid Column</th><td></td></tr>
+        </tbody>
+        </table>
+    """
+    return _

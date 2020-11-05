@@ -58,7 +58,7 @@ class Overview:
                 if mappings:
                     new_tag.append(table.new_tag("br"))
                     new_tag.append(table.new_tag("br"))
-                    new_tag.append(table.new_string("Category: Original (Transformed)"))
+                    new_tag.append(table.new_string("Category - Original (Transformed)"))
                     i = 0
                     for key, val in mappings.items():
                         new_tag.append(table.new_tag("br"))
