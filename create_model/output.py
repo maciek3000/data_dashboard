@@ -1,6 +1,7 @@
 import os, datetime, copy
 from jinja2 import Environment, FileSystemLoader
 from .output_overview import Overview
+from .output_features import FeatureView
 
 
 class Output:
@@ -31,6 +32,11 @@ class Output:
             naive_mapping=self.naive_mapping
         )
 
+        self.feature_view = FeatureView(
+            template=self.env.get_template("features.html"),
+            css_path=os.path.join(self.static_path, "features.css")
+        )
+
     def create_html_output(self, data_objects):
         # extracting different objects from data_objects that are needed for different templates
         tables = data_objects["tables"]
@@ -42,10 +48,21 @@ class Output:
 
         # base params include dynamic items for the base of templates
         base_params = self._get_standard_variables()
+
+        overview = "overview"
+        feature_view = "features"
+
+        views = [overview, feature_view]
+        view_paths = self._paths_to_views(views)
+
+        base_params.update(view_paths)
+
         rendered_templates = {
-            "overview": self.overview.render(copy.copy(base_params), tables, lists, figures, figure_directory),
+            overview: self.overview.render(copy.copy(base_params), tables, lists, figures, figure_directory),
+            feature_view: self.feature_view.render(copy.copy(base_params)),
         }
-        self._write_html(rendered_templates)
+
+        self._write_html(rendered_templates, view_paths)
 
     def _get_standard_variables(self):
         current_time = datetime.datetime.now().strftime(self.time_format)
@@ -55,7 +72,13 @@ class Output:
         }
         return html_dict
 
-    def _write_html(self, html_templates):
-        for name, html in html_templates.items():
-            with open(os.path.join(self.output_directory, (name + ".html")), "w") as f:
-                f.write(html)
+    def _write_html(self, html_templates, html_file_paths):
+        for name in html_templates:
+            with open(html_file_paths[name + "_file"], "w") as f:
+                f.write(html_templates[name])
+
+    def _paths_to_views(self, views):
+        _ = {}
+        for view in views:
+            _[(view + "_file")] = os.path.join(self.output_directory, (view + ".html"))
+        return _
