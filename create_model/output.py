@@ -34,14 +34,20 @@ class Output:
 
         self.feature_view = FeatureView(
             template=self.env.get_template("features.html"),
-            css_path=os.path.join(self.static_path, "features.css")
+            css_path=os.path.join(self.static_path, "features.css"),
+            features=self.features,
+            naive_mapping=self.naive_mapping
         )
 
     def create_html_output(self, data_objects):
         # extracting different objects from data_objects that are needed for different templates
-        tables = data_objects["tables"]
-        lists = data_objects["lists"]
-        figures = data_objects["figures"]
+
+        # Overview elements
+        tables = data_objects["explainer_tables"]
+        lists = data_objects["explainer_lists"]
+        figures = data_objects["explainer_figures"]
+
+        histograms = data_objects["explainer_histograms"]
 
         # figure directory is needed for views to save figures if they need to
         figure_directory = os.path.join(self.output_directory, "assets")
@@ -59,7 +65,7 @@ class Output:
 
         rendered_templates = {
             overview: self.overview.render(copy.copy(base_params), tables, lists, figures, figure_directory),
-            feature_view: self.feature_view.render(copy.copy(base_params)),
+            feature_view: self.feature_view.render(copy.copy(base_params), histograms),
         }
 
         self._write_html(rendered_templates, view_paths)

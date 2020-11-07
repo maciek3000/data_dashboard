@@ -24,7 +24,7 @@ if __name__ == "__main__":
     descriptions = open(os.path.join(data_directory, "feature_descriptions.json"))
 
     coord = Coordinator(X, y, accuracy_score, descriptions, os.getcwd())
-    coord.eda()
+    coord.create_html()
 
 
     # model = coord.find_model()

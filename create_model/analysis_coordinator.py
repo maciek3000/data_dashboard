@@ -26,6 +26,7 @@ class Coordinator:
             self.root_path = root_path
 
         self.explainer = DataExplainer(self.X, self.y)
+        # TODO: rethink if data_explained can be moved to .data_objects property of DataExplainer
         self.data_explained = self.explainer.analyze()
         self.explainer_mapping = self.explainer.mapping
 
@@ -35,12 +36,6 @@ class Coordinator:
         self.output = Output(self.root_path, features=self.features, naive_mapping=self.explainer_mapping, data_name="test", package_name=self.name)
         self.transformer = Transformer(self.X, self.y, self.data_explained["columns"]["columns_without_target"])
         self.scoring = scoring
-
-    def eda(self):
-        output_keys = ["figures", "tables", "lists"]
-        output = {key: self.data_explained[key] for key in output_keys}
-        self.output.create_html_output(output)
-        print("Created output at {directory}".format(directory=self.output.output_directory))
 
     def find_model(self):
         if not self.transformed_X:
@@ -56,3 +51,19 @@ class Coordinator:
 
     def transform(self, X):
         return self.transformer.transform(X)
+
+    def create_html(self):
+        explainer_data_keys = ["figures", "tables", "lists", "histograms"]
+        explainer_data = {"explainer_" + key: self.data_explained[key] for key in explainer_data_keys}
+
+        # transformer_data_keys = ["transformations"]
+        # transformer_data = {"transformer_" + key: self.transformer.data_objects[key] for key in transformer_data_keys}
+        #
+        # output = {}
+        # for _ in [explainer_data, transformer_data]:
+        #     output.update(_)
+
+        output = explainer_data
+
+        self.output.create_html_output(output)
+        print("Created output at {directory}".format(directory=self.output.output_directory))

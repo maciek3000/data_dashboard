@@ -50,6 +50,7 @@ def test_consolidate_mappings(feature_descriptor, expected_mapping, feature, exp
     )
 )
 def test_append_descriptions_to_table(feature_descriptor, expected_mapping, test_html_table, expected_string):
+    # TODO: test with >10 categories
     overview = Overview("test_template", "test_css", feature_descriptor, expected_mapping)
     actual_html = overview._Overview__append_description(test_html_table)
     print(actual_html)

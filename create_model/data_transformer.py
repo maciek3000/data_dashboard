@@ -23,8 +23,12 @@ class Transformer:
 
         self.preprocessor = self._create_preprocessor()
 
+        # placeholder
+        self.data_objects = None
+
     def fit(self):
         self.preprocessor = self.preprocessor.fit(self.X)
+        self.update_data_objects()
         return self
 
     def transform(self, X=None):
@@ -61,3 +65,7 @@ class Transformer:
             OneHotEncoder(handle_unknown="ignore")
         )
         return transformer
+
+    def update_data_objects(self):
+        # placeholder
+        self.data_objects = {"transformations": None}

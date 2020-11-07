@@ -1,6 +1,7 @@
 import copy
 import seaborn as sns
 import pandas as pd
+import numpy as np
 
 
 class DataExplainer:
@@ -10,6 +11,7 @@ class DataExplainer:
     key_figs = "figures"
     key_tables = "tables"
     key_lists = "lists"
+    key_histograms = "histograms"
 
     key_numerical = "numerical"
     key_categorical = "categorical"
@@ -47,7 +49,8 @@ class DataExplainer:
             self.key_cols: self.columns,
             self.key_figs: self._create_figures(),
             self.key_tables: self._create_tables(),
-            self.key_lists: self._create_lists()
+            self.key_lists: self._create_lists(),
+            self.key_histograms: self._create_histogram_data()
         }
         return output
 
@@ -101,6 +104,7 @@ class DataExplainer:
         other_cols = self.numerical_columns + self.date_columns
 
         new_df = pd.concat([categorical_df, self.raw_df[other_cols]], axis=1)
+        new_df[self.numerical_columns] = new_df[self.numerical_columns].astype("float64")
         return new_df, mapping
 
     def _create_categorical_mapping(self):
@@ -156,3 +160,10 @@ class DataExplainer:
         colors = {"color": self.plot_color}
         p = sns.pairplot(df, plot_kws=colors, diag_kws=colors)
         return p
+
+    def _create_histogram_data(self):
+        _ = {}
+        for column in self.transformed_df.columns:
+            hist, edges = np.histogram((self.transformed_df[column][self.transformed_df[column].notna()]), density=True, bins=50)
+            _[column] = (hist, edges)
+        return _

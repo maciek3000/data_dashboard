@@ -18,12 +18,6 @@ class FeatureDescriptor:
             self.json = json.load(json_file)
             self.initialized = True
 
-    def __getitem__(self, arg):
-        if arg not in self.json:
-            raise KeyError
-
-        return self.json[arg][self._description]
-
     def feature_mapping(self, arg):
         if arg not in self.json:
             raise KeyError
@@ -32,3 +26,21 @@ class FeatureDescriptor:
             return self.json[arg][self._mapping]
         except KeyError:
             return None
+
+    def __getitem__(self, arg):
+        if arg not in self.json:
+            raise KeyError
+
+        return self.json[arg][self._description]
+
+    def __iter__(self):
+        self.__iter_items = list(sorted(self.json.keys()))
+        self.__counter = 0
+        return self
+
+    def __next__(self):
+        try:
+            self.__counter += 1
+            return self.__iter_items[self.__counter - 1]
+        except IndexError:
+            raise StopIteration
