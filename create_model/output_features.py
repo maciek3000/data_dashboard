@@ -8,9 +8,10 @@ from bs4 import BeautifulSoup
 
 class FeatureView:
 
-    def __init__(self, template, css_path, features, naive_mapping):
+    def __init__(self, template, css_path, js_path, features, naive_mapping):
         self.template = template
         self.css = css_path
+        self.js = js_path
         self.features = features
         self.naive_mapping = naive_mapping
 
@@ -20,36 +21,39 @@ class FeatureView:
         output_dict.update(base_dict)
 
         output_dict["features_menu"] = self._create_features_menu()
-
+        output_dict["chosen_feature"] = sorted(histogram_data)[0]
         grid = self._create_gridplot(histogram_data)
 
         script, div = components(grid)
 
         output_dict["bokeh_script"] = script
         output_dict["test_plot"] = div
-        output_dict["feature_css"] = self.css
+        output_dict["features_css"] = self.css
+        output_dict["features_js"] = self.js
         return self.template.render(**output_dict)
 
     def _create_features_menu(self):
         html = ""
-        template = "<div onclick='myFunction(this)' id={}>{:03}. {}</div>"
+        template = "<div>{:03}. {}</div>"
         i = 0
         for feat in self.features:
-            html += template.format(feat, i, feat)
+            html += template.format(i, feat)
             i += 1
         return html
 
 
     def _create_gridplot(self, histogram_data):
 
-        data = {
-            "hist": [0],
-            "left_edges": [0],
-            "right_edges": [0]
-        }
-        histogram_source = ColumnDataSource(data=data)
+        histogram_source = ColumnDataSource()
 
         unique_features = sorted(histogram_data.keys())
+        new = histogram_data[unique_features[0]]
+
+        histogram_source.data = {
+            "hist": new[0],
+            "left_edges": new[1][:-1],
+            "right_edges": new[1][1:]
+        }
 
         histogram_plot = self._create_histogram_plot(histogram_source)
         dropdown = self._create_dropdown(unique_features)
@@ -79,6 +83,7 @@ class FeatureView:
         output = row(
             histogram_plot, dropdown
         )
+
         return output
 
     def _create_histogram_plot(self, source):
@@ -87,5 +92,5 @@ class FeatureView:
         return p
 
     def _create_dropdown(self, vals):
-        d = Select(options=vals, css_classes=["feature_dropdown"], name="feature_dropdown")
+        d = Select(options=vals, css_classes=["features_dropdown"], name="features_dropdown")
         return d

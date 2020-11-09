@@ -6,25 +6,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="burger_menu">
-    <div class="burger">&#9776;</div>
-    <div>Choose Feature</div>
-    <div class="features_menu">{{ features_menu }}</div>
+<div class="burger-menu">
+    <div class="burger-button">&#9776;</div>
+    <div class="chosen-feature">{{ chosen_feature }}</div>
 </div>
+<div class="features-menu">{{ features_menu }}</div>
 <div>{{ test_plot }}</div>
-{{ bokeh_script }}
-<script>
-    function myFunction(x) {
-    /*
-    var dropdown = document.querySelector(".feature_dropdown");
-
-    */
-    var elem = x.innerText.split(". ")[1];
-    console.log(Bokeh.documents[0]);
-    var dropdown = Bokeh.documents[0].get_model_by_name("feature_dropdown");
-    dropdown.value = elem;
-    console.log(elem);
-    console.log(dropdown);
-    }
-</script>
+<div>{{ bokeh_script }}</div>
+<script src="{{ features_js }}"></script>
 {% endblock %}
+

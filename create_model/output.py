@@ -35,6 +35,7 @@ class Output:
         self.feature_view = FeatureView(
             template=self.env.get_template("features.html"),
             css_path=os.path.join(self.static_path, "features.css"),
+            js_path=os.path.join(self.static_path, "features.js"),
             features=self.features,
             naive_mapping=self.naive_mapping
         )
