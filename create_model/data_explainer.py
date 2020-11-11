@@ -163,7 +163,31 @@ class DataExplainer:
 
     def _create_histogram_data(self):
         _ = {}
+
         for column in self.transformed_df.columns:
-            hist, edges = np.histogram((self.transformed_df[column][self.transformed_df[column].notna()]), density=True, bins=50)
+            # removing NaN values
+            srs = self.transformed_df[column][self.transformed_df[column].notna()]
+
+            # if column is categorical we do not want too many bins
+            if column in self.categorical_columns:
+                unique_vals = len(self.transformed_df[column].unique())
+                if unique_vals > self.max_categories:
+                    bins = self.max_categories
+                else:
+                    bins = unique_vals
+
+            # if columns is numerical we calculate the number of bins manually
+            # https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
+            elif column in self.numerical_columns:
+                n = srs.size
+                iqr = srs.quantile(0.75) - srs.quantile(0.25)
+                bins = (srs.max() - srs.min()) / (2*iqr*pow(n, (-1/3)))
+                bins = int(round(bins, 0))
+            else:
+                # placeholder rule
+                bins = 1
+
+            hist, edges = np.histogram(srs, density=True, bins=bins)
             _[column] = (hist, edges)
+
         return _

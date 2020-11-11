@@ -6,7 +6,10 @@ from bokeh.models.widgets import Select
 from bokeh.models import CustomJS
 from bs4 import BeautifulSoup
 
+import functools
+
 class FeatureView:
+
 
     def __init__(self, template, css_path, js_path, features, naive_mapping):
         self.template = template
@@ -14,6 +17,29 @@ class FeatureView:
         self.js = js_path
         self.features = features
         self.naive_mapping = naive_mapping
+
+    def _stylize_attributes(force=False):
+        def decorator_stylize_attributes(plot_func):
+            @functools.wraps(plot_func)
+            def wrapper(self, *args, **kwargs):
+                p = plot_func(self, *args, **kwargs)
+
+                if force:
+                    return p
+
+                for axis in [p.xaxis, p.yaxis]:
+                    axis.minor_tick_line_color = None
+                    axis.major_tick_line_color = None
+                    axis.major_label_text_color = "#8C8C8C"
+                    axis.axis_label_text_font = "Lato"
+                    axis.axis_line_color = "#8C8C8C"
+
+                p.xgrid.grid_line_color = None
+                p.ygrid.grid_line_color = None
+
+                return p
+            return wrapper
+        return decorator_stylize_attributes
 
     def render(self, base_dict, histogram_data):
 
@@ -33,8 +59,8 @@ class FeatureView:
         return self.template.render(**output_dict)
 
     def _create_features_menu(self):
-        html = ""
-        template = "<div>{:03}. {}</div>"
+        html = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
+        template = "<div class='single-feature'>{:03}. {}</div>"
         i = 0
         for feat in self.features:
             html += template.format(i, feat)
@@ -86,11 +112,34 @@ class FeatureView:
 
         return output
 
+    @_stylize_attributes()
     def _create_histogram_plot(self, source):
-        p = figure()
-        p.quad(top="hist", bottom=0, left="left_edges", right="right_edges", fill_color="navy", source=source)
+
+        kwargs = {
+            "plot_height": 460,
+            "plot_width": 460
+        }
+
+        p = self._default_figure(kwargs)
+
+        p.quad(top="hist", bottom=0, left="left_edges", right="right_edges", source=source, fill_color="#8CA8CD")
         return p
 
     def _create_dropdown(self, vals):
         d = Select(options=vals, css_classes=["features_dropdown"], name="features_dropdown")
         return d
+
+    def _default_figure(self, plot_specific_kwargs=None):
+        # supplying stylizing attributes to Figure() doesn't always work, as apparently some methods (e.g. grids)
+        # require axes from a created figure to change something
+
+        default_kwargs = {
+            "tools": [],
+        }
+
+        if plot_specific_kwargs:
+            default_kwargs.update(plot_specific_kwargs)
+
+        p = figure(**default_kwargs)
+
+        return p

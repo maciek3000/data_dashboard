@@ -1,5 +1,5 @@
 // Listeners for Features Menu
-var elems = document.querySelectorAll(".features-menu div");
+var elems = document.querySelectorAll(".features-menu .single-feature");
 var i;
 
 for (i=0; i < elems.length; i++) {
@@ -27,11 +27,13 @@ for (i=0; i < elems.length; i++) {
     elems[i].addEventListener("click", func(elems[i], elems));
 };
 
-// Burger Menu Button
-var burger_menu = document.querySelector(".burger-button");
-burger_menu.addEventListener("click", function() {
-    var features_menu = document.querySelector(".features-menu");
-    features_menu.classList.toggle("active-menu");
-});
+// Burger Menu Button and Menu X close button
+var burger_menu_button = document.querySelector(".burger-button");
+var x_button = document.querySelector(".close-button");
+for (button of Array(burger_menu_button, x_button)) {
+    button.addEventListener("click", function() {
+        var features_menu = document.querySelector(".features-menu");
+        features_menu.classList.toggle("active-menu");
+})};
 
-window.onload = document.querySelectorAll(".features-menu div")[0].classList.add("active-feature");
+window.onload = document.querySelectorAll(".features-menu .single-feature")[0].classList.add("active-feature");
