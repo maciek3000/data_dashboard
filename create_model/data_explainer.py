@@ -12,6 +12,7 @@ class DataExplainer:
     key_tables = "tables"
     key_lists = "lists"
     key_histograms = "histograms"
+    key_scatter = "scatter"
 
     key_numerical = "numerical"
     key_categorical = "categorical"
@@ -50,7 +51,8 @@ class DataExplainer:
             self.key_figs: self._create_figures(),
             self.key_tables: self._create_tables(),
             self.key_lists: self._create_lists(),
-            self.key_histograms: self._create_histogram_data()
+            self.key_histograms: self._create_histogram_data(),
+            self.key_scatter: self._create_scatter_data()
         }
         return output
 
@@ -191,3 +193,6 @@ class DataExplainer:
             _[column] = (hist, edges)
 
         return _
+
+    def _create_scatter_data(self):
+        return self.transformed_df.to_dict()

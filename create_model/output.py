@@ -49,6 +49,7 @@ class Output:
         figures = data_objects["explainer_figures"]
 
         histograms = data_objects["explainer_histograms"]
+        scatter = data_objects["explainer_scatter"]
 
         # figure directory is needed for views to save figures if they need to
         figure_directory = os.path.join(self.output_directory, "assets")
@@ -66,7 +67,7 @@ class Output:
 
         rendered_templates = {
             overview: self.overview.render(copy.copy(base_params), tables, lists, figures, figure_directory),
-            feature_view: self.feature_view.render(copy.copy(base_params), histograms),
+            feature_view: self.feature_view.render(copy.copy(base_params), histograms, scatter),
         }
 
         self._write_html(rendered_templates, view_paths)

@@ -2,14 +2,14 @@ from bokeh.plotting import figure
 from bokeh.layouts import column, row
 from bokeh.models import ColumnDataSource
 from bokeh.embed import components
-from bokeh.models.widgets import Select
+from bokeh.models.widgets import Select, Div
 from bokeh.models import CustomJS
 from bs4 import BeautifulSoup
 
 import functools
 
-class FeatureView:
 
+class FeatureView:
 
     def __init__(self, template, css_path, js_path, features, naive_mapping):
         self.template = template
@@ -18,7 +18,11 @@ class FeatureView:
         self.features = features
         self.naive_mapping = naive_mapping
 
+        self.chosen_feature = None
+
     def _stylize_attributes(force=False):
+        """Decorator for functions that return Plot figures that all of them would be stylized similarly"""
+
         def decorator_stylize_attributes(plot_func):
             @functools.wraps(plot_func)
             def wrapper(self, *args, **kwargs):
@@ -27,35 +31,64 @@ class FeatureView:
                 if force:
                     return p
 
+                text_color = "#8C8C8C"
+
+                p.axis.minor_tick_line_color = None
+                p.axis.major_tick_line_color = None
+                p.axis.major_label_text_font = "Lato"
+                p.axis.major_label_text_color = text_color
+                p.axis.axis_line_color = text_color
+
                 for axis in [p.xaxis, p.yaxis]:
-                    axis.minor_tick_line_color = None
-                    axis.major_tick_line_color = None
-                    axis.major_label_text_color = "#8C8C8C"
-                    axis.axis_label_text_font = "Lato"
-                    axis.axis_line_color = "#8C8C8C"
+                    pass
 
                 p.xgrid.grid_line_color = None
                 p.ygrid.grid_line_color = None
 
+                p.title.text_font = "Lato"
+                p.title.text_color = text_color
+                p.title.text_font_size = "16px"
+
                 return p
+
             return wrapper
+
         return decorator_stylize_attributes
 
-    def render(self, base_dict, histogram_data):
+    def _default_figure(self, plot_specific_kwargs=None):
+        # supplying stylizing attributes to Figure() doesn't always work, as apparently some methods (e.g. grids)
+        # require axes from a created figure to change something
 
+        default_kwargs = {
+            "tools": [],
+            "toolbar_location": None,
+            "outline_line_color": None
+        }
+
+        if plot_specific_kwargs:
+            default_kwargs.update(plot_specific_kwargs)
+
+        p = figure(**default_kwargs)
+
+        return p
+
+    def render(self, base_dict, histogram_data, scatter_data):
+
+        self.chosen_feature = sorted(self.features.keys())[0]
         output_dict = {}
         output_dict.update(base_dict)
 
-        output_dict["features_menu"] = self._create_features_menu()
-        output_dict["chosen_feature"] = sorted(histogram_data)[0]
-        grid = self._create_gridplot(histogram_data)
-
-        script, div = components(grid)
-
-        output_dict["bokeh_script"] = script
-        output_dict["test_plot"] = div
+        output_dict["chosen_feature"] = self.chosen_feature
         output_dict["features_css"] = self.css
         output_dict["features_js"] = self.js
+
+        output_dict["features_menu"] = self._create_features_menu()
+
+        grid = self._create_gridplot(histogram_data, scatter_data)
+        script, div = components(grid)
+        output_dict["bokeh_script"] = script
+        output_dict["test_plot"] = div
+
         return self.template.render(**output_dict)
 
     def _create_features_menu(self):
@@ -67,79 +100,146 @@ class FeatureView:
             i += 1
         return html
 
+    def _create_gridplot(self, histogram_data, scatter_data):
 
-    def _create_gridplot(self, histogram_data):
+        histogram_source, histogram_plot = self._create_histogram(histogram_data)
+        info_mapping, info_div = self._create_info_div()
+        scatter_source, scatter_plot = self._create_scatter(scatter_data)
+        dropdown = self._create_features_dropdown()
 
-        histogram_source = ColumnDataSource()
-
-        unique_features = sorted(histogram_data.keys())
-        new = histogram_data[unique_features[0]]
-
-        histogram_source.data = {
-            "hist": new[0],
-            "left_edges": new[1][:-1],
-            "right_edges": new[1][1:]
+        dropdown_kwargs = {
+            # histogram
+            "histogram_data": histogram_data,
+            "histogram_source": histogram_source,
+            # info div
+            "info_mapping": info_mapping,
+            # scatter
+            "scatter_data": scatter_data,
+            "scatter_source": scatter_source
         }
 
-        histogram_plot = self._create_histogram_plot(histogram_source)
-        dropdown = self._create_dropdown(unique_features)
+        callbacks = self._create_features_dropdown_callbacks(**dropdown_kwargs)
+        for callback in callbacks:
+            dropdown.js_on_change("value", callback)
 
-        callback = CustomJS(args=dict(source=histogram_source, all_data=histogram_data), code="""
-            var new_val = cb_obj.value;
-            var new_hist = all_data[new_val];
+        output = column(
+            dropdown,  # this dropdown will be invisible (display: none)
+            row(
+                histogram_plot, info_div, scatter_plot
+            )
+        )
+        return output
+
+    def _create_features_dropdown(self):
+        fts = sorted(self.features.keys())
+        d = Select(options=fts, css_classes=["features_dropdown"], name="features_dropdown")
+        return d
+
+    def _create_features_dropdown_callbacks(self, histogram_data, histogram_source, info_mapping,
+                                            scatter_data, scatter_source):
+        callbacks = []
+
+        for call in [
+            self._create_histogram_callback(histogram_data, histogram_source),
+            self._create_info_div_callback(info_mapping)
+        ]:
+            callbacks.append(call)
+
+        return callbacks
+
+    def _create_histogram_callback(self, histogram_data, histogram_source):
+        kwargs = {
+            "hist_source": histogram_source,
+            "hist_data": histogram_data
+        }
+
+        callback = CustomJS(args=kwargs, code="""
+            // new dropdown value
+            var new_val = cb_obj.value;  
+            
+            // new histogram data 
+            var new_hist = hist_data[new_val];
             var hist = new_hist[0];
             var edges = new_hist[1];
             var left_edges = edges.slice(0, edges.length - 1);
             var right_edges = edges.slice(1, edges.length);
             
-            var data = source.data;
-            data["hist"] = hist;
-            data["left_edges"] = left_edges;
-            data["right_edges"] = right_edges;
+            // histogram source updated
+            hist_source.data["hist"] = hist;
+            hist_source.data["left_edges"] = left_edges;
+            hist_source.data["right_edges"] = right_edges;
             
-            console.log(left_edges);
-            console.log(right_edges);
-            
-            source.change.emit();
+            // updating ColumnDataSources
+            hist_source.change.emit();
             
         """)
+        return callback
 
-        dropdown.js_on_change("value", callback)
+    def _create_info_div_callback(self, info_mapping):
+        # feature : feature_name
 
-        output = row(
-            histogram_plot, dropdown
-        )
+        callback = CustomJS(args=info_mapping, code="""
+            // new values
+            var new_feature = cb_obj.value;  // new feature
+            
+            // updating 
+            document.querySelector("#" + info_mapping["feature_name"]).innerText = new_feature;
+        """)
 
-        return output
+        return callback
+
+    def _create_histogram(self, histogram_data):
+        hist_source = self._create_histogram_source(histogram_data)
+        hist_plot = self._create_histogram_plot(hist_source)
+        return hist_source, hist_plot
+
+    def _create_histogram_source(self, histogram_data):
+        source = ColumnDataSource()
+        first_values = histogram_data[self.chosen_feature]
+
+        source.data = {
+            "hist": first_values[0],
+            "left_edges": first_values[1][:-1],
+            "right_edges": first_values[1][1:],
+        }
+        return source
 
     @_stylize_attributes()
     def _create_histogram_plot(self, source):
 
         kwargs = {
             "plot_height": 460,
-            "plot_width": 460
+            "plot_width": 460,
+            "title": "Feature Distribution"
         }
 
         p = self._default_figure(kwargs)
+        p.quad(top="hist", bottom=0, left="left_edges", right="right_edges", source=source,
+               fill_color="#8CA8CD")
 
-        p.quad(top="hist", bottom=0, left="left_edges", right="right_edges", source=source, fill_color="#8CA8CD")
+        p.y_range.start = 0
+        p.yaxis.visible = False
         return p
 
-    def _create_dropdown(self, vals):
-        d = Select(options=vals, css_classes=["features_dropdown"], name="features_dropdown")
-        return d
-
-    def _default_figure(self, plot_specific_kwargs=None):
-        # supplying stylizing attributes to Figure() doesn't always work, as apparently some methods (e.g. grids)
-        # require axes from a created figure to change something
-
-        default_kwargs = {
-            "tools": [],
+    def _create_info_div(self):
+        id_name = "feature_name"
+        mapping = {
+            "feature_name": id_name
         }
+        text = "Feature to be discussed: <p id={id_name}>{feature}</p>".format(id_name=id_name,
+                                                                               feature=self.chosen_feature)
+        d = Div(name="info_div", css_classes=["info_div"], text=text)
+        return mapping, d
 
-        if plot_specific_kwargs:
-            default_kwargs.update(plot_specific_kwargs)
+    def _create_scatter(self, scatter_data):
+        scatter_source = self._create_scatter_source(scatter_data)
+        scatter_plot = self._create_scatter_plot(scatter_source)
 
-        p = figure(**default_kwargs)
+        return scatter_source, scatter_plot
 
-        return p
+    def _create_scatter_source(self, scatter_data):
+        source = ColumnDataSource()
+        source.data = {
+            "x": scatter_data[self.chosen_feature],
+            "y": sorted(scatter_data.keys() - {self.chosen_feature})[0]
+        }

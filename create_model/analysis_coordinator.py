@@ -53,7 +53,7 @@ class Coordinator:
         return self.transformer.transform(X)
 
     def create_html(self):
-        explainer_data_keys = ["figures", "tables", "lists", "histograms"]
+        explainer_data_keys = ["figures", "tables", "lists", "histograms", "scatter"]
         explainer_data = {"explainer_" + key: self.data_explained[key] for key in explainer_data_keys}
 
         # transformer_data_keys = ["transformations"]

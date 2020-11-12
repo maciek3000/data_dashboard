@@ -1,7 +1,7 @@
 import json
 
 
-class FeatureDescriptor:
+class FeatureDescriptor(dict):
     """Provides Descriptions and optional mapping of Features.
 
         Class reads json_file (must be already opened) and creates internal dictionary of it.
@@ -17,6 +17,7 @@ class FeatureDescriptor:
         if json_file:
             self.json = json.load(json_file)
             self.initialized = True
+            super().__init__(self.json)
 
     def feature_mapping(self, arg):
         if arg not in self.json:
@@ -44,3 +45,6 @@ class FeatureDescriptor:
             return self.__iter_items[self.__counter - 1]
         except IndexError:
             raise StopIteration
+
+    # def keys(self):
+    #     return self.json.keys()
