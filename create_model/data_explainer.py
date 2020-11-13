@@ -48,6 +48,8 @@ class DataExplainer:
     def analyze(self):
         output = {
             self.key_cols: self.columns,
+            self.key_numerical: self.numerical_columns,
+            self.key_categorical: self.categorical_columns,
             self.key_figs: self._create_figures(),
             self.key_tables: self._create_tables(),
             self.key_lists: self._create_lists(),
@@ -195,4 +197,4 @@ class DataExplainer:
         return _
 
     def _create_scatter_data(self):
-        return self.transformed_df.to_dict()
+        return self.transformed_df.dropna().to_dict(orient="list")

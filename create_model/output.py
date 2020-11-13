@@ -44,12 +44,14 @@ class Output:
         # extracting different objects from data_objects that are needed for different templates
 
         # Overview elements
+        # TODO: change hardcoded keys
         tables = data_objects["explainer_tables"]
         lists = data_objects["explainer_lists"]
         figures = data_objects["explainer_figures"]
 
         histograms = data_objects["explainer_histograms"]
         scatter = data_objects["explainer_scatter"]
+        categorical_columns = data_objects["explainer_categorical"]
 
         # figure directory is needed for views to save figures if they need to
         figure_directory = os.path.join(self.output_directory, "assets")
@@ -67,7 +69,7 @@ class Output:
 
         rendered_templates = {
             overview: self.overview.render(copy.copy(base_params), tables, lists, figures, figure_directory),
-            feature_view: self.feature_view.render(copy.copy(base_params), histograms, scatter),
+            feature_view: self.feature_view.render(copy.copy(base_params), histograms, scatter, categorical_columns),
         }
 
         self._write_html(rendered_templates, view_paths)

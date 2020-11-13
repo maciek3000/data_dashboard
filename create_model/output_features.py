@@ -4,6 +4,8 @@ from bokeh.models import ColumnDataSource
 from bokeh.embed import components
 from bokeh.models.widgets import Select, Div
 from bokeh.models import CustomJS
+from bokeh.transform import factor_cmap
+from bokeh.palettes import Spectral5
 from bs4 import BeautifulSoup
 
 import functools
@@ -72,7 +74,7 @@ class FeatureView:
 
         return p
 
-    def render(self, base_dict, histogram_data, scatter_data):
+    def render(self, base_dict, histogram_data, scatter_data, categorical_columns):
 
         self.chosen_feature = sorted(self.features.keys())[0]
         output_dict = {}
@@ -84,7 +86,7 @@ class FeatureView:
 
         output_dict["features_menu"] = self._create_features_menu()
 
-        grid = self._create_gridplot(histogram_data, scatter_data)
+        grid = self._create_gridplot(histogram_data, scatter_data, categorical_columns)
         script, div = components(grid)
         output_dict["bokeh_script"] = script
         output_dict["test_plot"] = div
@@ -100,11 +102,11 @@ class FeatureView:
             i += 1
         return html
 
-    def _create_gridplot(self, histogram_data, scatter_data):
+    def _create_gridplot(self, histogram_data, scatter_data, categorical_columns):
 
         histogram_source, histogram_plot = self._create_histogram(histogram_data)
         info_mapping, info_div = self._create_info_div()
-        scatter_source, scatter_plot = self._create_scatter(scatter_data)
+        scatter_source, scatter_plot = self._create_scatter(scatter_data, categorical_columns)
         dropdown = self._create_features_dropdown()
 
         dropdown_kwargs = {
@@ -231,15 +233,35 @@ class FeatureView:
         d = Div(name="info_div", css_classes=["info_div"], text=text)
         return mapping, d
 
-    def _create_scatter(self, scatter_data):
-        scatter_source = self._create_scatter_source(scatter_data)
+    def _create_scatter(self, scatter_data, categorical_columns):
+        scatter_source = self._create_scatter_source(scatter_data, categorical_columns)
         scatter_plot = self._create_scatter_plot(scatter_source)
 
-        return scatter_source, scatter_plot
+        grid = column(
+            #row(one_dropdown, two_dropdown),
+            row(scatter_plot)
+        )
 
-    def _create_scatter_source(self, scatter_data):
+        return scatter_source, grid
+
+    def _create_scatter_source(self, scatter_data, categorical_columns):
         source = ColumnDataSource()
+        x = self.chosen_feature
+        cols_wo_x = sorted(scatter_data.keys() - {x,})
+        y = cols_wo_x[0]
+        hue_cols = {key: arg for key, arg in scatter_data.items() if (key in categorical_columns) and (key not in [x, y])}
+        hue = sorted(hue_cols.keys())[0]
+        # feature to be chosen at first when the page loads for the first time
         source.data = {
-            "x": scatter_data[self.chosen_feature],
-            "y": sorted(scatter_data.keys() - {self.chosen_feature})[0]
+            "x": scatter_data[x],
+            "y": scatter_data[y],
+            "color": factor_cmap(hue, palette=Spectral5, factors=list(map(str, sorted(set(scatter_data[hue])))))
         }
+
+    @_stylize_attributes()
+    def _create_scatter_plot(self, source):
+        # This won't work - JS would need to make a lot of calculations on data (e.g. remove NaN values) and create
+        # new colormaps for every chosen category for hue
+        p = self._default_figure()
+        p.scatter(x="x", y="y", fill_color="hue", source=source)
+        return p

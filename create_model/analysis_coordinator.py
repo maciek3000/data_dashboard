@@ -53,8 +53,10 @@ class Coordinator:
         return self.transformer.transform(X)
 
     def create_html(self):
-        explainer_data_keys = ["figures", "tables", "lists", "histograms", "scatter"]
+        # TODO: change hardcoded keys
+        explainer_data_keys = ["figures", "tables", "lists", "histograms", "scatter", "categorical"]
         explainer_data = {"explainer_" + key: self.data_explained[key] for key in explainer_data_keys}
+
 
         # transformer_data_keys = ["transformations"]
         # transformer_data = {"transformer_" + key: self.transformer.data_objects[key] for key in transformer_data_keys}
@@ -63,6 +65,7 @@ class Coordinator:
         # for _ in [explainer_data, transformer_data]:
         #     output.update(_)
 
+        # TODO: change when more objects will provide their data_objects
         output = explainer_data
 
         self.output.create_html_output(output)
