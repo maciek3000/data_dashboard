@@ -5,7 +5,7 @@ from bokeh.embed import components
 from bokeh.models.widgets import Select, Div
 from bokeh.models import CustomJS
 from bokeh.transform import factor_cmap
-from bokeh.palettes import Spectral5
+from bokeh.palettes import cividis
 from bs4 import BeautifulSoup
 
 import functools
@@ -127,8 +127,9 @@ class FeatureView:
         output = column(
             dropdown,  # this dropdown will be invisible (display: none)
             row(
-                histogram_plot, info_div, scatter_plot
-            )
+                histogram_plot, info_div,
+            ),
+            scatter_plot
         )
         return output
 
@@ -178,9 +179,11 @@ class FeatureView:
         return callback
 
     def _create_info_div_callback(self, info_mapping):
-        # feature : feature_name
+        mapp = {
+            "info_mapping": info_mapping
+        }
 
-        callback = CustomJS(args=info_mapping, code="""
+        callback = CustomJS(args=mapp, code="""
             // new values
             var new_feature = cb_obj.value;  // new feature
             
@@ -234,34 +237,49 @@ class FeatureView:
         return mapping, d
 
     def _create_scatter(self, scatter_data, categorical_columns):
-        scatter_source = self._create_scatter_source(scatter_data, categorical_columns)
-        scatter_plot = self._create_scatter_plot(scatter_source)
+        scatter_source= self._create_scatter_source(scatter_data)
+        scatter_plot = self._create_scatter_plot(scatter_source, categorical_columns)
 
-        grid = column(
-            #row(one_dropdown, two_dropdown),
-            row(scatter_plot)
-        )
+        # grid = column(
+        #     #row(one_dropdown, two_dropdown),
+        #     row(scatter_plot)
+        # )
 
-        return scatter_source, grid
+        return scatter_source, scatter_plot
 
-    def _create_scatter_source(self, scatter_data, categorical_columns):
-        source = ColumnDataSource()
-        x = self.chosen_feature
-        cols_wo_x = sorted(scatter_data.keys() - {x,})
-        y = cols_wo_x[0]
-        hue_cols = {key: arg for key, arg in scatter_data.items() if (key in categorical_columns) and (key not in [x, y])}
-        hue = sorted(hue_cols.keys())[0]
-        # feature to be chosen at first when the page loads for the first time
-        source.data = {
-            "x": scatter_data[x],
-            "y": scatter_data[y],
-            "color": factor_cmap(hue, palette=Spectral5, factors=list(map(str, sorted(set(scatter_data[hue])))))
-        }
+    def _create_scatter_source(self, scatter_data):
+        scatter_data["Embarked"] = list(map(str, scatter_data["Embarked"]))
+        source = ColumnDataSource(scatter_data)
+        # x = self.chosen_feature
+        # cols_wo_x = sorted(scatter_data.keys() - {x,})
+        # y = cols_wo_x[0]
+        # # feature to be chosen at first when the page loads for the first time
+        # source.data = {
+        #     "x": scatter_data[x],
+        #     "y": scatter_data[y],
+        # }
+        return source
 
     @_stylize_attributes()
-    def _create_scatter_plot(self, source):
-        # This won't work - JS would need to make a lot of calculations on data (e.g. remove NaN values) and create
-        # new colormaps for every chosen category for hue
+    def _create_scatter_plot(self, source, categorical_columns):
+        hue_cols = {key: arg for key, arg in source.data.items() if (key in categorical_columns)}
+
+        x = self.chosen_feature
+        cols_wo_x = sorted(source.data.keys() - {x,})
+        y = cols_wo_x[0]
+
+        x = "Fare"
+        y = "Parch"
+
+        print(source.data.keys())
+
+        # factor_cmap expects categorical data to be Str, not Int/Float
+
+        # hue = sorted(hue_cols.keys())[0]
+        hue = "Embarked"
+        hue_cmap = factor_cmap(hue, palette=cividis(3), factors=sorted(set(source.data[hue])))
+
         p = self._default_figure()
-        p.scatter(x="x", y="y", fill_color="hue", source=source)
+        p.scatter(x=x, y=y, fill_color=hue_cmap, source=source)
+        # fill_color=hue_cmap,
         return p
