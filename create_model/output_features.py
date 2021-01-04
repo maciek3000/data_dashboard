@@ -86,10 +86,15 @@ class FeatureView:
 
         output_dict["features_menu"] = self._create_features_menu()
 
-        grid = self._create_gridplot(histogram_data, scatter_data, categorical_columns)
-        script, div = components(grid)
-        output_dict["bokeh_script"] = script
-        output_dict["test_plot"] = div
+        info_grid = self._create_info_grid(histogram_data)
+        info_grid_script, info_grid_div = components(info_grid)
+        output_dict["bokeh_script_info_grid"] = info_grid_script
+        output_dict["info_grid"] = info_grid_div
+
+        scatter_plot_grid = self._create_scatter_plot_grid(scatter_data, categorical_columns)
+        scatter_plot_grid_script, scatter_plot_div = components(scatter_plot_grid)
+        output_dict["scatter_plot_grid"] = scatter_plot_div
+        output_dict["bokeh_script_scatter_plot_grid"] = scatter_plot_grid_script
 
         return self.template.render(**output_dict)
 
@@ -102,22 +107,19 @@ class FeatureView:
             i += 1
         return html
 
-    def _create_gridplot(self, histogram_data, scatter_data, categorical_columns):
+    def _create_info_grid(self, histogram_data):
 
         histogram_source, histogram_plot = self._create_histogram(histogram_data)
         info_mapping, info_div = self._create_info_div()
-        scatter_source, scatter_plot = self._create_scatter(scatter_data, categorical_columns)
         dropdown = self._create_features_dropdown()
 
         dropdown_kwargs = {
             # histogram
             "histogram_data": histogram_data,
             "histogram_source": histogram_source,
+
             # info div
             "info_mapping": info_mapping,
-            # scatter
-            "scatter_data": scatter_data,
-            "scatter_source": scatter_source
         }
 
         callbacks = self._create_features_dropdown_callbacks(**dropdown_kwargs)
@@ -129,17 +131,36 @@ class FeatureView:
             row(
                 histogram_plot, info_div,
             ),
-            scatter_plot
         )
         return output
+
+    def _create_scatter_plot_grid(self, scatter_data, categorical_columns):
+
+        scatter_source, scatter_plot = self._create_scatter(scatter_data, categorical_columns)
+        dropdown = self._create_features_dropdown()
+
+        dropdown_kwargs = {
+            "scatter_data": scatter_data,
+            "scatter_source": scatter_source
+        }
+
+        # callbacks = self._create_features_dropdown_callbacks(**dropdown_kwargs)
+        # for callback in callbacks:
+        #     dropdown.js_on_change("value", callback)
+
+        output = column(
+            dropdown,  # this dropdown will be invisible (display: none)
+            row(scatter_plot, Div(text="Test"))
+        )
+        return output
+
 
     def _create_features_dropdown(self):
         fts = sorted(self.features.keys())
         d = Select(options=fts, css_classes=["features_dropdown"], name="features_dropdown")
         return d
 
-    def _create_features_dropdown_callbacks(self, histogram_data, histogram_source, info_mapping,
-                                            scatter_data, scatter_source):
+    def _create_features_dropdown_callbacks(self, histogram_data, histogram_source, info_mapping):
         callbacks = []
 
         for call in [
@@ -163,9 +184,12 @@ class FeatureView:
             // new histogram data 
             var new_hist = hist_data[new_val];
             var hist = new_hist[0];
-            var edges = new_hist[1];
+            var left_edges = new_hist[1];
+            var right_edges = new_hist[2];
+            
+            /* var edges = new_hist[1];
             var left_edges = edges.slice(0, edges.length - 1);
-            var right_edges = edges.slice(1, edges.length);
+            var right_edges = edges.slice(1, edges.length); */
             
             // histogram source updated
             hist_source.data["hist"] = hist;
@@ -204,8 +228,8 @@ class FeatureView:
 
         source.data = {
             "hist": first_values[0],
-            "left_edges": first_values[1][:-1],
-            "right_edges": first_values[1][1:],
+            "left_edges": first_values[1],  #first_values[1][:-1],
+            "right_edges": first_values[2]  #first_values[1][1:],
         }
         return source
 
@@ -220,7 +244,7 @@ class FeatureView:
 
         p = self._default_figure(kwargs)
         p.quad(top="hist", bottom=0, left="left_edges", right="right_edges", source=source,
-               fill_color="#8CA8CD")
+               fill_color="#8CA8CD", line_color="#8CA8CD")
 
         p.y_range.start = 0
         p.yaxis.visible = False

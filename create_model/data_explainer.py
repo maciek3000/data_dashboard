@@ -175,10 +175,10 @@ class DataExplainer:
             # if column is categorical we do not want too many bins
             if column in self.categorical_columns:
                 unique_vals = len(self.transformed_df[column].unique())
-                if unique_vals > self.max_categories:
-                    bins = self.max_categories
-                else:
-                    bins = unique_vals
+                # if unique_vals > self.max_categories:
+                #     bins = self.max_categories
+                # else:
+                bins = unique_vals
 
             # if columns is numerical we calculate the number of bins manually
             # https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
@@ -192,7 +192,24 @@ class DataExplainer:
                 bins = 1
 
             hist, edges = np.histogram(srs, density=True, bins=bins)
-            _[column] = (hist, edges)
+            left_edges = [edges[0]]
+            right_edges = [edges[1]]
+
+            interval = (max(edges) - min(edges)) * 0.005  # 0.5%
+            i = interval
+
+            for edge in edges[1:-1]:
+                left_edges.append(edge + i)
+                i += interval
+
+            i = interval
+
+            for edge in edges[2:]:
+                right_edges.append(edge + i)
+                i += interval
+
+            # _[column] = (hist, edges)
+            _[column] = (hist, left_edges, right_edges)
 
         return _
 
