@@ -11,8 +11,15 @@
     <div class="chosen-feature">{{ chosen_feature }}</div>
 </div>
 <div class="features-menu">{{ features_menu }}</div>
-<div>{{ test_plot }}</div>
-<div>{{ bokeh_script }}</div>
+
+<div class="submenu">Info</div>
+<div class="submenu-content">{{ info_grid }}</div>
+
+<div class="submenu">Scatter Plot</div>
+<div class="submenu-content">{{ scatter_plot_grid }}</div>
+
+<div>{{ bokeh_script_info_grid }}</div>
+<div>{{ bokeh_script_scatter_plot_grid }}</div>
 <script src="{{ features_js }}"></script>
 {% endblock %}
 

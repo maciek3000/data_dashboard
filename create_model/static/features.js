@@ -37,3 +37,23 @@ for (button of Array(burger_menu_button, x_button)) {
 })};
 
 window.onload = document.querySelectorAll(".features-menu .single-feature")[0].classList.add("active-feature");
+
+// Subcategory Divs
+window.onload = function() {
+    var elements = document.getElementsByClassName("submenu");
+    console.log(elements.length);
+    var i;
+
+    for (i = 0; i < elements.length; i++) {
+        elements[i].addEventListener("click", function() {
+            this.classList.toggle("active-submenu");
+            var content = this.nextElementSibling;
+            console.log(content.style.display);
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        });
+    }
+};
