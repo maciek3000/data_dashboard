@@ -166,6 +166,9 @@ class DataExplainer:
         return p
 
     def _create_histogram_data(self):
+        #TODO: separate deciding on number of bins / replacing edge values
+        #TODO: clean code
+
         _ = {}
 
         for column in self.transformed_df.columns:
@@ -214,4 +217,5 @@ class DataExplainer:
         return _
 
     def _create_scatter_data(self):
-        return self.transformed_df.dropna().to_dict(orient="list")
+        # returning df as creating multiple rows of scatter plots will require a lot of data manipulation
+        return self.transformed_df
