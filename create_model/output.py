@@ -1,7 +1,7 @@
 import os, datetime, copy
 from jinja2 import Environment, FileSystemLoader
-from .output_overview import Overview
-from .output_features import FeatureView
+from .overview import Overview
+from .features import FeatureView
 
 
 class Output:

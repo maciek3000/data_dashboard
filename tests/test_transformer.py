@@ -1,4 +1,4 @@
-from create_model.data_transformer import Transformer
+from create_model.transformer import Transformer
 import pytest
 
 

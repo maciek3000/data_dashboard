@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from scipy.stats import truncnorm, skewnorm
 
-from create_model.feature_descriptor import FeatureDescriptor
+from create_model.descriptor import FeatureDescriptor
 
 
 @pytest.fixture

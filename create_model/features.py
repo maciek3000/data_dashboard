@@ -4,6 +4,8 @@ from .plots import InfoGrid, ScatterPlotGrid
 class FeatureView:
 
     def __init__(self, template, css_path, js_path, features, naive_mapping):
+        # TODO: get path to templates folder instead of a instanced template
+
         self.template = template
         self.css = css_path
         self.js = js_path
@@ -16,7 +18,6 @@ class FeatureView:
         self.scatter_plot_grid = ScatterPlotGrid(features)
 
     def render(self, base_dict, histogram_data, scatter_data, categorical_columns):
-
         self.chosen_feature = sorted(self.features.keys())[0]
         output_dict = {}
         output_dict.update(base_dict)
@@ -27,14 +28,10 @@ class FeatureView:
 
         output_dict["features_menu"] = self._create_features_menu()
 
-        # info_grid = self._create_info_grid(histogram_data)
-        # info_grid_script, info_grid_div = components(info_grid)
         info_grid_script, info_grid_div = self.info_grid.create_grid_elements(histogram_data, self.chosen_feature)
         output_dict["bokeh_script_info_grid"] = info_grid_script
         output_dict["info_grid"] = info_grid_div
 
-        # scatter_plot_grid = self._create_scatter_plot_grid(scatter_data, categorical_columns)
-        # scatter_plot_grid_script, scatter_plot_div = components(scatter_plot_grid)
         scatter_plot_grid_script, scatter_plot_grid_div = self.scatter_plot_grid.create_grid_elements(
             scatter_data, categorical_columns, self.chosen_feature)
         output_dict["scatter_plot_grid"] = scatter_plot_grid_div

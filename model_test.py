@@ -3,7 +3,7 @@ from sklearn.metrics import accuracy_score
 import os
 import pandas as pd
 
-from create_model.analysis_coordinator import Coordinator
+from create_model.coordinator import Coordinator
 
 if __name__ == "__main__":
 

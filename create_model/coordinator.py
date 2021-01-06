@@ -1,8 +1,8 @@
-from .data_explainer import DataExplainer
+from .explainer import DataExplainer
 from .output import Output
-from .data_transformer import Transformer
+from .transformer import Transformer
 from .model_finder import ModelFinder
-from .feature_descriptor import FeatureDescriptor
+from .descriptor import FeatureDescriptor
 
 import os
 

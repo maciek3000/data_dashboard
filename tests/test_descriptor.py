@@ -1,4 +1,4 @@
-from create_model.feature_descriptor import FeatureDescriptor
+from create_model.descriptor import FeatureDescriptor
 import pytest
 
 

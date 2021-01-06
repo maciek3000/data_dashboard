@@ -1,4 +1,4 @@
-from create_model.data_explainer import DataExplainer
+from create_model.explainer import DataExplainer
 import pandas as pd
 
 def test_data_explainer_analyze_columns(test_data_classification_balanced):
