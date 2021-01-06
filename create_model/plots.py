@@ -4,8 +4,8 @@ from bokeh.models import ColumnDataSource
 from bokeh.embed import components
 from bokeh.models.widgets import Select, Div
 from bokeh.models import CustomJS
-from bokeh.transform import factor_cmap
-from bokeh.palettes import cividis
+from bokeh.transform import factor_cmap, linear_cmap
+from bokeh.palettes import Reds4, Category10
 
 import functools
 
@@ -62,10 +62,24 @@ def default_figure(plot_specific_kwargs=None):
     return p
 
 
-class InfoGrid:
+class MainGrid:
 
     def __init__(self, features):
         self.features = features
+
+    def _create_features_dropdown(self, name="features_dropdown"):
+        fts = sorted(self.features.keys())
+        d = Select(options=fts, css_classes=["features_dropdown"], name=name)
+        return d
+
+    def _create_features_dropdown_callbacks(self, **kwargs):
+        raise NotImplementedError
+
+
+class InfoGrid(MainGrid):
+
+    def __init__(self, features):
+        super().__init__(features)
 
     def create_grid_elements(self, histogram_data, initial_feature):
         return components(self._create_info_grid(histogram_data, initial_feature))
@@ -74,7 +88,7 @@ class InfoGrid:
 
         histogram_source, histogram_plot = self._create_histogram(histogram_data, initial_feature)
         info_mapping, info_div = self._create_info_div(initial_feature)
-        dropdown = self._create_features_dropdown()
+        dropdown = self._create_features_dropdown("info_grid_dropdown")
 
         dropdown_kwargs = {
             # histogram
@@ -97,10 +111,10 @@ class InfoGrid:
         )
         return output
 
-    def _create_features_dropdown(self):
-        fts = sorted(self.features.keys())
-        d = Select(options=fts, css_classes=["features_dropdown"], name="features_dropdown")
-        return d
+    # def _create_features_dropdown(self):
+    #     fts = sorted(self.features.keys())
+    #     d = Select(options=fts, css_classes=["features_dropdown"], name="features_dropdown")
+    #     return d
 
     def _create_features_dropdown_callbacks(self, histogram_data, histogram_source, info_mapping):
         callbacks = []
@@ -203,28 +217,102 @@ class InfoGrid:
         return mapping, d
 
 
-class ScatterPlotGrid:
+class ScatterPlotGrid(MainGrid):
 
     def __init__(self, features):
-        self.features = features
+        super().__init__(features)
+
+        self.categorical_palette = Category10
+        self.linear_palette = Reds4[::-1]
+
+        self.categorical_palette[2] = Category10[3][:2]
+        self.categorical_palette[1] = Category10[3][:1]
 
     def create_grid_elements(self, scatter_data, categorical_columns, initial_feature):
         return components(self._create_scatter(scatter_data, categorical_columns, initial_feature))
 
     def _create_scatter(self, scatter_data, categorical_columns, initial_feature):
-        scatter_source = self._create_scatter_source(scatter_data)
-        scatter_plot = self._create_scatter_plot(scatter_source, categorical_columns, initial_feature)
+
+        scatter_row_sources, scatter_rows = self._create_scatter_rows(scatter_data, initial_feature, categorical_columns)
+        #scatter_source = self._create_scatter_source(scatter_data, initial_feature)
+        #scatter_plot = self._create_scatter_plot(scatter_source, categorical_columns, )
+
+        dropdown = self._create_features_dropdown("scatter_plot_grid_dropdown")
+        callbacks = self._create_features_dropdown_callbacks(scatter_row_sources)
+        for callback in callbacks:
+            dropdown.js_on_change("value", callback)
 
         grid = column(
-            #row(one_dropdown, two_dropdown),
-            row(scatter_plot)
+            dropdown,
+            *scatter_rows
         )
 
         return grid
 
-    def _create_scatter_source(self, scatter_data):
-        scatter_data = scatter_data.dropna().to_dict(orient="list")
-        scatter_data["Embarked"] = list(map(str, scatter_data["Embarked"]))
+    def _create_features_dropdown_callbacks(self, scatter_source):
+        callbacks = []
+
+        for call in [
+            self._create_scatter_plot_callback(scatter_source),
+        ]:
+            callbacks.append(call)
+
+        return callbacks
+
+    def _create_scatter_plot_callback(self, sources):
+        kwargs = {
+            "scatter_sources": sources
+        }
+
+        callback = CustomJS(args=kwargs, code="""
+                // new dropdown value
+                var new_val = cb_obj.value;  
+                
+                // new x 
+                var new_x = new_val;
+                
+                // scatter source updated
+                for (i=0; i<scatter_sources.length; i++) {
+                    scatter_sources[i].data["x"] = scatter_sources[i].data[new_x];
+                    scatter_sources[i].change.emit();
+                };
+            """)
+        return callback
+
+    def _create_scatter_rows(self, data, initial_feature, categorical_columns):
+        all_sources = []
+        all_rows = []
+
+        for feature in sorted(data.keys()):
+            sources, single_row = self._create_single_scatter_row(data, initial_feature, feature, categorical_columns)
+
+            all_sources.extend(sources)
+            all_rows.append(single_row)
+
+        return all_sources, all_rows
+
+    def _create_single_scatter_row(self, data, x, hue, categorical_columns):
+        sources = []
+        plots = []
+
+        color_map = self._create_color_map(hue, data[hue], categorical_columns)
+
+        for feature in sorted(data.keys()):
+            src = self._create_scatter_source(data, x, feature)
+            plot = self._create_scatter_plot(src, x, feature, color_map)
+
+            sources.append(src)
+            plots.append(plot)
+
+        r = row(
+            Div(text="Color: {hue}".format(hue=hue)),
+            *plots
+        )
+
+        return sources, r
+
+
+    def _create_scatter_source(self, scatter_data, x, y):
         source = ColumnDataSource(scatter_data)
         # x = self.chosen_feature
         # cols_wo_x = sorted(scatter_data.keys() - {x,})
@@ -234,28 +322,47 @@ class ScatterPlotGrid:
         #     "x": scatter_data[x],
         #     "y": scatter_data[y],
         # }
+        source.data.update(
+            {"x": source.data[x],
+             "y": source.data[y]
+             }
+        )
         return source
 
     @stylize()
-    def _create_scatter_plot(self, source, categorical_columns, feature):
-        hue_cols = {key: arg for key, arg in source.data.items() if (key in categorical_columns)}
+    def _create_scatter_plot(self, source, x, y, cmap):
+        # x is left in case it is needed for any styling of the plot later in the development
 
-        x = feature
-        cols_wo_x = sorted(source.data.keys() - {x, })
-        y = cols_wo_x[0]
+        kwargs = {
+            "x": "x",
+            "y": "y",
+            "source": source,
+            "size": 10
+        }
 
-        x = "Fare"
-        y = "Parch"
+        if cmap:
+            kwargs.update(
+                {
+                    "fill_color": cmap
+                }
+            )
 
-        print(source.data.keys())
+        p = default_figure()  #{"y_range": (min(source.data["y"]), max(source.data["y"]))})
+        p.plot_width = 250
+        p.plot_height = 250
+        p.scatter(**kwargs)
+        p.yaxis.axis_label = y
 
-        # factor_cmap expects categorical data to be Str, not Int/Float
-
-        # hue = sorted(hue_cols.keys())[0]
-        hue = "Embarked"
-        hue_cmap = factor_cmap(hue, palette=cividis(3), factors=sorted(set(source.data[hue])))
-
-        p = default_figure()
-        p.scatter(x=x, y=y, fill_color=hue_cmap, source=source)
-        # fill_color=hue_cmap,
         return p
+
+    def _create_color_map(self, hue, values, categorical_columns):
+        if hue in categorical_columns:
+            factors = sorted(set(values))
+            if len(factors) <= 10:
+                cmap = factor_cmap(hue, palette=self.categorical_palette[len(factors)], factors=factors)
+            else:
+                cmap = None
+        else:
+            cmap = linear_cmap(hue, palette=self.linear_palette, low=min(values), high=max(values))
+
+        return cmap

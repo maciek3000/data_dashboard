@@ -218,4 +218,16 @@ class DataExplainer:
 
     def _create_scatter_data(self):
         # returning df as creating multiple rows of scatter plots will require a lot of data manipulation
-        return self.transformed_df
+        df = self.transformed_df
+        cat_df = df[self.categorical_columns].astype("float64").fillna(-1)
+        num_df = df.drop(self.categorical_columns, axis=1).astype("float64").fillna(-1)
+
+        df = pd.concat([cat_df, num_df], axis=0)
+
+        scatter_data = df.to_dict(orient="list")
+
+        # factor_cmap expects categorical data to be Str, not Int/Float
+        for col in self.categorical_columns:
+            scatter_data[col] = list(map(str, scatter_data[col]))
+
+        return scatter_data
