@@ -306,7 +306,7 @@ class ScatterPlotGrid(MainGrid):
         sources = []
         plots = []
 
-        color_map, colorbar = self._create_color_map(hue, data, categorical_columns)
+        color_map = self._create_color_map(hue, data, categorical_columns)
         for feature in features:
             src = self._create_scatter_source(data, x, feature)
             plot = self._create_scatter_plot(src, x, feature, color_map)
@@ -315,19 +315,18 @@ class ScatterPlotGrid(MainGrid):
             plots.append(plot)
 
 
-        p = default_figure({"width": 100, "height": 100})
-        if color_map and (hue in categorical_columns):
-            legend = plots[0].legend[0]
-            tuples = []
-            for item in legend.items:
-                tuples.append((item.label["value"], item.renderers))
+        # p = default_figure({"width": 100, "height": 100})
+        # if color_map and (hue in categorical_columns):
+        #     p.renderers = plots[0].renderers
+        #     items = []
+        #     for item in plots[0].legend[0].items:
+        #         items.append((item.label["value"], item.renderers))
+        #     colorbar = Legend(items=items)
+        #
+        # if colorbar:
+        #     p.add_layout(colorbar)
 
-            plots[0].add_layout(Legend(items=tuples), "left")
-
-        if colorbar:
-            p.add_layout(colorbar)
-
-        color_legend = self._create_color_legend_div(hue, p)
+        color_legend = self._create_row_description(hue, color_map, categorical_columns)
 
         r = row(
             color_legend,
@@ -363,7 +362,8 @@ class ScatterPlotGrid(MainGrid):
             "x": "x",
             "y": "y",
             "source": source,
-            "size": 10
+            "size": 10,
+            "fill_color": "#8CA8CD"
         }
 
         if cmap:
@@ -392,20 +392,15 @@ class ScatterPlotGrid(MainGrid):
             values = data[hue]
             cmap = linear_cmap(hue, palette=self.linear_palette, low=min(values), high=max(values))
 
-        colorbar = None
-        if (hue not in categorical_columns) and cmap:
-            colorbar = ColorBar(color_mapper=cmap["transform"], ticker=BasicTicker(desired_num_ticks=4),
-                                formatter=PrintfTickFormatter(), label_standoff=10, border_line_color=None,
-                                location=(0, 0), major_label_text_font_size="12px")
+        return cmap
 
-
-        return cmap, colorbar
-
-    def _create_color_legend_div(self, hue, legend):
+    def _create_row_description(self, hue, cmap, categorical_columns):
 
         kwargs = {
             "text": "Color: {hue}".format(hue=hue),
         }
+
+        legend = self._create_legend(hue, cmap, categorical_columns)
 
         d = Div(**kwargs)
 
@@ -418,3 +413,27 @@ class ScatterPlotGrid(MainGrid):
         )
 
         return c
+
+    def _create_legend(self, hue, cmap, categorical_columns):
+        
+        legend = Div(text="No hue - too many categories!")
+        if cmap:
+            if hue in categorical_columns:
+                categories = cmap["transform"].factors
+                colors = cmap["transform"].palette
+                text = "<ul style='list-style-type: circle'>"
+                template = "<li style='color: {color}'>{category}</li>"
+                for category, color in zip(categories, colors):
+                    text += template.format(color=color, category=category)
+                text += "</ul>"
+
+                legend = Div(text=text)
+
+            else:
+                colorbar = ColorBar(color_mapper=cmap["transform"], ticker=BasicTicker(desired_num_ticks=4),
+                                formatter=PrintfTickFormatter(), label_standoff=10, border_line_color=None,
+                                location=(0, 0), major_label_text_font_size="12px")
+                legend = default_figure({"height": 100, "width": 100})
+                legend.add_layout(colorbar)
+
+        return legend
