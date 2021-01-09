@@ -129,3 +129,6 @@
     border: 1px solid black;
 }
 */
+.active_feature_hue div {
+    filter: grayscale(1) !important;
+}

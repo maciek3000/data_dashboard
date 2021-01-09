@@ -54,7 +54,6 @@ window.onload = function() {
         elements[i].addEventListener("click", function() {
             this.classList.toggle("active-submenu");
             var content = this.nextElementSibling;
-            console.log(content.style.display);
             if (content.style.maxHeight) {
                 content.style.maxHeight = null;
             } else {

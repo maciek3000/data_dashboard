@@ -3,7 +3,7 @@ from bokeh.layouts import column, row
 from bokeh.models import ColumnDataSource
 from bokeh.embed import components
 from bokeh.models.widgets import Select, Div
-from bokeh.models import CustomJS
+from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, Legend
 from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.palettes import Reds4, Category10
 
@@ -228,14 +228,13 @@ class ScatterPlotGrid(MainGrid):
         self.categorical_palette[2] = Category10[3][:2]
         self.categorical_palette[1] = Category10[3][:1]
 
-    def create_grid_elements(self, scatter_data, categorical_columns, initial_feature):
-        return components(self._create_scatter(scatter_data, categorical_columns, initial_feature))
+    def create_grid_elements(self, scatter_data, categorical_columns, features, initial_feature):
+        return components(self._create_scatter(scatter_data, categorical_columns, features, initial_feature))
 
-    def _create_scatter(self, scatter_data, categorical_columns, initial_feature):
+    def _create_scatter(self, scatter_data, categorical_columns, features, initial_feature):
 
-        scatter_row_sources, scatter_rows = self._create_scatter_rows(scatter_data, initial_feature, categorical_columns)
-        #scatter_source = self._create_scatter_source(scatter_data, initial_feature)
-        #scatter_plot = self._create_scatter_plot(scatter_source, categorical_columns, )
+        features = sorted(features.keys())
+        scatter_row_sources, scatter_rows = self._create_scatter_rows(scatter_data, features, initial_feature, categorical_columns)
 
         dropdown = self._create_features_dropdown("scatter_plot_grid_dropdown")
         callbacks = self._create_features_dropdown_callbacks(scatter_row_sources)
@@ -244,7 +243,7 @@ class ScatterPlotGrid(MainGrid):
 
         grid = column(
             dropdown,
-            *scatter_rows
+            *scatter_rows,
         )
 
         return grid
@@ -276,37 +275,64 @@ class ScatterPlotGrid(MainGrid):
                     scatter_sources[i].data["x"] = scatter_sources[i].data[new_x];
                     scatter_sources[i].change.emit();
                 };
+                
+                var all_scatter_rows = document.getElementsByClassName("scatter_plot_row");
+                for (j=0; j<all_scatter_rows.length; j++) {
+                    all_scatter_rows[j].classList.remove("active_feature_hue");
+                };
+                
+                var scatter_row = document.getElementsByClassName("scatter_plot_row_" + new_val);
+                scatter_row[0].classList.add("active_feature_hue");
+
             """)
         return callback
 
-    def _create_scatter_rows(self, data, initial_feature, categorical_columns):
+    def _create_scatter_rows(self, data, features, initial_feature, categorical_columns):
         all_sources = []
         all_rows = []
 
-        for feature in sorted(data.keys()):
-            sources, single_row = self._create_single_scatter_row(data, initial_feature, feature, categorical_columns)
+        for feature in features:
+            sources, single_row = self._create_single_scatter_row(data, features, initial_feature, feature, categorical_columns)
+
+            if feature == initial_feature:
+                single_row.css_classes.append("active_feature_hue")
 
             all_sources.extend(sources)
             all_rows.append(single_row)
 
         return all_sources, all_rows
 
-    def _create_single_scatter_row(self, data, x, hue, categorical_columns):
+    def _create_single_scatter_row(self, data, features, x, hue, categorical_columns):
         sources = []
         plots = []
 
-        color_map = self._create_color_map(hue, data[hue], categorical_columns)
-
-        for feature in sorted(data.keys()):
+        color_map, colorbar = self._create_color_map(hue, data, categorical_columns)
+        for feature in features:
             src = self._create_scatter_source(data, x, feature)
             plot = self._create_scatter_plot(src, x, feature, color_map)
 
             sources.append(src)
             plots.append(plot)
 
+
+        p = default_figure({"width": 100, "height": 100})
+        if color_map and (hue in categorical_columns):
+            legend = plots[0].legend[0]
+            tuples = []
+            for item in legend.items:
+                tuples.append((item.label["value"], item.renderers))
+
+            plots[0].add_layout(Legend(items=tuples), "left")
+
+        if colorbar:
+            p.add_layout(colorbar)
+
+        color_legend = self._create_color_legend_div(hue, p)
+
         r = row(
-            Div(text="Color: {hue}".format(hue=hue)),
-            *plots
+            color_legend,
+            *plots,
+            css_classes=["scatter_plot_row", "scatter_plot_row_" + hue]
         )
 
         return sources, r
@@ -343,26 +369,52 @@ class ScatterPlotGrid(MainGrid):
         if cmap:
             kwargs.update(
                 {
-                    "fill_color": cmap
+                    "fill_color": cmap,
                 }
             )
 
-        p = default_figure()  #{"y_range": (min(source.data["y"]), max(source.data["y"]))})
-        p.plot_width = 250
-        p.plot_height = 250
+        p = default_figure()
+        p.plot_width = 200
+        p.plot_height = 200
         p.scatter(**kwargs)
         p.yaxis.axis_label = y
 
         return p
 
-    def _create_color_map(self, hue, values, categorical_columns):
+    def _create_color_map(self, hue, data, categorical_columns):
         if hue in categorical_columns:
-            factors = sorted(set(values))
+            factors = sorted(set(data[hue + "_categorical"]))
             if len(factors) <= 10:
-                cmap = factor_cmap(hue, palette=self.categorical_palette[len(factors)], factors=factors)
+                cmap = factor_cmap(hue + "_categorical", palette=self.categorical_palette[len(factors)], factors=factors)
             else:
                 cmap = None
         else:
+            values = data[hue]
             cmap = linear_cmap(hue, palette=self.linear_palette, low=min(values), high=max(values))
 
-        return cmap
+        colorbar = None
+        if (hue not in categorical_columns) and cmap:
+            colorbar = ColorBar(color_mapper=cmap["transform"], ticker=BasicTicker(desired_num_ticks=4),
+                                formatter=PrintfTickFormatter(), label_standoff=10, border_line_color=None,
+                                location=(0, 0), major_label_text_font_size="12px")
+
+
+        return cmap, colorbar
+
+    def _create_color_legend_div(self, hue, legend):
+
+        kwargs = {
+            "text": "Color: {hue}".format(hue=hue),
+        }
+
+        d = Div(**kwargs)
+
+        c = column(
+            d,
+            legend,
+            width=200,
+            height=200,
+            width_policy="fixed"
+        )
+
+        return c

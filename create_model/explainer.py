@@ -195,21 +195,10 @@ class DataExplainer:
                 bins = 1
 
             hist, edges = np.histogram(srs, density=True, bins=bins)
-            left_edges = [edges[0]]
-            right_edges = [edges[1]]
 
             interval = (max(edges) - min(edges)) * 0.005  # 0.5%
-            i = interval
-
-            for edge in edges[1:-1]:
-                left_edges.append(edge + i)
-                i += interval
-
-            i = interval
-
-            for edge in edges[2:]:
-                right_edges.append(edge + i)
-                i += interval
+            left_edges = edges[:-1]
+            right_edges = [edge - interval for edge in edges[1:]]
 
             # _[column] = (hist, edges)
             _[column] = (hist, left_edges, right_edges)
@@ -219,15 +208,17 @@ class DataExplainer:
     def _create_scatter_data(self):
         # returning df as creating multiple rows of scatter plots will require a lot of data manipulation
         df = self.transformed_df
-        cat_df = df[self.categorical_columns].astype("float64").fillna(-1)
-        num_df = df.drop(self.categorical_columns, axis=1).astype("float64").fillna(-1)
-
-        df = pd.concat([cat_df, num_df], axis=0)
-
-        scatter_data = df.to_dict(orient="list")
+        # cat_df = df[self.categorical_columns].astype("float64").fillna(-1)
+        # num_df = df.drop(self.categorical_columns, axis=1).astype("float64").fillna(-1)
+        #
+        # df = pd.concat([cat_df, num_df], axis=0)
+        # df = df.astype("float64")
+        for col in self.categorical_columns:
+            df[col + "_categorical"] = df[col].astype(str)
+        scatter_data = df.dropna().to_dict(orient="list")
 
         # factor_cmap expects categorical data to be Str, not Int/Float
-        for col in self.categorical_columns:
-            scatter_data[col] = list(map(str, scatter_data[col]))
+        # for col in self.categorical_columns:
+        #     scatter_data[col] = list(map(str, scatter_data[col]))
 
         return scatter_data

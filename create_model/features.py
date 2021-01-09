@@ -33,7 +33,7 @@ class FeatureView:
         output_dict["info_grid"] = info_grid_div
 
         scatter_plot_grid_script, scatter_plot_grid_div = self.scatter_plot_grid.create_grid_elements(
-            scatter_data, categorical_columns, self.chosen_feature)
+            scatter_data, categorical_columns, self.features, self.chosen_feature)
         output_dict["scatter_plot_grid"] = scatter_plot_grid_div
         output_dict["bokeh_script_scatter_plot_grid"] = scatter_plot_grid_script
 
