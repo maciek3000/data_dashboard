@@ -132,3 +132,23 @@
 .active_feature_hue div {
     filter: grayscale(1) !important;
 }
+
+.bk .legend {
+    border-style: solid;
+    border-color: var(--light-gray);
+    border-width: 0 0 2px 0;
+}
+
+.legend-row {
+    position: relative;
+    width: 100%;
+    text-align: center;
+}
+
+.legend-marker {
+  height: 15px;
+  width: 15px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 16px;
+}

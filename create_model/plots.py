@@ -408,8 +408,9 @@ class ScatterPlotGrid(MainGrid):
             d,
             legend,
             width=200,
-            height=200,
-            width_policy="fixed"
+            height=195,
+            width_policy="fixed",
+            css_classes=["legend"]
         )
 
         return c
@@ -421,11 +422,13 @@ class ScatterPlotGrid(MainGrid):
             if hue in categorical_columns:
                 categories = cmap["transform"].factors
                 colors = cmap["transform"].palette
-                text = "<ul style='list-style-type: circle'>"
-                template = "<li style='color: {color}'>{category}</li>"
+                text = "<div>"
+                template = "<div class='legend-row'><span style='background-color: {color}' class='legend-marker'></span>{category}</div>"
+                # text = "<ul style='list-style-type: circle'>"
+                # template = "<li style='color: {color}'>{category}</li>"
                 for category, color in zip(categories, colors):
                     text += template.format(color=color, category=category)
-                text += "</ul>"
+                text += "</div>"
 
                 legend = Div(text=text)
 
