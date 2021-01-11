@@ -1,5 +1,5 @@
 import pytest
-from create_model.overview import Overview
+from create_model.views import Overview
 
 @pytest.mark.parametrize(
     ("feature", "expected_result"),

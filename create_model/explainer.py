@@ -4,6 +4,207 @@ import pandas as pd
 import numpy as np
 
 
+class FeatureNotSupported(Exception):
+    pass
+
+
+class BaseFeature(object):
+
+    type = None
+
+    def data(self):
+        raise NotImplemented
+
+    def describe(self):
+        raise NotImplemented
+
+
+class CategoricalFeature(BaseFeature):
+
+    type = "Categorical"
+
+    def __init__(self, series, name, description, imputed_category, json_mapping=None):
+        self.series = series.copy()
+
+        self.name = name
+        self.description = description
+        self.json_mapping = json_mapping
+        self.imputed_category = imputed_category
+
+        self.raw_mapping = self._create_raw_mapping()
+        self.mapped_series = self._create_mapped_series()
+
+        self._descriptive_mapping = None
+
+    def data(self):
+        return self.transformed_series
+
+    def describe(self):
+        return self.transformed_series.describe()
+
+    def original_data(self):
+        return self.series
+
+    def mapping(self):
+        if not self._descriptive_mapping:
+            if self.json_mapping:
+                mapp = {}
+                for key, item in self.raw_mapping.items():
+                    new_key = item
+                    new_item = self.json_mapping[key]
+                    mapp[new_key] = new_item
+            else:
+                mapp = self.raw_mapping
+            self._descriptive_mapping = mapp
+
+        return self._descriptive_mapping
+
+    def _create_mapped_series(self):
+        return self.series.replace(self.raw_mapping)
+
+    def _create_raw_mapping(self):
+        values = sorted(self.series.unique(), key=str)
+        mapped = {value: x for value, x in zip(values, range(1, len(values) +1)) if not pd.isna(value)}  # count starts at 1
+        return mapped
+
+
+class NumericalFeature(BaseFeature):
+
+    type = "Numerical"
+
+    def __init__(self, series, name, description, imputed_category):
+        self.series = series.copy()
+
+        self.name = name
+        self.description = description
+        self.imputed_category = imputed_category
+        self.normalized_series = None
+
+    def data(self):
+        return self.series
+
+    def describe(self):
+        return self.series.describe()
+
+
+class DataFeatures:
+
+    categorical = "cat"
+    numerical = "num"
+    date = "date"
+    available_categories = [categorical, numerical]
+
+    max_categories = 10
+
+    def __init__(self, original_dataframe, target, json_descriptions=None):
+
+        self.original_dataframe = original_dataframe.copy()
+        self.target = target
+        self.features = self.analyze_features(json_descriptions)
+
+        self._categorical_features = None
+        self._numerical_features = None
+        self._unused_columns = None
+
+    def analyze_features(self, descriptions):
+        features = []
+
+        desc = "description"
+        mapp = "mapping"
+        cat = "category"
+
+        for column in self.original_dataframe.columns:
+            description = "Description not Available"
+            category = None
+            mapping = None
+            category_imputed = False
+
+            # JSON keys extracted
+            if column in descriptions.keys():
+                # hardcoded expected keys in JSON
+                _ = descriptions[column]
+                try:
+                    description = _[desc]
+                except KeyError:
+                    pass
+
+                try:
+                    category = _[cat]
+                except KeyError:
+                    pass
+
+                try:
+                    mapping = _[mapp]
+                except KeyError:
+                    pass
+
+            # category imputed in case it wasn't extracted from JSON
+            if (not category) or (category not in self.available_categories):
+                category = self._impute_column_type(self.original_dataframe[column])
+                category_imputed = True
+
+            if category == self.categorical:  # Categorical
+                feature = CategoricalFeature(
+                    series=self.original_dataframe[column],
+                    name=column,
+                    description=description,
+                    json_mapping=mapping,
+                    imputed_category=category_imputed
+                )
+
+            elif category == self.numerical:  # Numerical
+                feature = NumericalFeature(
+                    series=self.original_dataframe[column],
+                    name=column,
+                    description=description,
+                    imputed_category=category_imputed
+                )
+
+            else:
+                raise FeatureNotSupported("Feature Category not supported: {}".format(category))
+
+            features.append(feature)
+
+        return features
+
+    def _impute_column_type(self, series):
+
+        if series.dtype == "bool":
+            return self.numerical
+        else:
+            try:
+                _ = series.astype("float64")
+                if len(_.unique()) <= self.max_categories:
+                    return self.categorical
+                else:
+                    return self.numerical
+            except TypeError:
+                return self.date
+            except ValueError:
+                return self.categorical
+            except Exception:
+                raise
+
+    def categorical_features(self):
+        if not self._categorical_features:
+            output = []
+            for feature in self.features:
+                if feature.type == "Categorical":
+                    output.append(feature.name)
+            self._categorical_features = output
+        return self._categorical_features
+
+    def numerical_features(self):
+        if not self._numerical_features:
+            output = []
+            for feature in self.features:
+                if feature.type == "Numerical":
+                    output.append(feature.name)
+            self._numerical_features = output
+        return self._numerical_features
+
+
+
 class DataExplainer:
 
     key_cols = "columns"
