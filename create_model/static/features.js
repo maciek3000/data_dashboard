@@ -47,7 +47,6 @@ window.onload = document.querySelectorAll(".features-menu .single-feature")[0].c
 // Subcategory Divs
 window.onload = function() {
     var elements = document.getElementsByClassName("submenu");
-    console.log(elements.length);
     var i;
 
     for (i = 0; i < elements.length; i++) {

@@ -29,8 +29,9 @@ def stylize(force=False):
             p.axis.major_label_text_color = text_color
             p.axis.axis_line_color = text_color
 
-            for axis in [p.xaxis, p.yaxis]:
-                pass
+            p.axis.axis_label_text_font = "Lato"
+            p.axis.axis_label_text_color = text_color
+            p.axis.axis_label_text_font_style = "normal"
 
             p.xgrid.grid_line_color = None
             p.ygrid.grid_line_color = None
@@ -233,6 +234,10 @@ class ScatterPlotGrid(MainGrid):
 
     def _create_scatter(self, scatter_data, categorical_columns, features, initial_feature):
 
+        # Font won't be updated in plots until any change is made (e.g. choosing different Feature).
+        # This is a bug in bokeh: https://github.com/bokeh/bokeh/issues/9448
+        # Issue is relatively minor, I won't be doing any workaround for now.
+
         features = sorted(features.keys())
         scatter_row_sources, scatter_rows = self._create_scatter_rows(scatter_data, features, initial_feature, categorical_columns)
 
@@ -331,7 +336,8 @@ class ScatterPlotGrid(MainGrid):
         r = row(
             color_legend,
             *plots,
-            css_classes=["scatter_plot_row", "scatter_plot_row_" + hue]
+            css_classes=["scatter_plot_row", "scatter_plot_row_" + hue],
+            margin=(0, 48, 0, 0)
         )
 
         return sources, r
@@ -397,7 +403,8 @@ class ScatterPlotGrid(MainGrid):
     def _create_row_description(self, hue, cmap, categorical_columns):
 
         kwargs = {
-            "text": "Color: {hue}".format(hue=hue),
+            "text": "{hue}".format(hue=hue),
+            "css_classes": ["hue-title"]
         }
 
         legend = self._create_legend(hue, cmap, categorical_columns)
@@ -410,7 +417,7 @@ class ScatterPlotGrid(MainGrid):
             width=200,
             height=195,
             width_policy="fixed",
-            css_classes=["legend"]
+            css_classes=["row-description"]
         )
 
         return c
@@ -422,15 +429,14 @@ class ScatterPlotGrid(MainGrid):
             if hue in categorical_columns:
                 categories = cmap["transform"].factors
                 colors = cmap["transform"].palette
-                text = "<div>"
+                text = ""
                 template = "<div class='legend-row'><span style='background-color: {color}' class='legend-marker'></span>{category}</div>"
                 # text = "<ul style='list-style-type: circle'>"
                 # template = "<li style='color: {color}'>{category}</li>"
                 for category, color in zip(categories, colors):
                     text += template.format(color=color, category=category)
-                text += "</div>"
 
-                legend = Div(text=text)
+                legend = Div(text=text, css_classes=["legend"])
 
             else:
                 colorbar = ColorBar(color_mapper=cmap["transform"], ticker=BasicTicker(desired_num_ticks=4),

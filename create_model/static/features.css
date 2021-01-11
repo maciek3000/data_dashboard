@@ -133,22 +133,38 @@
     filter: grayscale(1) !important;
 }
 
-.bk .legend {
+.bk .row-description {
     border-style: solid;
-    border-color: var(--light-gray);
-    border-width: 0 0 2px 0;
+    border-color: var(--gray-title);
+    border-width: 0 0 1px 0;
+    font-family: "Lato";
+}
+
+.bk .legend {
+    border: 1px solid var(--light-gray);
+    width: 50%;
+    margin-left: 24px;
+    padding-left: 8px;
+    padding-right: 24px;
 }
 
 .legend-row {
-    position: relative;
     width: 100%;
     text-align: center;
 }
 
 .legend-marker {
-  height: 15px;
-  width: 15px;
+  height: 10px;
+  width: 10px;
   border-radius: 50%;
   display: inline-block;
   margin-right: 16px;
+}
+
+.hue-title {
+    font-size: 1.7em !important;
+    text-align: center;
+    font-weight: bold;
+    width: 100% !important;
+    font-family: inherit !important;
 }
