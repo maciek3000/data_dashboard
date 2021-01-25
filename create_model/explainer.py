@@ -36,16 +36,18 @@ class CategoricalFeature(BaseFeature):
 
         self._descriptive_mapping = None
 
+
     def data(self):
-        return self.transformed_series
+        return self.mapped_series
 
     def describe(self):
-        return self.transformed_series.describe()
+        return self.mapped_series.describe()
 
     def original_data(self):
         return self.series
 
     def mapping(self):
+        # will be used by Coordinator to provide mapping between human friendly and computer friendly variables
         if not self._descriptive_mapping:
             if self.json_mapping:
                 mapp = {}
@@ -63,7 +65,9 @@ class CategoricalFeature(BaseFeature):
         return self.series.replace(self.raw_mapping)
 
     def _create_raw_mapping(self):
+        # replaces every categorical value with a number starting from 1 (sorted alphabetically)
         values = sorted(self.series.unique(), key=str)
+        # TODO: change to enumerate
         mapped = {value: x for value, x in zip(values, range(1, len(values) +1)) if not pd.isna(value)}  # count starts at 1
         return mapped
 
@@ -123,6 +127,7 @@ class DataFeatures:
             if column in descriptions.keys():
                 # hardcoded expected keys in JSON
                 _ = descriptions[column]
+
                 try:
                     description = _[desc]
                 except KeyError:
@@ -185,6 +190,7 @@ class DataFeatures:
             except Exception:
                 raise
 
+    # TODO: change hardcoded strings?
     def categorical_features(self):
         if not self._categorical_features:
             output = []
@@ -203,6 +209,9 @@ class DataFeatures:
             self._numerical_features = output
         return self._numerical_features
 
+
+# Data Features should be created by Coordinator, and then Explainer should have functions to work on
+# Categorical/Numerical variables based on DataFeatures object created
 
 
 class DataExplainer:
