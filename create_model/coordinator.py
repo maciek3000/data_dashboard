@@ -1,8 +1,9 @@
-from .explainer import DataExplainer
+from .explainer import DataExplainer, DataFeatures
 from .output import Output
 from .transformer import Transformer
 from .model_finder import ModelFinder
 from .descriptor import FeatureDescriptor
+import pandas as pd
 
 import os
 
@@ -25,15 +26,19 @@ class Coordinator:
         else:
             self.root_path = root_path
 
-        self.explainer = DataExplainer(self.X, self.y)
+        self.features_descriptions = FeatureDescriptor(feature_json)
+        self.features = DataFeatures(pd.concat([self.X, self.y], axis=1), self.y.name, self.features_descriptions)
+
+        self.explainer = DataExplainer(self.features)
         # TODO: rethink if data_explained can be moved to .data_objects property of DataExplainer
         self.data_explained = self.explainer.analyze()
-        self.explainer_mapping = self.explainer.mapping
+        #self.explainer_mapping = self.explainer.mapping
+        self.mapping = self.features.mapping()
 
-        self.features = FeatureDescriptor(feature_json)
+
 
         # TODO: consider lazy instancing
-        self.output = Output(self.root_path, features=self.features, naive_mapping=self.explainer_mapping, data_name="test", package_name=self.name)
+        self.output = Output(self.root_path, features=self.features_descriptions, naive_mapping=self.mapping, data_name="test", package_name=self.name)
         self.transformer = Transformer(self.X, self.y, self.data_explained["columns"]["columns_without_target"])
         self.scoring = scoring
 
