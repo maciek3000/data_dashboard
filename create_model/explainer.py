@@ -52,7 +52,13 @@ class CategoricalFeature(BaseFeature):
                 mapp = {}
                 for key, item in self.raw_mapping.items():
                     new_key = item
-                    new_item = self.json_mapping[key]
+                    try:
+                        new_item = self.json_mapping[key]
+                    except KeyError:
+                        try:
+                            new_item = self.json_mapping[str(key)]
+                        except KeyError:
+                            raise
                     mapp[new_key] = new_item
             else:
                 mapp = self.raw_mapping
@@ -89,6 +95,9 @@ class NumericalFeature(BaseFeature):
     def describe(self):
         return self.series.describe()
 
+    def mapping(self):
+        return None
+
 
 class DataFeatures:
 
@@ -107,8 +116,11 @@ class DataFeatures:
         self._features = self.analyze_features(descriptions)
 
         self._all_features = None
+        self._all_features_wo_target = None
         self._categorical_features = None
+        self._categorical_features_wo_target = None
         self._numerical_features = None
+        self._numerical_features_wo_target = None
         self._unused_columns = None
 
         self._raw_dataframe = None
@@ -119,10 +131,6 @@ class DataFeatures:
     def analyze_features(self, descriptions):
         features = {}
 
-        desc = "description"
-        mapp = "mapping"
-        cat = "category"
-
         for column in self.original_dataframe.columns:
             description = "Description not Available"
             category = None
@@ -131,21 +139,19 @@ class DataFeatures:
 
             # JSON keys extracted
             if column in descriptions.keys():
-                # hardcoded expected keys in JSON
-                _ = descriptions[column]
 
                 try:
-                    description = _[desc]
+                    description = descriptions.description(column)
                 except KeyError:
                     pass
 
                 try:
-                    category = _[cat]
+                    category = descriptions.category(column)
                 except KeyError:
                     pass
 
                 try:
-                    mapping = _[mapp]
+                    mapping = descriptions.mapping(column)
                 except KeyError:
                     pass
 
@@ -196,36 +202,64 @@ class DataFeatures:
             except Exception:
                 raise
 
-    def features(self):
+    def features(self, drop_target=False):
         if not self._all_features:
             output = []
             for feature in self._features.values():
                 output.append(feature.name)
             self._all_features = output
-        return self._all_features
 
-    def categorical_features(self):
+        if drop_target:
+            if self._all_features_wo_target is None:
+                no_target = self._all_features.copy()
+                no_target.remove(self.target)
+                self._all_features_wo_target = no_target
+            return self._all_features_wo_target
+        else:
+            return self._all_features
+
+    def categorical_features(self, drop_target=False):
         if not self._categorical_features:
             output = []
             for feature in self._features.values():
                 if isinstance(feature, CategoricalFeature):
                     output.append(feature.name)
             self._categorical_features = output
-        return self._categorical_features
 
-    def numerical_features(self):
+        if drop_target:
+            if self.target in self._categorical_features:
+                no_target = self._categorical_features.copy()
+                no_target.remove(self.target)
+                self._categorical_features_wo_target = no_target
+            else:
+                self._categorical_features_wo_target = self._categorical_features
+            return self._categorical_features_wo_target
+        else:
+            return self._categorical_features
+
+    def numerical_features(self, drop_target=False):
         if not self._numerical_features:
             output = []
             for feature in self._features.values():
                 if isinstance(feature, NumericalFeature):
                     output.append(feature.name)
             self._numerical_features = output
-        return self._numerical_features
+
+        if drop_target:
+            if self.target in self._numerical_features:
+                no_target = self._numerical_features.copy()
+                no_target.remove(self.target)
+                self._numerical_features_wo_target = no_target
+            else:
+                self.__numerical_features_wo_target = self._numerical_features
+            return self._numerical_features_wo_target
+        else:
+            return self._numerical_features
 
     def raw_data(self, drop_target=False):
         if self._raw_dataframe is None:
-            numeric = [feature.data for feature in self._features if feature.name in self._numerical_features]
-            cat = [feature.original_data for feature in self._features if feature.name in self.categorical_features]
+            numeric = [feature.data() for feature in self._features.values() if feature.name in self.numerical_features()]
+            cat = [feature.original_data() for feature in self._features.values() if feature.name in self.categorical_features()]
             self._raw_dataframe = pd.concat([*numeric, *cat], axis=1)
 
         if drop_target:
@@ -235,7 +269,7 @@ class DataFeatures:
 
     def mapped_data(self, drop_target=False):
         if self._mapped_dataframe is None:
-            self._mapped_dataframe = pd.concat([feature.data for feature in self._features], axis=1)
+            self._mapped_dataframe = pd.concat([self._features[feature].data() for feature in self._features], axis=1)
 
         if drop_target:
             return self._mapped_dataframe.drop([self.target], axis=1)
@@ -245,7 +279,7 @@ class DataFeatures:
     def mapping(self):
         if self._mapping is None:
             output = {}
-            for feature in self.categorical_features():
+            for feature in self.features():
                 output[feature] = self._features[feature].mapping()
             self._mapping = output
         return self._mapping
@@ -295,7 +329,8 @@ class DataExplainer:
 
     def analyze(self):
         output = {
-            self.key_cols: self.features.features_descriptions(),  # this might expect dictionary instead of a list
+            self.key_cols: self.features.features(),
+            self.key_cols_wo_target: self.features.features(drop_target=True),
             self.key_numerical: self.features.numerical_features(),
             self.key_categorical: self.features.categorical_features(),
             self.key_figs: self._create_figures(),
@@ -394,7 +429,7 @@ class DataExplainer:
 
     def __create_df_head(self):
         # cols = sorted(self.features.raw_data)
-        return self.features.raw_data()[sorted(self.features.features_descriptions())].head().T
+        return self.features.raw_data()[sorted(self.features.features())].head().T
 
     def _create_lists(self):
         return {
@@ -403,7 +438,7 @@ class DataExplainer:
 
     def _unused_cols(self):
         # TODO: implement unused columns
-        return
+        return list()
 
     def _create_figures(self):
         d = {
@@ -470,7 +505,7 @@ class DataExplainer:
         #
         # df = pd.concat([cat_df, num_df], axis=0)
         # df = df.astype("float64")
-        for col in self.features.numerical_features():
+        for col in self.features.categorical_features():
             df[col + "_categorical"] = df[col].astype(str)
         scatter_data = df.dropna().to_dict(orient="list")
 

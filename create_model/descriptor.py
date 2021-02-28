@@ -11,6 +11,7 @@ class FeatureDescriptor(dict):
 
     _description = "description"
     _mapping = "mapping"
+    _category = "category"
 
     def __init__(self, json_file):
         self.initialized = False
@@ -19,7 +20,7 @@ class FeatureDescriptor(dict):
             self.initialized = True
             super().__init__(self.json)
 
-    def feature_mapping(self, arg):
+    def mapping(self, arg):
         if arg not in self.json:
             raise KeyError
 
@@ -28,11 +29,29 @@ class FeatureDescriptor(dict):
         except KeyError:
             return None
 
+    def description(self, arg):
+        if arg not in self.json:
+            raise KeyError
+
+        try:
+            return self.json[arg][self._description]
+        except KeyError:
+            return None
+
+    def category(self, arg):
+        if arg not in self.json:
+            raise KeyError
+
+        try:
+            return self.json[arg][self._category]
+        except KeyError:
+            return None
+
     def __getitem__(self, arg):
         if arg not in self.json:
             raise KeyError
 
-        return self.json[arg][self._description]
+        return self.json[arg]
 
     def __iter__(self):
         self.__iter_items = list(sorted(self.json.keys()))

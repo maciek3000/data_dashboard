@@ -9,7 +9,7 @@ class Transformer:
 
     # https://scikit-learn.org/stable/auto_examples/compose/plot_column_transformer_mixed_types.html
 
-    def __init__(self, X, y, columns):
+    def __init__(self, X, y, numerical_columns, categorical_columns):
         self.X = X
         self.y = y
 
@@ -17,9 +17,12 @@ class Transformer:
         self.transformed_X = None
         self.transformed_y = None
 
-        self.numerical_columns = columns["numerical"]
-        self.categorical_columns = columns["categorical"]
-        self.date_columns = columns["date"]
+        self.numerical_columns = numerical_columns
+        self.categorical_columns = categorical_columns
+
+        # self.numerical_columns = columns["numerical"]
+        # self.categorical_columns = columns["categorical"]
+        # self.date_columns = columns["date"]
 
         self.preprocessor = self._create_preprocessor()
 

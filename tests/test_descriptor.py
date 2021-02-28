@@ -32,7 +32,7 @@ def test_feature_get(temp_json_file, feature_descriptions):
 )
 def test_feature_mapping(temp_json_file, feature_descriptions, feature):
     fd = FeatureDescriptor(temp_json_file)
-    assert fd.feature_mapping(feature) == feature_descriptions[feature]["mapping"]
+    assert fd.mapping(feature) == feature_descriptions[feature]["mapping"]
 
 
 @pytest.mark.parametrize(
@@ -59,4 +59,4 @@ def test_keyerror_raised(temp_json_file, invalid_feature):
 )
 def test_no_feature_mapping(temp_json_file, nm_feature):
     fd = FeatureDescriptor(temp_json_file)
-    assert fd.feature_mapping(nm_feature) is None
+    assert fd.mapping(nm_feature) is None

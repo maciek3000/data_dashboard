@@ -5,10 +5,10 @@ from .plots import InfoGrid, ScatterPlotGrid
 
 class Overview:
 
-    def __init__(self, template, css_path, features, naive_mapping):
+    def __init__(self, template, css_path, descriptions, naive_mapping):
         self.template = template
         self.css = css_path
-        self.features = features
+        self.descriptions = descriptions
         self.naive_mapping = naive_mapping
 
     def render(self, base_dict, tables, lists, figures, figure_directory):
@@ -34,12 +34,12 @@ class Overview:
         return params
 
     def __append_description(self, html_table):
-        if self.features.initialized:
+        if self.descriptions.initialized:
             table = BeautifulSoup(html_table, "html.parser")
             headers = table.select("table tbody tr th")
             for header in headers:
                 try:
-                    description = self.features[header.string]
+                    description = self.descriptions.description(header.string)
                 except KeyError:
                     continue
 
@@ -55,7 +55,8 @@ class Overview:
                         new_tag.append(table.new_string("{}".format(line)))
 
                 # appending mappings to descriptions as long as they exist (they are not none)
-                mappings = self._consolidate_mappings(header.string)
+                mappings = self.naive_mapping[header.string]
+                #mappings = self._consolidate_mappings(header.string)
                 if mappings:
                     new_tag.append(table.new_tag("br"))
                     new_tag.append(table.new_tag("br"))
@@ -77,7 +78,7 @@ class Overview:
 
     def _consolidate_mappings(self, feature):
         # description mapping comes from json so all keys are strings
-        description_mapping = self.features.feature_mapping(feature)
+        description_mapping = self.descriptions.mapping(feature)
         try:
             naive_mapping = self.naive_mapping[feature]
         except KeyError:
@@ -131,22 +132,22 @@ class Overview:
 
 class FeatureView:
 
-    def __init__(self, template, css_path, js_path, features, naive_mapping):
+    def __init__(self, template, css_path, js_path, descriptions, naive_mapping):
         # TODO: get path to templates folder instead of a instanced template
 
         self.template = template
         self.css = css_path
         self.js = js_path
-        self.features = features
+        self.descriptions = descriptions
         self.naive_mapping = naive_mapping
 
         self.chosen_feature = None
 
-        self.info_grid = InfoGrid(features)
-        self.scatter_plot_grid = ScatterPlotGrid(features)
+        self.info_grid = InfoGrid(descriptions)
+        self.scatter_plot_grid = ScatterPlotGrid(descriptions)
 
     def render(self, base_dict, histogram_data, scatter_data, categorical_columns):
-        self.chosen_feature = sorted(self.features.keys())[0]
+        self.chosen_feature = sorted(self.descriptions.keys())[0]
         output_dict = {}
         output_dict.update(base_dict)
 
@@ -161,7 +162,7 @@ class FeatureView:
         output_dict["info_grid"] = info_grid_div
 
         scatter_plot_grid_script, scatter_plot_grid_div = self.scatter_plot_grid.create_grid_elements(
-            scatter_data, categorical_columns, self.features, self.chosen_feature)
+            scatter_data, categorical_columns, self.descriptions, self.chosen_feature)
         output_dict["scatter_plot_grid"] = scatter_plot_grid_div
         output_dict["bokeh_script_scatter_plot_grid"] = scatter_plot_grid_script
 
@@ -171,7 +172,7 @@ class FeatureView:
         html = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
         template = "<div class='single-feature'>{:03}. {}</div>"
         i = 0
-        for feat in self.features:
-            html += template.format(i, feat)
+        for feat in self.descriptions:
+            html += template.format(i, self.descriptions.description(feat))
             i += 1
         return html
