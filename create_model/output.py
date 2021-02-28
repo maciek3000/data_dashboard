@@ -9,14 +9,14 @@ class Output:
     time_format = "%d-%b-%Y %H:%M:%S"
     footer_note = "Created on {time}"
 
-    def __init__(self, root_path, descriptions, naive_mapping, data_name, package_name):
+    def __init__(self, root_path, features, naive_mapping, data_name, package_name):
 
         # TODO:
         # this solution is sufficient right now but nowhere near satisfying
         # if the Coordinator is imported as a package, this whole facade might crumble with directories
         # being created in seemingly random places.
         self.root_path = root_path
-        self.descriptions = descriptions
+        self.features = features
         self.naive_mapping = naive_mapping
 
         self.output_directory = os.path.join(self.root_path, "output")
@@ -28,7 +28,7 @@ class Output:
         self.overview = Overview(
             template=self.env.get_template("overview.html"),
             css_path=os.path.join(self.static_path, "overview.css"),
-            descriptions=self.descriptions,
+            features=self.features,
             naive_mapping=self.naive_mapping
         )
 
@@ -36,7 +36,7 @@ class Output:
             template=self.env.get_template("features.html"),
             css_path=os.path.join(self.static_path, "features.css"),
             js_path=os.path.join(self.static_path, "features.js"),
-            descriptions=self.descriptions,
+            features=self.features,
             naive_mapping=self.naive_mapping
         )
 

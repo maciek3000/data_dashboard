@@ -65,11 +65,11 @@ def default_figure(plot_specific_kwargs=None):
 
 class MainGrid:
 
-    def __init__(self, descriptions):
-        self.descriptions = descriptions
+    def __init__(self, features):
+        self.features = features
 
     def _create_features_dropdown(self, name="features_dropdown"):
-        fts = sorted(self.descriptions.keys())
+        fts = sorted(self.features.features())
         d = Select(options=fts, css_classes=["features_dropdown"], name=name)
         return d
 
@@ -79,8 +79,8 @@ class MainGrid:
 
 class InfoGrid(MainGrid):
 
-    def __init__(self, descriptions):
-        super().__init__(descriptions)
+    def __init__(self, features):
+        super().__init__(features)
 
     def create_grid_elements(self, histogram_data, initial_feature):
         return components(self._create_info_grid(histogram_data, initial_feature))
@@ -220,8 +220,8 @@ class InfoGrid(MainGrid):
 
 class ScatterPlotGrid(MainGrid):
 
-    def __init__(self, descriptions):
-        super().__init__(descriptions)
+    def __init__(self, features):
+        super().__init__(features)
 
         self.categorical_palette = Category10
         self.linear_palette = Reds4[::-1]
@@ -238,7 +238,7 @@ class ScatterPlotGrid(MainGrid):
         # This is a bug in bokeh: https://github.com/bokeh/bokeh/issues/9448
         # Issue is relatively minor, I won't be doing any workaround for now.
 
-        features = sorted(features.keys())
+        features = sorted(features.features())
         scatter_row_sources, scatter_rows = self._create_scatter_rows(scatter_data, features, initial_feature, categorical_columns)
 
         dropdown = self._create_features_dropdown("scatter_plot_grid_dropdown")

@@ -284,6 +284,11 @@ class DataFeatures:
             self._mapping = output
         return self._mapping
 
+    def __getitem__(self, arg):
+        if arg not in self._features:
+            raise KeyError
+
+        return self._features[arg]
 
 # Data Features should be created by Coordinator, and then Explainer should have functions to work on
 # Categorical/Numerical variables based on DataFeatures object created

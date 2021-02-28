@@ -38,7 +38,7 @@ class Coordinator:
 
 
         # TODO: consider lazy instancing
-        self.output = Output(self.root_path, descriptions=self.features_descriptions, naive_mapping=self.mapping, data_name="test", package_name=self.name)
+        self.output = Output(self.root_path, features=self.features, naive_mapping=self.mapping, data_name="test", package_name=self.name)
         self.transformer = Transformer(self.X, self.y, self.data_explained["numerical"], self.data_explained["categorical"])
         self.scoring = scoring
 
