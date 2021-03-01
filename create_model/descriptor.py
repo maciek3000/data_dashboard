@@ -16,6 +16,8 @@ class FeatureDescriptor(dict):
         JSON might provide different metadata, but every "key" in JSON should also be defined in the class
         (in case any changes are introduced to JSON). Keys should be included as ._property properties and
         corresponding methods for extracting them should also be defined.
+
+        Including .initialized bool property as sometimes there might not be any corresponding json_file available.
     """
 
     _description = "description"
