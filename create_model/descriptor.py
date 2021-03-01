@@ -2,11 +2,20 @@ import json
 
 
 class FeatureDescriptor(dict):
-    """Provides Descriptions and optional mapping of Features.
+    """Provides metadata on features (known before any analysis takes place).
 
         Class reads json_file (must be already opened) and creates internal dictionary of it.
         obj[feature] syntax returns a description of a provided feature name.
-        .feature_mapping(feature) returns mapping of categories to data of a given feature.
+
+        Defines different methods to extracting different information from JSON.
+        As for now they are:
+            description()
+            mapping()
+            category()
+
+        JSON might provide different metadata, but every "key" in JSON should also be defined in the class
+        (in case any changes are introduced to JSON). Keys should be included as ._property properties and
+        corresponding methods for extracting them should also be defined.
     """
 
     _description = "description"
