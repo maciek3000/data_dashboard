@@ -1,4 +1,5 @@
-from .explainer import DataExplainer, DataFeatures
+from .explainer import DataExplainer
+from .features import DataFeatures
 from .output import Output
 from .transformer import Transformer
 from .model_finder import ModelFinder
@@ -27,7 +28,7 @@ class Coordinator:
             self.root_path = root_path
 
         self.features_descriptions = FeatureDescriptor(feature_json)
-        self.features = DataFeatures(pd.concat([self.X, self.y], axis=1), self.y.name, self.features_descriptions)
+        self.features = DataFeatures(self.X, self.y, self.features_descriptions)
 
         self.explainer = DataExplainer(self.features)
         # TODO: rethink if data_explained can be moved to .data_objects property of DataExplainer
