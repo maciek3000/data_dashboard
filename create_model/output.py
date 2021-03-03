@@ -9,7 +9,7 @@ class Output:
     time_format = "%d-%b-%Y %H:%M:%S"
     footer_note = "Created on {time}"
 
-    def __init__(self, root_path, features, naive_mapping, data_name, package_name):
+    def __init__(self, root_path, features, data_name, package_name):
 
         # TODO:
         # this solution is sufficient right now but nowhere near satisfying
@@ -17,7 +17,7 @@ class Output:
         # being created in seemingly random places.
         self.root_path = root_path
         self.features = features
-        self.naive_mapping = naive_mapping
+        self.naive_mapping = features.mapping()  # TODO
 
         self.output_directory = os.path.join(self.root_path, "output")
         self.templates_path = os.path.join(self.root_path, package_name, "templates")

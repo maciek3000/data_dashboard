@@ -8,6 +8,7 @@ from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.palettes import Reds4, Category10
 
 import functools
+import seaborn as sns
 
 
 def stylize(force=False):
@@ -61,6 +62,27 @@ def default_figure(plot_specific_kwargs=None):
     p = figure(**default_kwargs)
 
     return p
+
+
+class PairPlot:
+
+    def __init__(self, plot_design):
+        self.plot_design = plot_design
+
+        text_color = self.plot_design["text_color"]
+        sns.set_style("white", {
+            "axes.edgecolor": text_color,
+            "axes.labelcolor": text_color,
+            "text.color": text_color,
+            "font.sans-serif": ["Lato"],
+            "xtick.color": text_color,
+            "ytick.color": text_color,
+        })
+
+    def pairplot(self, dataframe):
+        colors = {"color": self.plot_design.pairplot_color}
+        p = sns.pairplot(dataframe, plot_kws=colors, diag_kws=colors)
+        return p
 
 
 class MainGrid:

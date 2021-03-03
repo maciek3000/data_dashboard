@@ -1,5 +1,5 @@
-from .explainer import DataExplainer
-from .features import DataFeatures
+from .analyzer import Analyzer
+from .features import Features
 from .output import Output
 from .transformer import Transformer
 from .model_finder import ModelFinder
@@ -22,26 +22,30 @@ class Coordinator:
         self.transformed_X = None
         self.transformed_y = None
 
+        self.scoring = scoring
+
         if root_path is None:
             self.root_path = os.getcwd()
         else:
             self.root_path = root_path
 
         self.features_descriptions = FeatureDescriptor(feature_json)
-        self.features = DataFeatures(self.X, self.y, self.features_descriptions)
+        self.features = Features(self.X, self.y, self.features_descriptions)
 
-        self.explainer = DataExplainer(self.features)
+        self.analyzer = Analyzer(self.features)
         # TODO: rethink if data_explained can be moved to .data_objects property of DataExplainer
-        self.data_explained = self.explainer.analyze()
-        #self.explainer_mapping = self.explainer.mapping
+
+
         self.mapping = self.features.mapping()
 
 
 
         # TODO: consider lazy instancing
-        self.output = Output(self.root_path, features=self.features, naive_mapping=self.mapping, data_name="test", package_name=self.name)
-        self.transformer = Transformer(self.X, self.y, self.data_explained["numerical"], self.data_explained["categorical"])
-        self.scoring = scoring
+        self.output = Output(self.root_path, features=self.features, data_name="test", package_name=self.name)
+        self.transformer = Transformer(self.X, self.y,
+                                       self.features.numerical_features(drop_target=True),
+                                       self.features.categorical_features(drop_target=True))
+
 
     def find_model(self):
         if not self.transformed_X:
@@ -60,8 +64,9 @@ class Coordinator:
 
     def create_html(self):
         # TODO: change hardcoded keys
+        data_explained = self.analyzer.analyze()
         explainer_data_keys = ["figures", "tables", "lists", "histograms", "scatter", "categorical"]
-        explainer_data = {"explainer_" + key: self.data_explained[key] for key in explainer_data_keys}
+        explainer_data = {"explainer_" + key: data_explained[key] for key in explainer_data_keys}
 
 
         # transformer_data_keys = ["transformations"]

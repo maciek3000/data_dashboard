@@ -3,13 +3,119 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 
+from. features import NumericalFeature, CategoricalFeature
+
+from .plots import PairPlot
+from .plot_design import PlotDesign
 
 
 
 # Data Features should be created by Coordinator, and then Explainer should have functions to work on
 # Categorical/Numerical variables based on DataFeatures object created
 
-class DataExplainer:
+def _calculate_numerical_bins(series):
+    # if columns is numerical we calculate the number of bins manually
+    # https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
+    n = series.size
+    iqr = series.quantile(0.75) - series.quantile(0.25)
+    bins = (series.max() - series.min()) / (2*iqr*pow(n, (-1/3)))
+    bins = int(round(bins, 0))
+    return bins
+
+def modify_histogram_edges(edges):
+    # Adding space between the edges to visualize the data properly
+    interval = (max(edges) - min(edges)) * 0.005  # 0.5%
+    left_edges = edges[:-1]
+    right_edges = [edge - interval for edge in edges[1:]]
+    return (left_edges, right_edges)
+
+
+class Explainer:
+    """Analyzes Features present in the data.
+
+        Main goal of the object is to analyze the data (features) provided and output any tables or plots
+        used in the application. All calculations and transformations on "raw" features (excluding mapping) should
+        happen here and Analyzer should expose methods or properties with the final output.
+    """
+
+    def __init__(self, features):
+        self.features = features
+        self.max_categories = features.max_categories
+        self.default_plot_design = PlotDesign()
+
+    def numerical_describe_df(self):
+        return self._create_describe_df(self.features.numerical_features())
+
+    def categorical_describe_df(self):
+        return self._create_describe_df(self.features.categorical_features())
+
+    def df_head(self):
+        return self.features.raw_data()[sorted(self.features.features())].head().T
+
+    def skipped_features(self):
+        return self.features.unused_features()
+
+    def features_pairplot(self):
+        df = self.features.data()[sorted(self.features.features())]
+        pairplot = PairPlot(self.default_plot_design).pairplot(df)
+        return pairplot
+
+    def histogram_data(self):
+        # TODO: this method might change its signature when InfoGrid is created from Analyzer itself
+        # TODO: might also be moved into InfoGrid as well but its up to debate
+        all_histograms = {}
+
+        for feature_name in self.features.features():
+            feature = self.features[feature_name]
+            # NaNs are not allowed
+            series = feature.data().dropna()  # srs = df[column][df[column].notna()]
+
+            if isinstance(feature, CategoricalFeature):
+                bins = len(series.unique())  # len(df[column].unique())
+            elif isinstance(feature, NumericalFeature):
+                bins = _calculate_numerical_bins(series)
+            else:
+                bins = 1  # placeholder rule
+
+            hist, edges = np.histogram(series, density=True, bins=bins)
+            left_edges, right_edges = modify_histogram_edges(edges)
+
+            all_histograms[feature_name] = (hist, left_edges, right_edges)
+
+        return all_histograms
+
+    def scatter_data(self):
+        df = self.features.data().copy()
+
+        # Every column will be treated as a hue (color) at some point, including categorical Columns
+        # However, factor_cmap (function that provides coloring by categorical variables) expects color columns
+        # to be Str, not Int/Float. Therefore, we need to create a copy of every categorical column
+        # and cast it explicitly to Str
+        for col in self.features.categorical_features():
+            df[col + "_categorical"] = df[col].astype(str)
+
+        # TODO: rethink NaNs
+        scatter_data = df.dropna().to_dict(orient="list")
+        return scatter_data
+
+    def _create_describe_df(self, feature_list):
+        df = self.features.data()[feature_list]
+        ds = df.describe().astype("float64").T
+        ds["missing"] = df.isna().sum() / max(df.count())
+        return ds
+
+
+
+#### ---------- DONT DELETE YET ------------ #####
+
+class Analyzer:
+    """Analyzes Features present in the data.
+
+        Main goal of the object is to analyze the data (features) provided and output any tables or plots
+        used in the application. All calculations and transformations on "raw" features (excluding mapping) should
+        happen here and Analyzer should expose methods or properties with the final output.
+    """
+
 
     key_cols = "columns"
     key_cols_wo_target = "columns_without_target"
@@ -23,7 +129,7 @@ class DataExplainer:
     key_categorical = "categorical"
     key_date = "date"
 
-    max_categories = 10
+
 
     plot_text_color = "#8C8C8C"
     plot_color = "#19529c"
@@ -39,6 +145,7 @@ class DataExplainer:
         })
 
         self.features = features
+        self.max_categories = features.max_categories
 
         # self.columns = features.columns
         #
@@ -134,7 +241,7 @@ class DataExplainer:
 
     def _numeric_describe(self):
         # df consists of only numerical features
-        df = self.features.mapped_data()[self.features.numerical_features()]
+        df = self.features.data()[self.features.numerical_features()]
 
         ds = df.describe().astype("float64").T
         ds["missing"] = df.isna().sum() / max(df.count())
@@ -142,7 +249,7 @@ class DataExplainer:
 
     def _categorical_describe(self):
         # df consists of only categorical features
-        df = self.features.mapped_data()[self.features.categorical_features()]
+        df = self.features.data()[self.features.categorical_features()]
 
         ds = df.describe().astype("float64").T
         ds["missing"] = df.isna().sum() / max(df.count())
@@ -170,7 +277,7 @@ class DataExplainer:
     def __create_pairplot(self):
         # num = self.transformed_df[self.numerical_columns]
         # cat = self.transformed_df[self.categorical_columns]
-        df = self.features.mapped_data()
+        df = self.features.data()
         df = df[sorted(df.columns)]
         colors = {"color": self.plot_color}
         p = sns.pairplot(df, plot_kws=colors, diag_kws=colors)
@@ -182,7 +289,7 @@ class DataExplainer:
 
         _ = {}
 
-        df = self.features.mapped_data()
+        df = self.features.data()
         for column in df.columns:
             # removing NaN values
             # TODO: this doesnt make sense
@@ -220,7 +327,7 @@ class DataExplainer:
 
     def _create_scatter_data(self):
         # returning df as creating multiple rows of scatter plots will require a lot of data manipulation
-        df = self.features.mapped_data()
+        df = self.features.data()
         # cat_df = df[self.categorical_columns].astype("float64").fillna(-1)
         # num_df = df.drop(self.categorical_columns, axis=1).astype("float64").fillna(-1)
         #

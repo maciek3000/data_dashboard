@@ -1,11 +1,11 @@
-from create_model.explainer import DataExplainer
+from create_model.analyzer import Analyzer
 import pandas as pd
 
 def test_data_explainer_analyze_columns(test_data_classification_balanced):
     X = test_data_classification_balanced[0]
     y = test_data_classification_balanced[1]
 
-    explainer = DataExplainer(X, y)
+    explainer = Analyzer(X, y)
 
     cols = explainer.columns[explainer.key_cols]
     cols_wo_target = explainer.columns[explainer.key_cols_wo_target]
@@ -37,7 +37,7 @@ def test_data_explainer_numeric_describe(test_data_classification_balanced):
         "missing": [0.01, 0.02]
     }, index=["Height", "Price"])
 
-    explainer = DataExplainer(X, y)
+    explainer = Analyzer(X, y)
     actual_df = explainer._numeric_describe().round(2)
 
     _ = expected_df[expected_df != actual_df]
@@ -51,7 +51,7 @@ def test_data_explainer_categorical_mapping(test_data_classification_balanced, e
     # debugging purposes
     # _ = pd.concat([X, y], axis=1)[["AgeGroup", "bool", "Product", "Sex", "Target"]]
 
-    explainer = DataExplainer(X, y)
+    explainer = Analyzer(X, y)
     actual_mapping = explainer._create_categorical_mapping()
 
     assert actual_mapping == expected_mapping
@@ -60,7 +60,7 @@ def test_data_explainer_categorical_describe(test_data_classification_balanced):
     X = test_data_classification_balanced[0]
     y = test_data_classification_balanced[1]
 
-    explainer = DataExplainer(X, y)
+    explainer = Analyzer(X, y)
 
     # debugging purposes
     _ = pd.concat([X, y], axis=1)[["AgeGroup", "bool", "Product", "Sex", "Target"]].replace(explainer._create_categorical_mapping()).describe().T

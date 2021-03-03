@@ -120,7 +120,7 @@ class NumericalFeature(BaseFeature):
         return None
 
 
-class DataFeatures:
+class Features:
     """Container for Features in the analyzed data.
 
         Data comes with different types of features - numerical, categorical, date, bool, etc. Goal of this class
@@ -154,7 +154,7 @@ class DataFeatures:
         self._all_features = None
         self._categorical_features = None
         self._numerical_features = None
-        self._unused_columns = None
+        self._unused_columns = []
 
         self._raw_dataframe = None
         self._mapped_dataframe = None
@@ -165,56 +165,61 @@ class DataFeatures:
         features = {}
 
         for column in self.original_dataframe.columns:
-            description = "Description not Available"
-            category = None
-            mapping = None
-            category_imputed = False
+            # TODO: rethink if can be split into smaller functions
+            try:
+                description = "Description not Available"
+                category = None
+                mapping = None
+                category_imputed = False
 
-            # JSON keys extracted only if object was initialized
-            if descriptions.initialized:
-                if column in descriptions.keys():
+                # JSON keys extracted only if object was initialized
+                if descriptions.initialized:
+                    if column in descriptions.keys():
 
-                    try:
-                        description = descriptions.description(column)
-                    except KeyError:
-                        pass
+                        try:
+                            description = descriptions.description(column)
+                        except KeyError:
+                            pass
 
-                    try:
-                        category = descriptions.category(column)
-                    except KeyError:
-                        pass
+                        try:
+                            category = descriptions.category(column)
+                        except KeyError:
+                            pass
 
-                    try:
-                        mapping = descriptions.mapping(column)
-                    except KeyError:
-                        pass
+                        try:
+                            mapping = descriptions.mapping(column)
+                        except KeyError:
+                            pass
 
-            # category imputed in case it wasn't extracted from JSON
-            if (not category) or (category not in self.available_categories):
-                category = self._impute_column_type(self.original_dataframe[column])
-                category_imputed = True
+                # category imputed in case it wasn't extracted from JSON
+                if (not category) or (category not in self.available_categories):
+                    category = self._impute_column_type(self.original_dataframe[column])
+                    category_imputed = True
 
-            if category == self.categorical:  # Categorical
-                feature = CategoricalFeature(
-                    series=self.original_dataframe[column],
-                    name=column,
-                    description=description,
-                    json_mapping=mapping,
-                    imputed_category=category_imputed
-                )
+                if category == self.categorical:  # Categorical
+                    feature = CategoricalFeature(
+                        series=self.original_dataframe[column],
+                        name=column,
+                        description=description,
+                        json_mapping=mapping,
+                        imputed_category=category_imputed
+                    )
 
-            elif category == self.numerical:  # Numerical
-                feature = NumericalFeature(
-                    series=self.original_dataframe[column],
-                    name=column,
-                    description=description,
-                    imputed_category=category_imputed
-                )
+                elif category == self.numerical:  # Numerical
+                    feature = NumericalFeature(
+                        series=self.original_dataframe[column],
+                        name=column,
+                        description=description,
+                        imputed_category=category_imputed
+                    )
 
-            else:
-                raise FeatureNotSupported("Feature Category not supported: {}".format(category))
+                else:
+                    raise FeatureNotSupported("Feature Category not supported: {}".format(category))
 
-            features[column] = feature
+                features[column] = feature
+
+            except FeatureNotSupported:
+                self._unused_columns.append(column)
 
         return features
 
@@ -288,7 +293,7 @@ class DataFeatures:
         else:
             return self._raw_dataframe
 
-    def mapped_data(self, drop_target=False):
+    def data(self, drop_target=False):
         if self._mapped_dataframe is None:
             self._mapped_dataframe = pd.concat([self._features[feature].data() for feature in self._features], axis=1)
 
@@ -304,6 +309,9 @@ class DataFeatures:
                 output[feature] = self._features[feature].mapping()
             self._mapping = output
         return self._mapping
+
+    def unused_features(self):
+        return self._unused_columns
 
     def __getitem__(self, arg):
         if arg not in self._features:
