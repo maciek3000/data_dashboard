@@ -5,41 +5,64 @@ from .plots import InfoGrid, ScatterPlotGrid
 
 class Overview:
 
-    def __init__(self, template, css_path, features, naive_mapping):
+    # TODO: change names
+    numerical_table_id = "described_numeric"
+    categorical_table_id = "described_categorical"
+    table_head = "head"
+
+    unused_columns = "unused_cols"
+
+    pairplot = "pairplot"
+    pairplot_filename = "pairplot"
+
+    assets = "assets"
+
+    def __init__(self, template, css_path, output_directory):
         self.template = template
         self.css = css_path
-        self.features = features
-        self.naive_mapping = naive_mapping
+        self.output_directory = output_directory
 
-    def render(self, base_dict, tables, lists, figures, figure_directory):
-        tables = self.__create_tables_html(tables)
-        lists = self.__create_lists_html(lists)
-        figures = self.__create_figures(figures, figure_directory)
+    def render(self, numerical_df, categorical_df, unused_features, head_df, pairplot, features):
 
-        output_dict = {}
-        for d in [tables, lists, figures, base_dict]:
-            output_dict.update(d)
+        output = {}
 
-        # adding overview specific css
-        output_dict["overview_css"] = self.css
-        return self.template.render(**output_dict)
+        # Tables
+        tables = self._tables(numerical_df, categorical_df, head_df, features)
+        output.update(tables)
 
-    def __create_tables_html(self, tables):
-        params = {}
-        for key, arg in tables.items():
-            html_table = arg.to_html(float_format="{:.2f}".format)
-            html_table = self.__append_description(html_table)
-            params[key] = html_table
+        # unused columns list
+        unused_features_list = self._unused_features_html(unused_features)
+        output[self.unused_columns] = unused_features_list
 
-        return params
+        pairplot_img = self._pairplot(pairplot)
+        output[self.pairplot] = pairplot_img
 
-    def __append_description(self, html_table):
-        # if self.features:
+        self.template.render(**output)
+
+    def _tables(self, numerical_df, categorical_df, head_df, features):
+        output = {}
+
+        tables_ids = [self.numerical_table_id, self.categorical_table_id, self.table_head]
+        dataframes = [numerical_df, categorical_df, head_df]
+
+        for table_id, dataframe in zip(tables_ids, dataframes):
+            raw_html = self._change_dataframe_to_html(dataframe)
+            html_with_descriptions = self._append_descriptions_to_features(raw_html, features)
+            output[table_id] = html_with_descriptions
+
+        return output
+
+    def _change_dataframe_to_html(self, dataframe):
+        return dataframe.to_html(float_format="{:.2f}".format)
+
+    def _append_descriptions_to_features(self, html_table, features):
+        # TODO: split into smaller functions
+
         table = BeautifulSoup(html_table, "html.parser")
         headers = table.select("table tbody tr th")
         for header in headers:
             try:
-                description = self.features[header.string].description
+                description = features[header.string].description
             except KeyError:
                 continue
 
@@ -55,8 +78,7 @@ class Overview:
                     new_tag.append(table.new_string("{}".format(line)))
 
             # appending mappings to descriptions as long as they exist (they are not none)
-            mappings = self.naive_mapping[header.string]
-            #mappings = self._consolidate_mappings(header.string)
+            mappings = features[header.string].mapping()
             if mappings:
                 new_tag.append(table.new_tag("br"))
                 new_tag.append(table.new_tag("br"))
@@ -73,40 +95,138 @@ class Overview:
 
             header.p.append(new_tag)
         return str(table)
-        # else:
-        #     return html_table
 
-    def _consolidate_mappings(self, feature):
-        # description mapping comes from json so all keys are strings
-        description_mapping = self.features.mapping(feature)
-        try:
-            naive_mapping = self.naive_mapping[feature]
-        except KeyError:
-            naive_mapping = None
+    def _unused_features_html(self, unused_features):
+        # TODO: redesign with bs4 and append descriptions
 
-        if (description_mapping is None) and (naive_mapping is None):
-            return ""
+        html = "<ul>"
+        for feature in unused_features:
+            html += "<li>" + feature + "</li>"
+        html += "</ul>"
+        return html
 
-        # we're expecting naive mapping to be always present in case of categorical values
-        converted_naive_mapping = {str(key): str(val) for key, val in naive_mapping.items()}
-        if description_mapping is None:
-            # changing to strings to accomodate for json keys
-            new_pairs = converted_naive_mapping
-        else:
-            _ = {}
-            for key in converted_naive_mapping:
-                _[description_mapping[key]] = "{} ({})".format(key, converted_naive_mapping[key])
-            new_pairs = _
+    def _pairplot(self, pairplot):
+        template = "<a href={path}><img src={path} title='Click to open larger version'></img></a>"
 
-        # app = ""
-        # if len(new_pairs) > 10:
-        #     new_pairs = dict(list(new_pairs.items())[:10])
-        #     app = "Showing only first 10 categories"
-        #
-        # mapping_string += "<br>".join((" - ".join([str(key), str(val)]) for key, val in new_pairs.items()))
-        # mapping_string += app
+        path = os.path.join(self.output_directory, self.assets, (self.pairplot_filename + "png"))
+        pairplot.savefig(path)
+        html = template.format(path=path)
+        return html
 
-        return new_pairs
+    def __create_figures(self, figures, output_directory):
+        d = {}
+        for name, plot in figures.items():
+            path = os.path.join(output_directory, (name + ".png"))
+            d[name] = "<a href={path}><img src={path} title='Click to open larger version'></img></a>".format(path=path)
+            plot.savefig(path)
+        return d
+
+
+#
+# class Overview:
+#
+#     def __init__(self, template, css_path, features, naive_mapping):
+#         self.template = template
+#         self.css = css_path
+#         self.features = features
+#         self.naive_mapping = naive_mapping
+#
+#     def render(self, base_dict, tables, lists, figures, figure_directory):
+#         tables = self.__create_tables_html(tables)
+#         lists = self.__create_lists_html(lists)
+#         figures = self.__create_figures(figures, figure_directory)
+#
+#         output_dict = {}
+#         for d in [tables, lists, figures, base_dict]:
+#             output_dict.update(d)
+#
+#         # adding overview specific css
+#         output_dict["overview_css"] = self.css
+#         return self.template.render(**output_dict)
+#
+#     def __create_tables_html(self, tables):
+#         params = {}
+#         for key, arg in tables.items():
+#             html_table = arg.to_html(float_format="{:.2f}".format)
+#             html_table = self.__append_description(html_table)
+#             params[key] = html_table
+#
+#         return params
+#
+#     def __append_description(self, html_table):
+#         # if self.features:
+#         table = BeautifulSoup(html_table, "html.parser")
+#         headers = table.select("table tbody tr th")
+#         for header in headers:
+#             try:
+#                 description = self.features[header.string].description
+#             except KeyError:
+#                 continue
+#
+#             # adding <span> that will hold description of a feature
+#             # every \n is replaced with <br> tag
+#             header.string.wrap(table.new_tag("p"))
+#             new_tag = table.new_tag("span")
+#             lines = description.split("\n")
+#             new_tag.string = lines[0]
+#             if len(lines) > 1:
+#                 for line in lines[1:]:
+#                     new_tag.append(table.new_tag("br"))
+#                     new_tag.append(table.new_string("{}".format(line)))
+#
+#             # appending mappings to descriptions as long as they exist (they are not none)
+#             mappings = self.naive_mapping[header.string]
+#             #mappings = self._consolidate_mappings(header.string)
+#             if mappings:
+#                 new_tag.append(table.new_tag("br"))
+#                 new_tag.append(table.new_tag("br"))
+#                 new_tag.append(table.new_string("Category - Original (Transformed)"))
+#                 i = 0
+#                 for key, val in mappings.items():
+#                     new_tag.append(table.new_tag("br"))
+#                     new_tag.append(table.new_string("{} - {}".format(key, val)))
+#                     if i >= 10:
+#                         new_tag.append(table.new_tag("br"))
+#                         new_tag.append(table.new_string("(...) Showing only first 10 categories"))
+#                         break
+#                     i += 1
+#
+#             header.p.append(new_tag)
+#         return str(table)
+#         # else:
+#         #     return html_table
+#
+#     def _consolidate_mappings(self, feature):
+#         # description mapping comes from json so all keys are strings
+#         description_mapping = self.features.mapping(feature)
+#         try:
+#             naive_mapping = self.naive_mapping[feature]
+#         except KeyError:
+#             naive_mapping = None
+#
+#         if (description_mapping is None) and (naive_mapping is None):
+#             return ""
+#
+#         # we're expecting naive mapping to be always present in case of categorical values
+#         converted_naive_mapping = {str(key): str(val) for key, val in naive_mapping.items()}
+#         if description_mapping is None:
+#             # changing to strings to accomodate for json keys
+#             new_pairs = converted_naive_mapping
+#         else:
+#             _ = {}
+#             for key in converted_naive_mapping:
+#                 _[description_mapping[key]] = "{} ({})".format(key, converted_naive_mapping[key])
+#             new_pairs = _
+#
+#         # app = ""
+#         # if len(new_pairs) > 10:
+#         #     new_pairs = dict(list(new_pairs.items())[:10])
+#         #     app = "Showing only first 10 categories"
+#         #
+#         # mapping_string += "<br>".join((" - ".join([str(key), str(val)]) for key, val in new_pairs.items()))
+#         # mapping_string += app
+#
+#         return new_pairs
 
     def __create_lists_html(self, lists):
         d = {}
