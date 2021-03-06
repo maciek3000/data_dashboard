@@ -1,9 +1,27 @@
 import os
 from bs4 import BeautifulSoup
 from .plots import InfoGrid, ScatterPlotGrid
+from bokeh.embed import components
 
 
-class Overview:
+class BaseView:
+
+    base_css_id = "base_css"
+    creation_date_id = "created_on"
+
+    def __init__(self):
+        pass
+
+    def standard_params(self, base_css, creation_date):
+        output = {
+            self.base_css_id: base_css,
+            self.creation_date_id: creation_date
+        }
+
+        return output
+
+
+class Overview(BaseView):
 
     # TODO: change names
     numerical_table_id = "described_numeric"
@@ -15,16 +33,25 @@ class Overview:
     pairplot = "pairplot"
     pairplot_filename = "pairplot"
 
+    css_id = "overview_css"
+
     assets = "assets"
 
     def __init__(self, template, css_path, output_directory):
+        super().__init__()
         self.template = template
         self.css = css_path
         self.output_directory = output_directory
 
-    def render(self, numerical_df, categorical_df, unused_features, head_df, pairplot, features):
+    def render(self, base_css, creation_date, numerical_df, categorical_df, unused_features, head_df, pairplot, feature_list):
 
         output = {}
+
+        # Standard params
+        standard = super().standard_params(base_css, creation_date)
+        output.update(standard)
+
+        output[self.css_id] = self.css
 
         # Tables
         tables = self._tables(numerical_df, categorical_df, head_df, features)
@@ -227,72 +254,137 @@ class Overview:
 #         # mapping_string += app
 #
 #         return new_pairs
+#
+#     def __create_lists_html(self, lists):
+#         d = {}
+#
+#         # Was thinking of redesigning it with bs4, but its a very simple structure so it would be an overkill
+#         # TODO: redesign with bs4 and append descriptions
+#         for key, l in lists.items():
+#             _ = "<ul>"
+#             for x in l:
+#                 _ += "<li>" + x + "</li>"
+#             _ += "</ul>"
+#             d[key] = _
+#         return d
+#
+#     def __create_figures(self, figures, output_directory):
+#         d = {}
+#         for name, plot in figures.items():
+#             path = os.path.join(output_directory, (name + ".png"))
+#             d[name] = "<a href={path}><img src={path} title='Click to open larger version'></img></a>".format(path=path)
+#             plot.savefig(path)
+#         return d
 
-    def __create_lists_html(self, lists):
-        d = {}
+class FeatureView(BaseView):
 
-        # Was thinking of redesigning it with bs4, but its a very simple structure so it would be an overkill
-        # TODO: redesign with bs4 and append descriptions
-        for key, l in lists.items():
-            _ = "<ul>"
-            for x in l:
-                _ += "<li>" + x + "</li>"
-            _ += "</ul>"
-            d[key] = _
-        return d
+    first_feature = "chosen_feature"
+    features_css = "features_css"
+    features_js = "features_js"
+    features_menu = "features_menu"
 
-    def __create_figures(self, figures, output_directory):
-        d = {}
-        for name, plot in figures.items():
-            path = os.path.join(output_directory, (name + ".png"))
-            d[name] = "<a href={path}><img src={path} title='Click to open larger version'></img></a>".format(path=path)
-            plot.savefig(path)
-        return d
+    infogrid_script = "bokeh_script_info_grid"
+    infogrid = "info_grid"
 
+    scatterplot_script = "bokeh_script_scatter_plot_grid"
+    scatterplot = "scatter_plot_grid"
 
-class FeatureView:
+    feature_menu_header = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
+    feature_menu_single_feature = "<div class='single-feature'>{:03}. {}</div>"
 
-    def __init__(self, template, css_path, js_path, features, naive_mapping):
-        # TODO: get path to templates folder instead of a instanced template
-
+    def __init__(self, template, css_path, js_path):
+        super().__init__()
         self.template = template
         self.css = css_path
         self.js = js_path
-        self.features = features
-        self.naive_mapping = naive_mapping
 
-        self.chosen_feature = None
+    def render(self, base_css, creation_date, histogram, scatterplot, feature_list, first_feature):
 
-        self.info_grid = InfoGrid(features)
-        self.scatter_plot_grid = ScatterPlotGrid(features)
+        output = {}
 
-    def render(self, base_dict, histogram_data, scatter_data, categorical_columns):
-        self.chosen_feature = sorted(self.features.features())[0]
-        output_dict = {}
-        output_dict.update(base_dict)
+        # Standard variables
+        standard = super().standard_params(base_css, creation_date)
+        output.update(standard)
 
-        output_dict["chosen_feature"] = self.chosen_feature
-        output_dict["features_css"] = self.css
-        output_dict["features_js"] = self.js
+        # JS/CSS
+        output[self.features_css] = self.css
+        output[self.features_js] = self.js
 
-        output_dict["features_menu"] = self._create_features_menu()
+        # First Feature
+        output[self.first_feature] = first_feature
+        output[self.features_menu] = self._features_menu(feature_list)
 
-        info_grid_script, info_grid_div = self.info_grid.create_grid_elements(histogram_data, self.chosen_feature)
-        output_dict["bokeh_script_info_grid"] = info_grid_script
-        output_dict["info_grid"] = info_grid_div
+        # Histogram
+        infogrid_script, infogrid_div = components(histogram)
+        output[self.infogrid_script] = infogrid_script
+        output[self.infogrid] = infogrid_div
 
-        scatter_plot_grid_script, scatter_plot_grid_div = self.scatter_plot_grid.create_grid_elements(
-            scatter_data, categorical_columns, self.features, self.chosen_feature)
-        output_dict["scatter_plot_grid"] = scatter_plot_grid_div
-        output_dict["bokeh_script_scatter_plot_grid"] = scatter_plot_grid_script
+        # Scatter Plot
+        scatterplot_script, scatterplot_div = components(scatterplot)
+        output[self.scatterplot_script] = scatterplot_script
+        output[self.scatterplot] = scatterplot_div
 
-        return self.template.render(**output_dict)
+        return self.template.render(**output)
 
-    def _create_features_menu(self):
-        html = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
-        template = "<div class='single-feature'>{:03}. {}</div>"
+    def _features_menu(self, features):
+        html = self.feature_menu_header
+        template = self.feature_menu_single_feature
         i = 0
-        for feat in sorted(self.features.features()):
+        for feat in sorted(features):
             html += template.format(i, feat)
             i += 1
+
         return html
+
+
+#
+# class FeatureView:
+#
+#     chosen_feature = "chosen_feature"
+#     features_css = "features_css"
+#     features_js = "features_js"
+#
+#
+#     def __init__(self, template, css_path, js_path, features, naive_mapping):
+#
+#         self.template = template
+#         self.css = css_path
+#         self.js = js_path
+#         self.features = features
+#         self.naive_mapping = naive_mapping
+#
+#         self.chosen_feature = None
+#
+#         self.info_grid = InfoGrid(features)
+#         self.scatter_plot_grid = ScatterPlotGrid(features)
+#
+#     def render(self, base_dict, histogram_data, scatter_data, categorical_columns):
+#         self.chosen_feature = sorted(self.features.features())[0]
+#         output_dict = {}
+#         output_dict.update(base_dict)
+#
+#         output_dict["chosen_feature"] = self.chosen_feature
+#         output_dict["features_css"] = self.css
+#         output_dict["features_js"] = self.js
+#
+#         output_dict["features_menu"] = self._create_features_menu()
+#
+#         info_grid_script, info_grid_div = self.info_grid.create_grid_elements(histogram_data, self.chosen_feature)
+#         output_dict["bokeh_script_info_grid"] = info_grid_script
+#         output_dict["info_grid"] = info_grid_div
+#
+#         scatter_plot_grid_script, scatter_plot_grid_div = self.scatter_plot_grid.create_grid_elements(
+#             scatter_data, categorical_columns, self.features, self.chosen_feature)
+#         output_dict["scatter_plot_grid"] = scatter_plot_grid_div
+#         output_dict["bokeh_script_scatter_plot_grid"] = scatter_plot_grid_script
+#
+#         return self.template.render(**output_dict)
+#
+#     def _create_features_menu(self):
+#         html = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
+#         template = "<div class='single-feature'>{:03}. {}</div>"
+#         i = 0
+#         for feat in sorted(self.features.features()):
+#             html += template.format(i, feat)
+#             i += 1
+#         return html
