@@ -1,4 +1,3 @@
-import seaborn as sns
 import numpy as np
 from .features import NumericalFeature, CategoricalFeature
 from .plots import InfoGrid, ScatterPlotGrid
@@ -60,13 +59,13 @@ class Analyzer:
     def histogram(self, chosen_feature):
         feature_list = self.features.features()
         infogrid = InfoGrid(feature_list)
-        plot = infogrid.infogrid(self._histogram_data, chosen_feature)
+        plot = infogrid.infogrid(self._histogram_data(), chosen_feature)
         return plot
 
     def scatterplot(self, chosen_feature):
         feature_list = self.features.features()
         scattergrid = ScatterPlotGrid(feature_list)
-        plot = scattergrid.scattergrid(self._scatter_data, self.features.categorical_features(), chosen_feature)
+        plot = scattergrid.scattergrid(self._scatter_data(), self.features.categorical_features(), chosen_feature)
         return plot
 
     def _histogram_data(self):

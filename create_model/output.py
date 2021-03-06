@@ -45,23 +45,28 @@ class Output:
         current_time = datetime.datetime.now().strftime(self.time_format)
         created_on = self.footer_note.format(time=current_time)
 
+        hyperlinks = self._views_hyperlinks()
+
         feature_list = self.analyzer.feature_list()
         first_feature = sorted(feature_list)[0]
+
 
         overview_rendered = self.view_overview.render(
             base_css=base_css,
             creation_date=created_on,
+            hyperlinks=hyperlinks,
             numerical_df=self.analyzer.numerical_describe_df(),
             categorical_df=self.analyzer.categorical_describe_df(),
             unused_features=self.analyzer.unused_features(),
             head_df=self.analyzer.df_head(),
             pairplot=self.analyzer.features_pairplot_static(),
-            feature_list=feature_list
+            features=self.analyzer.features  # features object needed for descriptions/mappings
         )
 
         features_rendered = self.view_features.render(
             base_css=base_css,
             creation_date=created_on,
+            hyperlinks=hyperlinks,
             histogram=self.analyzer.histogram(first_feature),
             scatterplot=self.analyzer.scatterplot(first_feature),
             feature_list=feature_list,
@@ -75,6 +80,12 @@ class Output:
 
         for template_filename, template in rendered_templates.items():
             self._write_html(template_filename, template)
+
+    def _views_hyperlinks(self):
+        views_links = {}
+        for filename in [self.view_overview_filename, self.view_features_filename]:
+            views_links[filename] = self._path_to_file(filename)
+        return views_links
 
     def _write_html(self, template_filename, template):
         template_filepath = self._path_to_file(template_filename)

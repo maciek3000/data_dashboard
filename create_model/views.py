@@ -11,11 +11,14 @@ class BaseView:
     def __init__(self):
         pass
 
-    def standard_params(self, base_css, creation_date):
+    def standard_params(self, base_css, creation_date, hyperlinks):
         output = {
             self.base_css_id: base_css,
             self.creation_date_id: creation_date
         }
+
+        for view, path in hyperlinks.items():
+            output[(view + "_file")] = path
 
         return output
 
@@ -42,18 +45,18 @@ class Overview(BaseView):
         self.css = css_path
         self.output_directory = output_directory
 
-    def render(self, base_css, creation_date, numerical_df, categorical_df, unused_features, head_df, pairplot, feature_list):
+    def render(self, base_css, creation_date, hyperlinks, numerical_df, categorical_df, unused_features, head_df, pairplot, features):
 
         output = {}
 
         # Standard params
-        standard = super().standard_params(base_css, creation_date)
+        standard = super().standard_params(base_css, creation_date, hyperlinks)
         output.update(standard)
 
         output[self.css_id] = self.css
 
         # Tables
-        tables = self._tables(numerical_df, categorical_df, head_df, feature_list)
+        tables = self._tables(numerical_df, categorical_df, head_df, features)
         output.update(tables)
 
         # unused columns list
@@ -63,7 +66,7 @@ class Overview(BaseView):
         pairplot_img = self._pairplot(pairplot)
         output[self.pairplot] = pairplot_img
 
-        self.template.render(**output)
+        return self.template.render(**output)
 
     def _tables(self, numerical_df, categorical_df, head_df, features):
         output = {}
@@ -134,18 +137,18 @@ class Overview(BaseView):
     def _pairplot(self, pairplot):
         template = "<a href={path}><img src={path} title='Click to open larger version'></img></a>"
 
-        path = os.path.join(self.output_directory, self.assets, (self.pairplot_filename + "png"))
+        path = os.path.join(self.output_directory, self.assets, (self.pairplot_filename + ".png"))
         pairplot.savefig(path)
         html = template.format(path=path)
         return html
-
-    def __create_figures(self, figures, output_directory):
-        d = {}
-        for name, plot in figures.items():
-            path = os.path.join(output_directory, (name + ".png"))
-            d[name] = "<a href={path}><img src={path} title='Click to open larger version'></img></a>".format(path=path)
-            plot.savefig(path)
-        return d
+    #
+    # def __create_figures(self, figures, output_directory):
+    #     d = {}
+    #     for name, plot in figures.items():
+    #         path = os.path.join(output_directory, (name + ".png"))
+    #         d[name] = "<a href={path}><img src={path} title='Click to open larger version'></img></a>".format(path=path)
+    #         plot.savefig(path)
+    #     return d
 
 
 #
@@ -297,12 +300,12 @@ class FeatureView(BaseView):
         self.css = css_path
         self.js = js_path
 
-    def render(self, base_css, creation_date, histogram, scatterplot, feature_list, first_feature):
+    def render(self, base_css, creation_date, hyperlinks, histogram, scatterplot, feature_list, first_feature):
 
         output = {}
 
         # Standard variables
-        standard = super().standard_params(base_css, creation_date)
+        standard = super().standard_params(base_css, creation_date, hyperlinks)
         output.update(standard)
 
         # JS/CSS

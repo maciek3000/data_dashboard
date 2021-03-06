@@ -1,12 +1,10 @@
 from bokeh.plotting import figure
 from bokeh.layouts import column, row
 from bokeh.models import ColumnDataSource
-from bokeh.embed import components
 from bokeh.models.widgets import Select, Div
-from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, Legend
+from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter
 from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.palettes import Reds4, Category10
-
 import functools
 import seaborn as sns
 
@@ -69,7 +67,7 @@ class PairPlot:
     def __init__(self, plot_design):
         self.plot_design = plot_design
 
-        text_color = self.plot_design["text_color"]
+        text_color = self.plot_design.text_color
         sns.set_style("white", {
             "axes.edgecolor": text_color,
             "axes.labelcolor": text_color,
@@ -91,7 +89,7 @@ class MainGrid:
         self.features = features
 
     def _create_features_dropdown(self, name="features_dropdown"):
-        fts = sorted(self.features.features())
+        fts = sorted(self.features)
         d = Select(options=fts, css_classes=["features_dropdown"], name=name)
         return d
 

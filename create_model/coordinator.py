@@ -31,21 +31,17 @@ class Coordinator:
 
         self.features_descriptions = FeatureDescriptor(feature_json)
         self.features = Features(self.X, self.y, self.features_descriptions)
-
         self.analyzer = Analyzer(self.features)
-        # TODO: rethink if data_explained can be moved to .data_objects property of DataExplainer
 
+        # self.mapping = self.features.mapping()
 
-        self.mapping = self.features.mapping()
-
-
-
-        # TODO: consider lazy instancing
-        self.output = Output(self.root_path, features=self.features, data_name="test", package_name=self.name)
         self.transformer = Transformer(self.X, self.y,
                                        self.features.numerical_features(drop_target=True),
                                        self.features.categorical_features(drop_target=True))
 
+        self.output = Output(self.root_path, analyzer=self.analyzer, data_name="test", package_name=self.name)
+
+        #self.output = Output(self.root_path, features=self.features, data_name="test", package_name=self.name)
 
     def find_model(self):
         if not self.transformed_X:
@@ -63,21 +59,23 @@ class Coordinator:
         return self.transformer.transform(X)
 
     def create_html(self):
-        # TODO: change hardcoded keys
-        data_explained = self.analyzer.analyze()
-        explainer_data_keys = ["figures", "tables", "lists", "histograms", "scatter", "categorical"]
-        explainer_data = {"explainer_" + key: data_explained[key] for key in explainer_data_keys}
-
-
-        # transformer_data_keys = ["transformations"]
-        # transformer_data = {"transformer_" + key: self.transformer.data_objects[key] for key in transformer_data_keys}
+        # # TODO: change hardcoded keys
+        # data_explained = self.analyzer.analyze()
+        # explainer_data_keys = ["figures", "tables", "lists", "histograms", "scatter", "categorical"]
+        # explainer_data = {"explainer_" + key: data_explained[key] for key in explainer_data_keys}
         #
-        # output = {}
-        # for _ in [explainer_data, transformer_data]:
-        #     output.update(_)
+        #
+        # # transformer_data_keys = ["transformations"]
+        # # transformer_data = {"transformer_" + key: self.transformer.data_objects[key] for key in transformer_data_keys}
+        # #
+        # # output = {}
+        # # for _ in [explainer_data, transformer_data]:
+        # #     output.update(_)
+        #
+        # # TODO: change when more objects will provide their data_objects
+        # output = explainer_data
+        #
+        # self.output.create_html_output(output)
 
-        # TODO: change when more objects will provide their data_objects
-        output = explainer_data
-
-        self.output.create_html_output(output)
+        self.output.create_html()
         print("Created output at {directory}".format(directory=self.output.output_directory))
