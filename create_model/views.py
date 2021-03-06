@@ -1,6 +1,5 @@
 import os
 from bs4 import BeautifulSoup
-from .plots import InfoGrid, ScatterPlotGrid
 from bokeh.embed import components
 
 
@@ -54,7 +53,7 @@ class Overview(BaseView):
         output[self.css_id] = self.css
 
         # Tables
-        tables = self._tables(numerical_df, categorical_df, head_df, features)
+        tables = self._tables(numerical_df, categorical_df, head_df, feature_list)
         output.update(tables)
 
         # unused columns list

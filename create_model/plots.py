@@ -104,10 +104,7 @@ class InfoGrid(MainGrid):
     def __init__(self, features):
         super().__init__(features)
 
-    def create_grid_elements(self, histogram_data, initial_feature):
-        return components(self._create_info_grid(histogram_data, initial_feature))
-
-    def _create_info_grid(self, histogram_data, initial_feature):
+    def infogrid(self, histogram_data, initial_feature):
 
         histogram_source, histogram_plot = self._create_histogram(histogram_data, initial_feature)
         info_mapping, info_div = self._create_info_div(initial_feature)
@@ -251,16 +248,14 @@ class ScatterPlotGrid(MainGrid):
         self.categorical_palette[2] = Category10[3][:2]
         self.categorical_palette[1] = Category10[3][:1]
 
-    def create_grid_elements(self, scatter_data, categorical_columns, features, initial_feature):
-        return components(self._create_scatter(scatter_data, categorical_columns, features, initial_feature))
-
-    def _create_scatter(self, scatter_data, categorical_columns, features, initial_feature):
+    def scattergrid(self, scatter_data, categorical_columns, initial_feature):
 
         # Font won't be updated in plots until any change is made (e.g. choosing different Feature).
         # This is a bug in bokeh: https://github.com/bokeh/bokeh/issues/9448
         # Issue is relatively minor, I won't be doing any workaround for now.
 
-        features = sorted(features.features())
+        # features = sorted(features.features())
+        features = sorted(self.features)
         scatter_row_sources, scatter_rows = self._create_scatter_rows(scatter_data, features, initial_feature, categorical_columns)
 
         dropdown = self._create_features_dropdown("scatter_plot_grid_dropdown")
@@ -410,6 +405,7 @@ class ScatterPlotGrid(MainGrid):
         return p
 
     def _create_color_map(self, hue, data, categorical_columns):
+        # TODO: "_categorical" needs to be exposed and not hardcoded
         if hue in categorical_columns:
             factors = sorted(set(data[hue + "_categorical"]))
             if len(factors) <= 10:

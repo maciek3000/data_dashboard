@@ -62,8 +62,8 @@ class Output:
         features_rendered = self.view_features.render(
             base_css=base_css,
             creation_date=created_on,
-            histogram=self.analyzer.histogram(),
-            scatterplot=self.analyzer.scatterplot(),
+            histogram=self.analyzer.histogram(first_feature),
+            scatterplot=self.analyzer.scatterplot(first_feature),
             feature_list=feature_list,
             first_feature=first_feature
         )
