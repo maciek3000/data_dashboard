@@ -40,7 +40,9 @@ def stylize(force=False):
             p.title.text_font_size = "16px"
 
             return p
+
         return wrapper
+
     return decorator_stylize_attributes
 
 
@@ -63,6 +65,14 @@ def default_figure(plot_specific_kwargs=None):
 
 
 class PairPlot:
+    """Seaborn pairplot of features.
+
+        When it comes to visualizing features, pairplot consists of many scatter plots, plotting every feature
+        against one another and one histogram for every feature, presenting its distribution.
+
+        This is plotted with seaborn, as static visualization was deemed sufficient for this and also because
+        recreating it manually in bokeh would mean reinventing the wheel for no reason.
+    """
 
     def __init__(self, plot_design):
         self.plot_design = plot_design
@@ -84,6 +94,12 @@ class PairPlot:
 
 
 class MainGrid:
+    """Parent class for Grid Plots.
+
+        Can create dropdown with feature names for Grid plots, to which JS callback can be associated.
+        This dropdown serves as a main tool for interactivity in bokeh Grid plots. It's usually hidden from
+        an end-user, but it can still be accessed (and clicked) by JS scripts in the background.
+    """
 
     def __init__(self, features):
         self.features = features
@@ -98,6 +114,16 @@ class MainGrid:
 
 
 class InfoGrid(MainGrid):
+    """Creates a bokeh Grid plot with visualizations/summary statistics/etc. for a single feature.
+
+        As of now it consists of a Histogram and a Div which includes some basic info on the specific feature.
+
+        Dropdown from a parent MainGrid class is connected via JS to dynamically change histogram and div when
+        another feature is chosen.
+    """
+
+    infogrid_dropdown = "info_grid_dropdown"
+    feature_name_id = "feature_name"
 
     def __init__(self, features):
         super().__init__(features)
@@ -105,19 +131,13 @@ class InfoGrid(MainGrid):
     def infogrid(self, histogram_data, initial_feature):
 
         histogram_source, histogram_plot = self._create_histogram(histogram_data, initial_feature)
-        info_mapping, info_div = self._create_info_div(initial_feature)
-        dropdown = self._create_features_dropdown("info_grid_dropdown")
+        info_div = self._create_info_div(initial_feature)
+        dropdown = self._create_features_dropdown(self.infogrid_dropdown)
 
-        dropdown_kwargs = {
-            # histogram
-            "histogram_data": histogram_data,
-            "histogram_source": histogram_source,
-
-            # info div
-            "info_mapping": info_mapping,
-        }
-
-        callbacks = self._create_features_dropdown_callbacks(**dropdown_kwargs)
+        callbacks = self._create_features_dropdown_callbacks(
+            histogram_data=histogram_data,
+            histogram_source=histogram_source,
+        )
         for callback in callbacks:
             dropdown.js_on_change("value", callback)
 
@@ -129,17 +149,12 @@ class InfoGrid(MainGrid):
         )
         return output
 
-    # def _create_features_dropdown(self):
-    #     fts = sorted(self.features.keys())
-    #     d = Select(options=fts, css_classes=["features_dropdown"], name="features_dropdown")
-    #     return d
-
-    def _create_features_dropdown_callbacks(self, histogram_data, histogram_source, info_mapping):
+    def _create_features_dropdown_callbacks(self, histogram_data, histogram_source):
         callbacks = []
 
         for call in [
             self._create_histogram_callback(histogram_data, histogram_source),
-            self._create_info_div_callback(info_mapping)
+            self._create_info_div_callback()
         ]:
             callbacks.append(call)
 
@@ -176,22 +191,26 @@ class InfoGrid(MainGrid):
             """)
         return callback
 
-    def _create_info_div_callback(self, info_mapping):
-        mapp = {
-            "info_mapping": info_mapping
-        }
-
-        callback = CustomJS(args=mapp, code="""
+    def _create_info_div_callback(self):
+        # this code will need to be updated with every detail added to the Info (Summary) Div
+        callback = CustomJS(code="""
                 // new values
                 var new_feature = cb_obj.value;  // new feature
                 
                 // updating 
-                document.querySelector("#" + info_mapping["feature_name"]).innerText = new_feature;
-            """)
+                document.querySelector("#" + "{feature_name_id}").innerText = new_feature;
+            """.format(
+            feature_name_id=self.feature_name_id)
+        )
 
         return callback
 
     def _create_histogram(self, histogram_data, feature):
+
+        # histogram source contains calculated histogram edges for all features in the data
+        # they are preemptively calculated so that JS can then call ColumnDataSource object and change
+        # which edges should be shown on the plot based on a chosen feature
+
         hist_source = self._create_histogram_source(histogram_data, feature)
         hist_plot = self._create_histogram_plot(hist_source)
         return hist_source, hist_plot
@@ -202,8 +221,8 @@ class InfoGrid(MainGrid):
 
         source.data = {
             "hist": first_values[0],
-            "left_edges": first_values[1],  #first_values[1][:-1],
-            "right_edges": first_values[2]  #first_values[1][1:],
+            "left_edges": first_values[1],
+            "right_edges": first_values[2]
         }
         return source
 
@@ -225,26 +244,42 @@ class InfoGrid(MainGrid):
         return p
 
     def _create_info_div(self, feature):
-        id_name = "feature_name"
-        mapping = {
-            "feature_name": id_name
-        }
-        text = "Feature to be discussed: <p id={id_name}>{feature}</p>".format(id_name=id_name,
-                                                                               feature=feature)
+        text = "Feature to be discussed: <p id={feature_name_id}>{feature}</p>".format(
+            feature_name_id=self.feature_name_id,
+            feature=feature
+        )
         d = Div(name="info_div", css_classes=["info_div"], text=text)
-        return mapping, d
+
+        return d
 
 
 class ScatterPlotGrid(MainGrid):
+    """Grid of Scatter Plots created with bokeh.
+
+        Similar to seaborn Pairplot, every feature is plotted against another, creating a grid of scatter plots.
+        However, there is an additional layer applied - every feature is also used as a hue (coloring) for every
+        scatter plot. The idea behind it is to visualize any specific subgroups within correlations between features.
+
+        ScatterPlotGrid is interactive - it has a hidden feature dropdown, which drives changes in the rows when
+        the value in it is changed. Chosen feature is always plotted as X. Additionally, row with a feature that
+        is chosen is greyed out so that it can be identified and neglected when looking for any insights (initially
+        I wanted to remove it from the plot, but it posed a lot of difficulties - there was a blank space left
+        and other plots didn't want to move again; so I dropped that idea and went with greying it out).
+
+        Dropdown from a parent MainGrid class is connected via JS to dynamically change X values in scatter plots.
+    """
+
+    categorical_palette = Category10
+    linear_palette = Reds4[::-1]
+
+    # changing palette for 1 and 2 elements to be of similar color to the palette for 3 elements
+    categorical_palette[2] = Category10[3][:2]
+    categorical_palette[1] = Category10[3][:1]
+
+    scatterplot_grid_dropdown = "scatter_plot_grid_dropdown"
 
     def __init__(self, features):
         super().__init__(features)
-
-        self.categorical_palette = Category10
-        self.linear_palette = Reds4[::-1]
-
-        self.categorical_palette[2] = Category10[3][:2]
-        self.categorical_palette[1] = Category10[3][:1]
 
     def scattergrid(self, scatter_data, categorical_columns, initial_feature):
 
@@ -252,11 +287,11 @@ class ScatterPlotGrid(MainGrid):
         # This is a bug in bokeh: https://github.com/bokeh/bokeh/issues/9448
         # Issue is relatively minor, I won't be doing any workaround for now.
 
-        # features = sorted(features.features())
         features = sorted(self.features)
-        scatter_row_sources, scatter_rows = self._create_scatter_rows(scatter_data, features, initial_feature, categorical_columns)
+        scatter_row_sources, scatter_rows = self._create_scatter_rows(scatter_data, features,
+                                                                      initial_feature, categorical_columns)
 
-        dropdown = self._create_features_dropdown("scatter_plot_grid_dropdown")
+        dropdown = self._create_features_dropdown(self.scatterplot_grid_dropdown)
         callbacks = self._create_features_dropdown_callbacks(scatter_row_sources)
         for callback in callbacks:
             dropdown.js_on_change("value", callback)
@@ -296,23 +331,26 @@ class ScatterPlotGrid(MainGrid):
                     scatter_sources[i].change.emit();
                 };
                 
+                // removing previous greying out
                 var all_scatter_rows = document.getElementsByClassName("scatter_plot_row");
                 for (j=0; j<all_scatter_rows.length; j++) {
                     all_scatter_rows[j].classList.remove("active_feature_hue");
                 };
                 
+                // greying out
                 var scatter_row = document.getElementsByClassName("scatter_plot_row_" + new_val);
                 scatter_row[0].classList.add("active_feature_hue");
 
             """)
         return callback
 
-    def _create_scatter_rows(self, data, features, initial_feature, categorical_columns):
+    def _create_scatter_rows(self, scatter_data, features, initial_feature, categorical_columns):
         all_sources = []
         all_rows = []
 
         for feature in features:
-            sources, single_row = self._create_single_scatter_row(data, features, initial_feature, feature, categorical_columns)
+            sources, single_row = self._create_single_scatter_row(scatter_data, features, initial_feature,
+                                                                  feature, categorical_columns)
 
             if feature == initial_feature:
                 single_row.css_classes.append("active_feature_hue")
@@ -322,29 +360,17 @@ class ScatterPlotGrid(MainGrid):
 
         return all_sources, all_rows
 
-    def _create_single_scatter_row(self, data, features, x, hue, categorical_columns):
+    def _create_single_scatter_row(self, scatter_data, features, initial_feature, hue, categorical_columns):
         sources = []
         plots = []
 
-        color_map = self._create_color_map(hue, data, categorical_columns)
+        color_map = self._create_color_map(hue, scatter_data, categorical_columns)
         for feature in features:
-            src = self._create_scatter_source(data, x, feature)
-            plot = self._create_scatter_plot(src, x, feature, color_map)
+            src = self._create_scatter_source(scatter_data, initial_feature, feature)
+            plot = self._create_scatter_plot(src, initial_feature, feature, color_map)
 
             sources.append(src)
             plots.append(plot)
-
-
-        # p = default_figure({"width": 100, "height": 100})
-        # if color_map and (hue in categorical_columns):
-        #     p.renderers = plots[0].renderers
-        #     items = []
-        #     for item in plots[0].legend[0].items:
-        #         items.append((item.label["value"], item.renderers))
-        #     colorbar = Legend(items=items)
-        #
-        # if colorbar:
-        #     p.add_layout(colorbar)
 
         color_legend = self._create_row_description(hue, color_map, categorical_columns)
 
@@ -357,17 +383,8 @@ class ScatterPlotGrid(MainGrid):
 
         return sources, r
 
-
     def _create_scatter_source(self, scatter_data, x, y):
         source = ColumnDataSource(scatter_data)
-        # x = self.chosen_feature
-        # cols_wo_x = sorted(scatter_data.keys() - {x,})
-        # y = cols_wo_x[0]
-        # # feature to be chosen at first when the page loads for the first time
-        # source.data = {
-        #     "x": scatter_data[x],
-        #     "y": scatter_data[y],
-        # }
         source.data.update(
             {"x": source.data[x],
              "y": source.data[y]
@@ -405,10 +422,14 @@ class ScatterPlotGrid(MainGrid):
     def _create_color_map(self, hue, data, categorical_columns):
         # TODO: "_categorical" needs to be exposed and not hardcoded
         if hue in categorical_columns:
+            # adding suffix to column name as described in analyzer._scatter_data
             factors = sorted(set(data[hue + "_categorical"]))
+            # TODO: get the same max_categories as every other object
             if len(factors) <= 10:
-                cmap = factor_cmap(hue + "_categorical", palette=self.categorical_palette[len(factors)], factors=factors)
+                cmap = factor_cmap(hue + "_categorical", palette=self.categorical_palette[len(factors)],
+                                   factors=factors)
             else:
+                # If there is too many categories, None is returned
                 cmap = None
         else:
             values = data[hue]
@@ -439,7 +460,8 @@ class ScatterPlotGrid(MainGrid):
         return c
 
     def _create_legend(self, hue, cmap, categorical_columns):
-        
+
+        # TODO: include proper mapping for categorical features
         legend = Div(text="No hue - too many categories!")
         if cmap:
             if hue in categorical_columns:
@@ -456,8 +478,8 @@ class ScatterPlotGrid(MainGrid):
 
             else:
                 colorbar = ColorBar(color_mapper=cmap["transform"], ticker=BasicTicker(desired_num_ticks=4),
-                                formatter=PrintfTickFormatter(), label_standoff=10, border_line_color=None,
-                                location=(0, 0), major_label_text_font_size="12px")
+                                    formatter=PrintfTickFormatter(), label_standoff=10, border_line_color=None,
+                                    location=(0, 0), major_label_text_font_size="12px")
                 legend = default_figure({"height": 100, "width": 100})
                 legend.add_layout(colorbar)
 

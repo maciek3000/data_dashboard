@@ -41,8 +41,6 @@ class Coordinator:
 
         self.output = Output(self.root_path, analyzer=self.analyzer, data_name="test", package_name=self.name)
 
-        #self.output = Output(self.root_path, features=self.features, data_name="test", package_name=self.name)
-
     def find_model(self):
         if not self.transformed_X:
             self.transformer = self.transformer.fit()

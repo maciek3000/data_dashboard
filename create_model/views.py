@@ -7,6 +7,7 @@ class BaseView:
 
     base_css_id = "base_css"
     creation_date_id = "created_on"
+    file_suffix = "_file"
 
     def __init__(self):
         pass
@@ -18,7 +19,7 @@ class BaseView:
         }
 
         for view, path in hyperlinks.items():
-            output[(view + "_file")] = path
+            output[(view + self.file_suffix)] = path
 
         return output
 
