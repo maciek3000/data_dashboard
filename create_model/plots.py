@@ -279,9 +279,10 @@ class ScatterPlotGrid(MainGrid):
     scatterplot_grid_dropdown = "scatter_plot_grid_dropdown"
 
     def __init__(self, features):
+        self.features = features
         super().__init__(features)
 
-    def scattergrid(self, scatter_data, categorical_columns, initial_feature):
+    def scattergrid(self, scatter_data, categorical_columns, initial_feature, feature_mapping):
 
         # Font won't be updated in plots until any change is made (e.g. choosing different Feature).
         # This is a bug in bokeh: https://github.com/bokeh/bokeh/issues/9448
@@ -289,7 +290,7 @@ class ScatterPlotGrid(MainGrid):
 
         features = sorted(self.features)
         scatter_row_sources, scatter_rows = self._create_scatter_rows(scatter_data, features,
-                                                                      initial_feature, categorical_columns)
+                                                                      initial_feature, categorical_columns, feature_mapping)
 
         dropdown = self._create_features_dropdown(self.scatterplot_grid_dropdown)
         callbacks = self._create_features_dropdown_callbacks(scatter_row_sources)
@@ -344,13 +345,13 @@ class ScatterPlotGrid(MainGrid):
             """)
         return callback
 
-    def _create_scatter_rows(self, scatter_data, features, initial_feature, categorical_columns):
+    def _create_scatter_rows(self, scatter_data, features, initial_feature, categorical_columns, feature_mapping):
         all_sources = []
         all_rows = []
 
         for feature in features:
             sources, single_row = self._create_single_scatter_row(scatter_data, features, initial_feature,
-                                                                  feature, categorical_columns)
+                                                                  feature, categorical_columns, feature_mapping)
 
             if feature == initial_feature:
                 single_row.css_classes.append("active_feature_hue")
@@ -360,7 +361,7 @@ class ScatterPlotGrid(MainGrid):
 
         return all_sources, all_rows
 
-    def _create_single_scatter_row(self, scatter_data, features, initial_feature, hue, categorical_columns):
+    def _create_single_scatter_row(self, scatter_data, features, initial_feature, hue, categorical_columns, feature_mapping):
         sources = []
         plots = []
 
@@ -372,7 +373,7 @@ class ScatterPlotGrid(MainGrid):
             sources.append(src)
             plots.append(plot)
 
-        color_legend = self._create_row_description(hue, color_map, categorical_columns)
+        color_legend = self._create_row_description(hue, color_map, categorical_columns, feature_mapping)
 
         r = row(
             color_legend,
@@ -437,14 +438,14 @@ class ScatterPlotGrid(MainGrid):
 
         return cmap
 
-    def _create_row_description(self, hue, cmap, categorical_columns):
+    def _create_row_description(self, hue, cmap, categorical_columns, feature_mapping):
 
         kwargs = {
             "text": "{hue}".format(hue=hue),
             "css_classes": ["hue-title"]
         }
 
-        legend = self._create_legend(hue, cmap, categorical_columns)
+        legend = self._create_legend(hue, cmap, categorical_columns, feature_mapping)
 
         d = Div(**kwargs)
 
@@ -459,12 +460,13 @@ class ScatterPlotGrid(MainGrid):
 
         return c
 
-    def _create_legend(self, hue, cmap, categorical_columns):
+    def _create_legend(self, hue, cmap, categorical_columns, feature_mapping):
 
         # TODO: include proper mapping for categorical features
         legend = Div(text="No hue - too many categories!")
         if cmap:
             if hue in categorical_columns:
+                mapping = feature_mapping[hue]
                 categories = cmap["transform"].factors
                 colors = cmap["transform"].palette
                 text = ""
@@ -472,6 +474,7 @@ class ScatterPlotGrid(MainGrid):
                 # text = "<ul style='list-style-type: circle'>"
                 # template = "<li style='color: {color}'>{category}</li>"
                 for category, color in zip(categories, colors):
+                    #mapped_category = mapping[int(category)]
                     text += template.format(color=color, category=category)
 
                 legend = Div(text=text, css_classes=["legend"])

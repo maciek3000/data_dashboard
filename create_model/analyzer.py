@@ -65,7 +65,8 @@ class Analyzer:
     def scatterplot(self, chosen_feature):
         feature_list = self.features.features()
         scattergrid = ScatterPlotGrid(feature_list)
-        plot = scattergrid.scattergrid(self._scatter_data(), self.features.categorical_features(), chosen_feature)
+        plot = scattergrid.scattergrid(self._scatter_data(), self.features.categorical_features(), chosen_feature,
+                                       self.features.mapping())
         return plot
 
     def _histogram_data(self):
