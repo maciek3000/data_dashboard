@@ -1,71 +1,71 @@
-import json
 
-
-class FeatureDescriptor(dict):
+class FeatureDescriptor:
     """Provides metadata on features (known before any analysis takes place).
 
-        Class reads json_file (must be already opened) and creates internal dictionary of it.
+        features_descriptions_dict must be a dict with all the metadata for the features, where key is the name
+        of the feature. Item of the appropriate feature should be another dictionary, which will contain such
+        information as description, mapping of variables within the feature or the category:
+            key (feature): dict()
+        Keys for the internal dictionary are defined in class properties - this isn't the most intuitive way of
+        doing that, but should be "rigid" enough to force some sort of a structure in the dictionary. It might
+        be changed in the future, but there are no plans for it at the moment.
+
         obj[feature] syntax returns a description of a provided feature name.
 
-        Defines different methods to extracting different information from JSON.
+        Defines different methods to extracting different information from features dictionary.
         As for now they are:
             description()
             mapping()
             category()
 
-        JSON might provide different metadata, but every "key" in JSON should also be defined in the class
-        (in case any changes are introduced to JSON). Keys should be included as ._property properties and
-        corresponding methods for extracting them should also be defined.
-
-        Including .initialized bool property as sometimes there might not be any corresponding json_file available.
+        Including .initialized bool property as sometimes there might not be any corresponding descriptions available.
     """
 
     _description = "description"
     _mapping = "mapping"
     _category = "category"
 
-    def __init__(self, json_file):
+    def __init__(self, features_descriptions_dict):
         self.initialized = False
-        if json_file:
-            self.json = json.load(json_file)
+        if features_descriptions_dict:
+            self.features_descriptions = features_descriptions_dict
             self.initialized = True
-            super().__init__(self.json)
 
     def mapping(self, arg):
-        if arg not in self.json:
+        if arg not in self.features_descriptions:
             raise KeyError
 
         try:
-            return self.json[arg][self._mapping]
+            return self.features_descriptions[arg][self._mapping]
         except KeyError:
             return None
 
     def description(self, arg):
-        if arg not in self.json:
+        if arg not in self.features_descriptions:
             raise KeyError
 
         try:
-            return self.json[arg][self._description]
+            return self.features_descriptions[arg][self._description]
         except KeyError:
             return None
 
     def category(self, arg):
-        if arg not in self.json:
+        if arg not in self.features_descriptions:
             raise KeyError
 
         try:
-            return self.json[arg][self._category]
+            return self.features_descriptions[arg][self._category]
         except KeyError:
             return None
 
     def __getitem__(self, arg):
-        if arg not in self.json:
+        if arg not in self.features_descriptions:
             raise KeyError
 
-        return self.json[arg]
+        return self.features_descriptions[arg]
 
     def __iter__(self):
-        self.__iter_items = list(sorted(self.json.keys()))
+        self.__iter_items = list(sorted(self.features_descriptions.keys()))
         self.__counter = 0
         return self
 
@@ -76,5 +76,5 @@ class FeatureDescriptor(dict):
         except IndexError:
             raise StopIteration
 
-    # def keys(self):
-    #     return self.json.keys()
+    def keys(self):
+        return self.features_descriptions.keys()

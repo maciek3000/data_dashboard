@@ -24,7 +24,7 @@ class Coordinator:
 
     name = "create_model"
 
-    def __init__(self, X, y, scoring=None, feature_json=None, root_path=None):
+    def __init__(self, X, y, scoring=None, feature_descriptions_dict=None, root_path=None):
 
         # copy original dataframes to avoid changing the originals
         self.X = X.copy()
@@ -40,7 +40,7 @@ class Coordinator:
         else:
             self.root_path = root_path
 
-        self.features_descriptions = FeatureDescriptor(feature_json)
+        self.features_descriptions = FeatureDescriptor(feature_descriptions_dict)
         self.features = Features(self.X, self.y, self.features_descriptions)
         self.analyzer = Analyzer(self.features)
 

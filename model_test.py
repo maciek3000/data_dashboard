@@ -2,6 +2,7 @@ from sklearn.metrics import accuracy_score
 
 import os
 import pandas as pd
+import json
 
 from create_model.coordinator import Coordinator
 
@@ -21,7 +22,7 @@ if __name__ == "__main__":
     X = train_df[features]
     y = train_df[target]
 
-    descriptions = open(os.path.join(data_directory, "feature_descriptions.json"))
+    descriptions = json.load(open(os.path.join(data_directory, "feature_descriptions.json")))
 
     coord = Coordinator(X, y, accuracy_score, descriptions, os.getcwd())
     coord.create_html()
