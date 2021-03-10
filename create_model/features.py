@@ -1,6 +1,10 @@
 import pandas as pd
 
 
+def sort_strings(l):
+    return sorted(l, key=lambda x: x.upper())
+
+
 class FeatureNotSupported(Exception):
     pass
 
@@ -28,13 +32,13 @@ class CategoricalFeature(BaseFeature):
         In case of some Categorical Features, they might already be represented in the data with key of some sort:
             "A": "Apple"
             "B": "Banana"
-        This structure is also present in the json descriptions that can be fed to the analysis.
+        This structure is also present in the dict descriptions that can be fed to the analysis.
         Raw mapping would associate those values with the unique numbers created during the mapping:
             "A": 1
             "B": 2
 
         What CategoricalFeature does is that it creates mapping between new unique numbers present in the data
-        and the description (item) of the json:
+        and the description (item) of the already provided mapping:
             1: "Apple"
             2: "Banana"
 
@@ -44,12 +48,12 @@ class CategoricalFeature(BaseFeature):
 
     type = "Categorical"
 
-    def __init__(self, series, name, description, imputed_category, json_mapping=None):
+    def __init__(self, series, name, description, imputed_category, mapping=None):
 
         self.series = series.copy()
         self.name = name
         self.description = description
-        self.json_mapping = json_mapping
+        self.original_mapping = mapping
         self.imputed_category = imputed_category  # flag to check if type of feature was provided or imputed
 
         self.raw_mapping = self._create_raw_mapping()
@@ -65,7 +69,7 @@ class CategoricalFeature(BaseFeature):
 
     def mapping(self):
         if not self._descriptive_mapping:
-            if self.json_mapping:
+            if self.original_mapping:
                 mapp = {}
                 for key, item in self.raw_mapping.items():
                     new_key = item
@@ -74,10 +78,10 @@ class CategoricalFeature(BaseFeature):
                     # however, sometimes those keys can be treated as integers and then they won't be found
                     # in the corresponding json object
                     try:
-                        new_item = self.json_mapping[key]
+                        new_item = self.original_mapping[key]
                     except KeyError:
                         try:
-                            new_item = self.json_mapping[str(key)]
+                            new_item = self.original_mapping[str(key)]
                         except KeyError:
                             raise
                     mapp[new_key] = new_item
@@ -92,6 +96,7 @@ class CategoricalFeature(BaseFeature):
 
     def _create_raw_mapping(self):
         # replaces every categorical value with a number starting from 1 (sorted alphabetically)
+        # it starts with 1 to be consistent with "count" obtained with .describe() methods on dataframes
         values = sorted(self.series.unique(), key=str)
         mapped = {value: number for number, value in enumerate(values, start=1) if not pd.isna(value)}
         return mapped
@@ -148,9 +153,6 @@ class Features:
         self.original_dataframe = pd.concat([X, y], axis=1).copy()
         self.target = y.name
 
-        # returns {feature_name: feature object} dict
-        self._features = self._analyze_features(descriptions)
-
         self._all_features = None
         self._categorical_features = None
         self._numerical_features = None
@@ -160,6 +162,9 @@ class Features:
         self._mapped_dataframe = None
 
         self._mapping = None
+
+        # returns {feature_name: feature object} dict
+        self._features = self._analyze_features(descriptions)
 
     def _analyze_features(self, descriptions):
         features = {}
@@ -172,7 +177,7 @@ class Features:
                 mapping = None
                 category_imputed = False
 
-                # JSON keys extracted only if object was initialized
+                # Provided keys extracted only if object was initialized
                 if descriptions.initialized:
                     if column in descriptions.keys():
 
@@ -201,7 +206,7 @@ class Features:
                         series=self.original_dataframe[column],
                         name=column,
                         description=description,
-                        json_mapping=mapping,
+                        mapping=mapping,
                         imputed_category=category_imputed
                     )
 
@@ -246,7 +251,7 @@ class Features:
             output = []
             for feature in self._features.values():
                 output.append(feature.name)
-            self._all_features = output
+            self._all_features = sort_strings(output)
 
         if drop_target:
             return [feature for feature in self._all_features if feature != self.target]
@@ -259,7 +264,7 @@ class Features:
             for feature in self._features.values():
                 if isinstance(feature, CategoricalFeature):
                     output.append(feature.name)
-            self._categorical_features = output
+            self._categorical_features = sort_strings(output)
 
         if drop_target:
             return [feature for feature in self._categorical_features if feature != self.target]
@@ -272,7 +277,7 @@ class Features:
             for feature in self._features.values():
                 if isinstance(feature, NumericalFeature):
                     output.append(feature.name)
-            self._numerical_features = output
+            self._numerical_features = sort_strings(output)
 
         if drop_target:
             return [feature for feature in self._numerical_features if feature != self.target]

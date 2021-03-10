@@ -2,13 +2,8 @@ from create_model.analyzer import Analyzer
 import pandas as pd
 
 
-def test_data_explainer_numeric_describe(data_classification_balanced):
-    X = data_classification_balanced[0]
-    y = data_classification_balanced[1]
-
-    # debugging purposes
-    # _ = X[["Height", "Price"]].describe().T
-
+def test_data_analyzer_numeric_describe(fixture_features, numerical_features):
+    """Testing if numerical_describe dataframe returned by the Analyzer is correct."""
     expected_df = pd.DataFrame({
         "count": [99.0, 98],
         "mean": [179.98, 40],
@@ -19,48 +14,30 @@ def test_data_explainer_numeric_describe(data_classification_balanced):
         "75%": [183.23, 51.93],
         "max": [191.67, 131.87],
         "missing": [0.01, 0.02]
-    }, index=["Height", "Price"])
+    }, index=numerical_features)
 
-    analyzer = Analyzer(X, y)
+    analyzer = Analyzer(fixture_features)
     actual_df = analyzer.numerical_describe_df().round(2)
 
-    _ = expected_df[expected_df != actual_df]
-
     assert expected_df.equals(actual_df)
 
-def test_data_explainer_categorical_mapping(data_classification_balanced, expected_raw_mapping):
-    X = data_classification_balanced[0]
-    y = data_classification_balanced[1]
 
-    # debugging purposes
-    # _ = pd.concat([X, y], axis=1)[["AgeGroup", "bool", "Product", "Sex", "Target"]]
-
-    explainer = Analyzer(X, y)
-    actual_mapping = explainer._create_categorical_mapping()
-
-    assert actual_mapping == expected_raw_mapping
-
-def test_data_explainer_categorical_describe(data_classification_balanced):
-    X = data_classification_balanced[0]
-    y = data_classification_balanced[1]
-
-    explainer = Analyzer(X, y)
-
-    # debugging purposes
-    _ = pd.concat([X, y], axis=1)[["AgeGroup", "bool", "Product", "Sex", "Target"]].replace(explainer._create_categorical_mapping()).describe().T
-
+def test_data_explainer_categorical_describe(fixture_features, categorical_features):
+    """Testing if categorical_describe dataframe returned by the Analyzer is correct."""
     expected_df = pd.DataFrame({
         "count": [100.0, 98, 99.0, 99.0, 100],
-        "mean": [3.73, 0.52, 4.34, 0.51, 0.60],
+        "mean": [4.73, 1.52, 5.34, 1.51, 1.60],
         "std": [2.55, 0.5, 2.84, 0.50, 0.49],
-        "min": [0, 0, 0.0, 0.0, 0],
-        "25%": [1.75, 0.0, 2.0, 0.0, 0],
-        "50%": [3.5, 1, 4.0, 1.0, 1],
-        "75%": [5.25, 1, 7.0, 1.0, 1],
-        "max": [8.0, 1, 9.0, 1.0, 1],
+        "min": [1, 1, 1.0, 1.0, 1],
+        "25%": [2.75, 1.0, 3.0, 1.0, 1],
+        "50%": [4.5, 2, 5.0, 2.0, 2],
+        "75%": [6.25, 2, 8.0, 2.0, 2],
+        "max": [9.0, 2, 10.0, 2.0, 2],
         "missing": [0, 0.02, 0.01, 0.01, 0.0]
-    }, index=["AgeGroup", "bool", "Product", "Sex", "Target"])
+    }, index=categorical_features)
 
-    actual_df = explainer._categorical_describe().round(2)
+    analyzer = Analyzer(fixture_features)
+    actual_df = analyzer.categorical_describe_df().round(2)
 
     assert expected_df.equals(actual_df)
+

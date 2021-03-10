@@ -12,6 +12,7 @@ from scipy.stats import truncnorm, skewnorm
 
 # this package
 from create_model.descriptor import FeatureDescriptor
+from create_model.features import Features
 
 
 @pytest.fixture
@@ -66,24 +67,11 @@ def feature_descriptions():
     return descriptions
 
 
-# @pytest.fixture
-# def temp_json_file(feature_descriptions):
-#
-#     fd, path = tempfile.mkstemp()
-#     with open(path, "w") as tmp:
-#         json.dump(feature_descriptions, tmp)
-#         tmp.flush()
-#
-#     with open(path, "r") as f:
-#         yield f
-#
-#     os.close(fd)
-#     os.unlink(path)
-
 @pytest.fixture
 def feature_descriptor(feature_descriptions):
     fd = FeatureDescriptor(feature_descriptions)
     return fd
+
 
 @pytest.fixture
 def data_classification_balanced():
@@ -150,43 +138,61 @@ def data_classification_balanced():
 
     return X, y
 
+
+@pytest.fixture
+def categorical_features():
+    return ["AgeGroup", "bool", "Product", "Sex", "Target"]
+
+
+@pytest.fixture
+def numerical_features():
+    return ["Height", "Price"]
+
+
+@pytest.fixture
+def fixture_features(data_classification_balanced, feature_descriptor):
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor)
+    return f
+
+
 @pytest.fixture
 def expected_raw_mapping():
     expected_raw_mapping = {
         "Product": {
-            "Apples": 0,
-            "Bananas": 1,
-            "Bread": 2,
-            "Butter": 3,
-            "Cheese": 4,
-            "Cookies": 5,
-            "Eggs": 6,
-            "Honey": 7,
-            "Ketchup": 8,
-            "Oranges": 9
+            "Apples": 1,
+            "Bananas": 2,
+            "Bread": 3,
+            "Butter": 4,
+            "Cheese": 5,
+            "Cookies": 6,
+            "Eggs": 7,
+            "Honey": 8,
+            "Ketchup": 9,
+            "Oranges": 10
         },
         "Sex": {
-            "Female": 0,
-            "Male": 1
+            "Female": 1,
+            "Male": 2
         },
         "AgeGroup": {
-            18: 0,
-            23: 1,
-            28: 2,
-            33: 3,
-            38: 4,
-            43: 5,
-            48: 6,
-            53: 7,
-            58: 8
+            18: 1,
+            23: 2,
+            28: 3,
+            33: 4,
+            38: 5,
+            43: 6,
+            48: 7,
+            53: 8,
+            58: 9
         },
         "bool": {
-            0: 0,
-            1: 1
+            0: 1,
+            1: 2
         },
         "Target": {
-            0: 0,
-            1: 1
+            0: 1,
+            1: 2
         }
     }
     return expected_raw_mapping
