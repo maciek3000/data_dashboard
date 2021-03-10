@@ -4,12 +4,23 @@ from .output import Output
 from .transformer import Transformer
 from .model_finder import ModelFinder
 from .descriptor import FeatureDescriptor
-import pandas as pd
-
 import os
 
 
 class Coordinator:
+    """Main object of the package.
+
+        The role of this class is to analyze the provided data (in terms of summary statistics, visualizing any
+        "easy" correlations, showing any potential new features, etc.), to transform the data for Machine Learning
+        models and then train and find the best model it could find, additionally providing all the metadata on it.
+        The end-goal is to create a series of static HTML files, which can be accessed like a dashboard to easily
+        navigate through them in search for any potential insights in the machine learning pipeline.
+
+        Coordinator encompasses all the classes that are used in creating the analysis and finding a model of
+        given data. Coordinator exposes several functions that might be called separately (if there is a need
+        for just a singular task, e.g. creating a dashboard for analyzing the data), but it also exposes a
+        .full_analysis() function which tries to build the whole analysis from the ground up.
+    """
 
     name = "create_model"
 
@@ -33,8 +44,6 @@ class Coordinator:
         self.features = Features(self.X, self.y, self.features_descriptions)
         self.analyzer = Analyzer(self.features)
 
-        # self.mapping = self.features.mapping()
-
         self.transformer = Transformer(self.X, self.y,
                                        self.features.numerical_features(drop_target=True),
                                        self.features.categorical_features(drop_target=True))
@@ -57,23 +66,8 @@ class Coordinator:
         return self.transformer.transform(X)
 
     def create_html(self):
-        # # TODO: change hardcoded keys
-        # data_explained = self.analyzer.analyze()
-        # explainer_data_keys = ["figures", "tables", "lists", "histograms", "scatter", "categorical"]
-        # explainer_data = {"explainer_" + key: data_explained[key] for key in explainer_data_keys}
-        #
-        #
-        # # transformer_data_keys = ["transformations"]
-        # # transformer_data = {"transformer_" + key: self.transformer.data_objects[key] for key in transformer_data_keys}
-        # #
-        # # output = {}
-        # # for _ in [explainer_data, transformer_data]:
-        # #     output.update(_)
-        #
-        # # TODO: change when more objects will provide their data_objects
-        # output = explainer_data
-        #
-        # self.output.create_html_output(output)
-
         self.output.create_html()
         print("Created output at {directory}".format(directory=self.output.output_directory))
+
+    def full_analysis(self):
+        raise NotImplementedError
