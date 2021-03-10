@@ -1,19 +1,25 @@
+# built-in
 import pytest
 import random
 import json
-import tempfile, os, io
+import tempfile
+import os
 
+# libraries
 import pandas as pd
 import numpy as np
 from scipy.stats import truncnorm, skewnorm
 
+# this package
 from create_model.descriptor import FeatureDescriptor
 
 
 @pytest.fixture
 def feature_descriptions():
-    d = "description"
-    m = "mapping"
+    d = FeatureDescriptor._description
+    m = FeatureDescriptor._mapping
+    c = FeatureDescriptor._category
+
     descriptions = {
         "Sex": {
             d: "Sex of the Participant"
@@ -21,15 +27,15 @@ def feature_descriptions():
         "AgeGroup": {
             d: "Age Group of the Participant.",
             m: {
-                "18": "Between 18 and 22",
-                "23": "Between 23 and 27",
-                "28": "Between 28 and 32",
-                "33": "Between 33 and 37",
-                "38": "Between 38 and 42",
-                "43": "Between 43 and 47",
-                "48": "Between 48 and 52",
-                "53": "Between 53 and 57",
-                "58": "Between 58 and 62"
+                18: "Between 18 and 22",
+                23: "Between 23 and 27",
+                28: "Between 28 and 32",
+                33: "Between 33 and 37",
+                38: "Between 38 and 42",
+                43: "Between 43 and 47",
+                48: "Between 48 and 52",
+                53: "Between 53 and 57",
+                58: "Between 58 and 62"
             }
         },
         "Height": {
@@ -50,35 +56,37 @@ def feature_descriptions():
         "Target": {
             d: "Was the Transaction satisfactory?\nTarget Feature",
             m: {
-                "1": "Yes",
-                "0": "No"
-            }
+                1: "Yes",
+                0: "No"
+            },
+            c: "categorical"
         }
     }
 
     return descriptions
 
+
+# @pytest.fixture
+# def temp_json_file(feature_descriptions):
+#
+#     fd, path = tempfile.mkstemp()
+#     with open(path, "w") as tmp:
+#         json.dump(feature_descriptions, tmp)
+#         tmp.flush()
+#
+#     with open(path, "r") as f:
+#         yield f
+#
+#     os.close(fd)
+#     os.unlink(path)
+
 @pytest.fixture
-def temp_json_file(feature_descriptions):
-
-    fd, path = tempfile.mkstemp()
-    with open(path, "w") as tmp:
-        json.dump(feature_descriptions, tmp)
-        tmp.flush()
-
-    with open(path, "r") as f:
-        yield f
-
-    os.close(fd)
-    os.unlink(path)
-
-@pytest.fixture
-def feature_descriptor(temp_json_file):
-    fd = FeatureDescriptor(temp_json_file)
+def feature_descriptor(feature_descriptions):
+    fd = FeatureDescriptor(feature_descriptions)
     return fd
 
 @pytest.fixture
-def test_data_classification_balanced():
+def data_classification_balanced():
 
     random_seed = 56
 
@@ -143,8 +151,8 @@ def test_data_classification_balanced():
     return X, y
 
 @pytest.fixture
-def expected_mapping():
-    expected_mapping = {
+def expected_raw_mapping():
+    expected_raw_mapping = {
         "Product": {
             "Apples": 0,
             "Bananas": 1,
@@ -181,7 +189,7 @@ def expected_mapping():
             1: 1
         }
     }
-    return expected_mapping
+    return expected_raw_mapping
 
 @pytest.fixture
 def test_html_table():

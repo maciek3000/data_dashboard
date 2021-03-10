@@ -1,26 +1,10 @@
 from create_model.analyzer import Analyzer
 import pandas as pd
 
-def test_data_explainer_analyze_columns(test_data_classification_balanced):
-    X = test_data_classification_balanced[0]
-    y = test_data_classification_balanced[1]
 
-    explainer = Analyzer(X, y)
-
-    cols = explainer.columns[explainer.key_cols]
-    cols_wo_target = explainer.columns[explainer.key_cols_wo_target]
-
-    assert cols[explainer.key_numerical] == ["Height", "Price"]
-    assert cols[explainer.key_categorical] == ["AgeGroup", "bool", "Product", "Sex", "Target"]
-    assert cols[explainer.key_date] == ["Date"]
-
-    assert cols_wo_target[explainer.key_numerical] == ["Height", "Price"]
-    assert cols_wo_target[explainer.key_categorical] == ["AgeGroup", "bool", "Product", "Sex"]
-    assert cols_wo_target[explainer.key_date] == ["Date"]
-
-def test_data_explainer_numeric_describe(test_data_classification_balanced):
-    X = test_data_classification_balanced[0]
-    y = test_data_classification_balanced[1]
+def test_data_explainer_numeric_describe(data_classification_balanced):
+    X = data_classification_balanced[0]
+    y = data_classification_balanced[1]
 
     # debugging purposes
     # _ = X[["Height", "Price"]].describe().T
@@ -37,16 +21,16 @@ def test_data_explainer_numeric_describe(test_data_classification_balanced):
         "missing": [0.01, 0.02]
     }, index=["Height", "Price"])
 
-    explainer = Analyzer(X, y)
-    actual_df = explainer._numeric_describe().round(2)
+    analyzer = Analyzer(X, y)
+    actual_df = analyzer.numerical_describe_df().round(2)
 
     _ = expected_df[expected_df != actual_df]
 
     assert expected_df.equals(actual_df)
 
-def test_data_explainer_categorical_mapping(test_data_classification_balanced, expected_mapping):
-    X = test_data_classification_balanced[0]
-    y = test_data_classification_balanced[1]
+def test_data_explainer_categorical_mapping(data_classification_balanced, expected_raw_mapping):
+    X = data_classification_balanced[0]
+    y = data_classification_balanced[1]
 
     # debugging purposes
     # _ = pd.concat([X, y], axis=1)[["AgeGroup", "bool", "Product", "Sex", "Target"]]
@@ -54,11 +38,11 @@ def test_data_explainer_categorical_mapping(test_data_classification_balanced, e
     explainer = Analyzer(X, y)
     actual_mapping = explainer._create_categorical_mapping()
 
-    assert actual_mapping == expected_mapping
+    assert actual_mapping == expected_raw_mapping
 
-def test_data_explainer_categorical_describe(test_data_classification_balanced):
-    X = test_data_classification_balanced[0]
-    y = test_data_classification_balanced[1]
+def test_data_explainer_categorical_describe(data_classification_balanced):
+    X = data_classification_balanced[0]
+    y = data_classification_balanced[1]
 
     explainer = Analyzer(X, y)
 

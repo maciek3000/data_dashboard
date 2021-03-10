@@ -35,8 +35,8 @@ from create_model.views import Overview
             ("Target", {"No": "0 (0)", "Yes": "1 (1)"})
     )
 )
-def test_consolidate_mappings(feature_descriptor, expected_mapping, feature, expected_result):
-    overview = Overview("test_template", "test_css", feature_descriptor, expected_mapping)
+def test_consolidate_mappings(feature_descriptor, expected_raw_mapping, feature, expected_result):
+    overview = Overview("test_template", "test_css", feature_descriptor, expected_raw_mapping)
     actual_mapping = overview._consolidate_mappings(feature)
 
     assert actual_mapping == expected_result
@@ -49,9 +49,9 @@ def test_consolidate_mappings(feature_descriptor, expected_mapping, feature, exp
         ("<tr><th><p>Target<span>Was the Transaction satisfactory?<br/>Target Feature<br/><br/>Category - Original (Transformed)<br/>No - 0 (0)<br/>Yes - 1 (1)</span></p></th><td></td></tr>",),
     )
 )
-def test_append_descriptions_to_table(feature_descriptor, expected_mapping, test_html_table, expected_string):
+def test_append_descriptions_to_table(feature_descriptor, expected_raw_mapping, test_html_table, expected_string):
     # TODO: test with >10 categories
-    overview = Overview("test_template", "test_css", feature_descriptor, expected_mapping)
+    overview = Overview("test_template", "test_css", feature_descriptor, expected_raw_mapping)
     actual_html = overview._Overview__append_description(test_html_table)
     print(actual_html)
     assert expected_string in actual_html
