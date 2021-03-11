@@ -4,6 +4,21 @@ import pytest
 
 
 @pytest.mark.parametrize(
+    ("input", "expected_output"),
+    (
+            (["string1", "String2", "STRING3"], ["string1", "String2", "STRING3"]),
+            (["bool", "Bool", "abcd"], ["abcd", "bool", "Bool"]),
+            (["zzz", "ZZA", "bbb", "bbc", "Aaa", "aab"], ["Aaa", "aab", "bbb", "bbc", "ZZA", "zzz"])
+    )
+)
+def test_sort_strings(input, expected_output):
+    """Testing if sort_strings sorting works correctly."""
+    assert sorted(input) != expected_output
+    actual_output = sort_strings(input)
+    assert actual_output == expected_output
+
+
+@pytest.mark.parametrize(
     ("column_name",),
     (
             ("AgeGroup",),
@@ -127,13 +142,41 @@ def test_numerical_features_no_mapping(
 
     assert feature.mapping() is None
 
+@pytest.mark.parametrize(
+    ("column_name", "expected_type"),
+    (
+            ("AgeGroup", "categorical"),
+            ("bool", "categorical"),
+            ("Date", "date"),
+            ("Height", "numerical"),
+            ("Price", "numerical"),
+            ("Product", "categorical"),
+            ("Sex", "categorical"),
+            ("Target", "categorical")
+    )
+)
+def test_features_impute_column_type(data_classification_balanced, column_name, expected_type):
+    X = data_classification_balanced[0]
+    y = data_classification_balanced[1]
+    df = pd.concat([X, y], axis=1)
+    f = Features(X, y)
 
-def test_features_raw_mapping(fixture_features, expected_raw_mapping, categorical_features):
-    """Testing if the .raw_mapping() of CategoricalFeature works correctly."""
-    f = fixture_features
-    actual_raw_mapping = {feature: f[feature].raw_mapping for feature in categorical_features}
+    cat = f.categorical
+    num = f.numerical
+    dat = f.date
 
-    assert actual_raw_mapping == expected_raw_mapping
+    if expected_type == "categorical":
+        expected = cat
+    elif expected_type == "numerical":
+        expected = num
+    elif expected_type == "date":
+        expected = dat
+    else:
+        raise
+
+    actual = f._impute_column_type(df[column_name])
+
+    assert actual == expected
 
 
 def test_features_analyze_features(data_classification_balanced, feature_descriptor):
@@ -160,3 +203,6 @@ def test_features_analyze_features(data_classification_balanced, feature_descrip
     for key, item in expected.items():
         assert isinstance(actual[key], item)
 
+
+def test_features_analyze_features_forced_category():
+    assert False

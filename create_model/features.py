@@ -185,7 +185,7 @@ class Features:
                 category_imputed = False
 
                 # Provided keys extracted only if object was initialized
-                if descriptions.initialized:
+                if descriptions is not None and descriptions.initialized:  # !
                     if column in descriptions.keys():
 
                         try:
@@ -236,9 +236,8 @@ class Features:
         return features
 
     def _impute_column_type(self, series):
-
-        if series.dtype == "bool":
-            return self.numerical
+        if series.dtype == bool:
+            return self.categorical
         else:
             try:
                 _ = series.astype("float64")
@@ -255,10 +254,7 @@ class Features:
 
     def features(self, drop_target=False):
         if not self._all_features:
-            output = []
-            for feature in self._features.values():
-                output.append(feature.name)
-            self._all_features = sort_strings(output)
+            self._all_features = self._create_features()
 
         if drop_target:
             return [feature for feature in self._all_features if feature != self.target]
@@ -267,11 +263,7 @@ class Features:
 
     def categorical_features(self, drop_target=False):
         if not self._categorical_features:
-            output = []
-            for feature in self._features.values():
-                if isinstance(feature, CategoricalFeature):
-                    output.append(feature.name)
-            self._categorical_features = sort_strings(output)
+            self._categorical_features = self._create_categorical_features()
 
         if drop_target:
             return [feature for feature in self._categorical_features if feature != self.target]
@@ -292,13 +284,8 @@ class Features:
             return self._numerical_features
 
     def raw_data(self, drop_target=False):
-        # raw data needs to call .original_data(), as the default function returns mapped data already
         if self._raw_dataframe is None:
-            numeric = [feature.data() for feature in self._features.values()
-                       if feature.name in self.numerical_features()]
-            cat = [feature.original_data() for feature in self._features.values()
-                   if feature.name in self.categorical_features()]
-            self._raw_dataframe = pd.concat([*numeric, *cat], axis=1)
+            self._raw_dataframe = self._create_raw_dataframe()
 
         if drop_target:
             return self._raw_dataframe.drop([self.target], axis=1)
@@ -307,7 +294,7 @@ class Features:
 
     def data(self, drop_target=False):
         if self._mapped_dataframe is None:
-            self._mapped_dataframe = pd.concat([self._features[feature].data() for feature in self._features], axis=1)
+            self._mapped_dataframe = self._create_mapped_dataframe()
 
         if drop_target:
             return self._mapped_dataframe.drop([self.target], axis=1)
@@ -316,14 +303,52 @@ class Features:
 
     def mapping(self):
         if self._mapping is None:
-            output = {}
-            for feature in self.features():
-                output[feature] = self._features[feature].mapping()
-            self._mapping = output
+            self._mapping = self._create_mapping()
         return self._mapping
 
     def unused_features(self):
         return self._unused_columns
+
+    def _create_features(self):
+        output = []
+        for feature in self._features.values():
+            output.append(feature.name)
+        output = sort_strings(output)
+        return output
+
+    def _create_categorical_features(self):
+        output = []
+        for feature in self._features.values():
+            if isinstance(feature, CategoricalFeature):
+                output.append(feature.name)
+        output = sort_strings(output)
+        return output
+
+    def _create_numerical_features(self):
+        output = []
+        for feature in self._features.values():
+            if isinstance(feature, NumericalFeature):
+                output.append(feature.name)
+        output = sort_strings(output)
+        return output
+
+    def _create_mapped_dataframe(self):
+        return pd.concat([self._features[feature].data() for feature in self._features], axis=1)
+
+    def _create_raw_dataframe(self):
+        # raw data needs to call .original_data(), as the default function returns already mapped data
+        numeric = [feature.data() for feature in self._features.values()
+                   if feature.name in self.numerical_features()]
+        cat = [feature.original_data() for feature in self._features.values()
+               if feature.name in self.categorical_features()]
+        df = pd.concat([*numeric, *cat], axis=1)
+        return df
+
+    def _create_mapping(self):
+        output = {}
+        for feature in self.features():
+            output[feature] = self._features[feature].mapping()
+        return output
 
     def __getitem__(self, arg):
         if arg not in self._features:

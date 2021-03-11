@@ -74,6 +74,14 @@ def feature_descriptor(feature_descriptions):
 
 
 @pytest.fixture
+def feature_descriptor_forced_categories(feature_descriptions):
+    cat_cols = ["Height", "Price"]
+    num_cols = ["bool", "AgeGroup", "Target"]
+
+    new_descriptions = feature_descriptions.copy()
+
+
+@pytest.fixture
 def feature_descriptor_broken(feature_descriptions):
     broken_features = ["Target", "AgeGroup"]
     for feat in broken_features:
@@ -145,7 +153,8 @@ def data_classification_balanced():
     np_cols = random.choices(range(len(df.columns) - 1), k=10)
 
     for row, col in zip(np_rows, np_cols):
-        df.iloc[row, col] = np.nan
+        if col != df.columns.to_list().index("bool"):
+            df.iloc[row, col] = np.nan
 
     X = df[columns[:-1]]
     y = df[columns[-1]]
