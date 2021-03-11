@@ -69,25 +69,7 @@ class CategoricalFeature(BaseFeature):
 
     def mapping(self):
         if not self._descriptive_mapping:
-            if self.original_mapping:
-                mapp = {}
-                for key, item in self.raw_mapping.items():
-                    new_key = item
-
-                    # try/except clause needed as json keys can only be str()
-                    # however, sometimes those keys can be treated as integers and then they won't be found
-                    # in the corresponding json object
-                    try:
-                        new_item = self.original_mapping[key]
-                    except KeyError:
-                        try:
-                            new_item = self.original_mapping[str(key)]
-                        except KeyError:
-                            raise
-                    mapp[new_key] = new_item
-            else:
-                mapp = self.raw_mapping
-            self._descriptive_mapping = mapp
+            self._descriptive_mapping = self._create_descriptive_mapping()
 
         return self._descriptive_mapping
 
@@ -100,6 +82,31 @@ class CategoricalFeature(BaseFeature):
         values = sorted(self.series.unique(), key=str)
         mapped = {value: number for number, value in enumerate(values, start=1) if not pd.isna(value)}
         return mapped
+
+    def _create_descriptive_mapping(self):
+        # Key is the "new" value provided with enumerating unique values
+        # Item is either the description of the category taken from original descriptions or the original value
+        if self.original_mapping:
+            mapp = {}
+            for key, item in self.raw_mapping.items():
+                new_key = item
+
+                # try/except clause needed as json keys can only be str()
+                # however, sometimes those keys can be treated as integers and then they won't be found
+                # in the corresponding json object
+                try:
+                    new_item = self.original_mapping[key]
+                except KeyError:
+                    try:
+                        new_item = self.original_mapping[str(key)]
+                    except KeyError:
+                        raise
+                mapp[new_key] = new_item
+        else:
+            # Changed the order to reflect that the key is
+            mapp = {item: key for key, item in self.raw_mapping.items()}
+
+        return mapp
 
 
 class NumericalFeature(BaseFeature):

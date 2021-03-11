@@ -198,6 +198,47 @@ def expected_raw_mapping():
     return expected_raw_mapping
 
 @pytest.fixture
+def expected_mapping():
+    expected_mapping = {
+        "Product": {
+            1: "Apples",
+            2: "Bananas",
+            3: "Bread",
+            4: "Butter",
+            5: "Cheese",
+            6: "Cookies",
+            7: "Eggs",
+            8: "Honey",
+            9: "Ketchup",
+            10: "Oranges"
+        },
+        "Sex": {
+            1: "Female",
+            2: "Male"
+        },
+        "AgeGroup": {
+            1: "Between 18 and 22",
+            2: "Between 23 and 27",
+            3: "Between 28 and 32",
+            4: "Between 33 and 37",
+            5: "Between 38 and 42",
+            6: "Between 43 and 47",
+            7: "Between 48 and 52",
+            8: "Between 53 and 57",
+            9: "Between 58 and 62"
+        },
+        "bool": {
+            1: 0,
+            2: 1
+        },
+        "Target": {
+            1: "No",
+            2: "Yes"
+        }
+    }
+    return expected_mapping
+
+@pytest.fixture
 def test_html_table():
     _ = """
         <table>
