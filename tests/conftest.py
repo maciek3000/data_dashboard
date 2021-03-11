@@ -74,6 +74,20 @@ def feature_descriptor(feature_descriptions):
 
 
 @pytest.fixture
+def feature_descriptor_broken(feature_descriptions):
+    broken_features = ["Target", "AgeGroup"]
+    for feat in broken_features:
+        internal = feature_descriptions[feat]
+        _ = {}
+        for key, item in internal.items():
+            _[str(key)] = item
+        feature_descriptions[feat] = _
+
+    fd = FeatureDescriptor(feature_descriptions)
+    return fd
+
+
+@pytest.fixture
 def data_classification_balanced():
 
     random_seed = 56
