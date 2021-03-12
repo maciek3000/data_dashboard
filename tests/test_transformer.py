@@ -8,4 +8,4 @@ def test_transformer_analyze_data(data_classification_balanced, fixture_features
 
     transformer = Transformer(X, y, fixture_features.numerical_features(), fixture_features.categorical_features())
 
-    assert True
+    assert False

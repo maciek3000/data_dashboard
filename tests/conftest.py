@@ -4,6 +4,7 @@ import random
 import json
 import tempfile
 import os
+import copy
 
 # libraries
 import pandas as pd
@@ -60,7 +61,7 @@ def feature_descriptions():
                 1: "Yes",
                 0: "No"
             },
-            c: "categorical"
+            c: "cat"
         }
     }
 
@@ -75,10 +76,22 @@ def feature_descriptor(feature_descriptions):
 
 @pytest.fixture
 def feature_descriptor_forced_categories(feature_descriptions):
+    c = FeatureDescriptor._category
+
     cat_cols = ["Height", "Price"]
     num_cols = ["bool", "AgeGroup", "Target"]
 
-    new_descriptions = feature_descriptions.copy()
+    new_descriptions = copy.deepcopy(feature_descriptions)
+
+    for cat in cat_cols:
+        new_descriptions[cat][c] = "cat"
+
+    for cat in num_cols:
+        new_descriptions[cat][c] = "num"
+
+    fd = FeatureDescriptor(new_descriptions)
+
+    return fd
 
 
 @pytest.fixture

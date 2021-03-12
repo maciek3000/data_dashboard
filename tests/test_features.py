@@ -4,17 +4,17 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    ("input", "expected_output"),
+    ("input_string", "expected_output"),
     (
             (["string1", "String2", "STRING3"], ["string1", "String2", "STRING3"]),
             (["bool", "Bool", "abcd"], ["abcd", "bool", "Bool"]),
             (["zzz", "ZZA", "bbb", "bbc", "Aaa", "aab"], ["Aaa", "aab", "bbb", "bbc", "ZZA", "zzz"])
     )
 )
-def test_sort_strings(input, expected_output):
+def test_sort_strings(input_string, expected_output):
     """Testing if sort_strings sorting works correctly."""
-    assert sorted(input) != expected_output
-    actual_output = sort_strings(input)
+    assert sorted(input_string) != expected_output
+    actual_output = sort_strings(input_string)
     assert actual_output == expected_output
 
 
@@ -142,6 +142,7 @@ def test_numerical_features_no_mapping(
 
     assert feature.mapping() is None
 
+
 @pytest.mark.parametrize(
     ("column_name", "expected_type"),
     (
@@ -204,5 +205,264 @@ def test_features_analyze_features(data_classification_balanced, feature_descrip
         assert isinstance(actual[key], item)
 
 
-def test_features_analyze_features_forced_category():
-    assert False
+def test_features_analyze_features_forced_category(data_classification_balanced, feature_descriptor_forced_categories):
+    """Testing if .analyze_features() method of Features class returns a dictionary with a correct content
+        when categories are forced by the FeatureDescriptor"""
+    n = NumericalFeature
+    c = CategoricalFeature
+    expected = {
+        "Sex": c,
+        "AgeGroup": n,
+        "Height": c,
+        "Product": c,
+        "Price": c,
+        "bool": n,
+        "Target": n
+    }
+
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor_forced_categories)
+
+    f.original_dataframe = pd.concat([X, y], axis=1)  # original_dataframe needs to be set up
+    actual = f._analyze_features(feature_descriptor_forced_categories)
+
+    assert isinstance(actual, dict)
+    for key, item in expected.items():
+        assert isinstance(actual[key], item)
+
+
+@pytest.mark.parametrize(
+    ("feature_descriptor_type",),
+    (
+            ("normal",),
+            ("forced",)
+    )
+)
+def test_features_create_features(
+        data_classification_balanced, feature_descriptor_type, feature_descriptor, feature_descriptor_forced_categories
+):
+    """Testing if ._create_features() returns correct values depending on the Features provided."""
+    expected = ["AgeGroup", "bool", "Height", "Price", "Product", "Sex", "Target"]
+    X, y = data_classification_balanced
+
+    # couldn't find a way to incorporate fixtures into @pytest.mark.parametrize
+    if feature_descriptor_type == "normal":
+        fd = feature_descriptor
+    elif feature_descriptor_type == "forced":
+        fd = feature_descriptor_forced_categories
+    else:
+        raise
+
+    f = Features(X, y, fd)
+
+    actual = f._create_features()
+
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    ("feature_descriptor_type",),
+    (
+            ("normal",),
+            ("forced",)
+    )
+)
+def test_features_features_list_no_target(
+        data_classification_balanced, feature_descriptor_type, feature_descriptor, feature_descriptor_forced_categories
+):
+    """Testing if .features() returns correct values when drop_target = True (without Target feature name)."""
+    expected = ["AgeGroup", "bool", "Height", "Price", "Product", "Sex"]
+    X, y = data_classification_balanced
+
+    # couldn't find a way to incorporate fixtures into @pytest.mark.parametrize
+    if feature_descriptor_type == "normal":
+        fd = feature_descriptor
+    elif feature_descriptor_type == "forced":
+        fd = feature_descriptor_forced_categories
+    else:
+        raise
+
+    f = Features(X, y, fd)
+    actual = f.features(drop_target=True)
+
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    ("feature_descriptor_type", "expected"),
+    (
+            ("normal", ["Height", "Price"]),
+            ("forced", ["AgeGroup", "bool",  "Target"])
+    )
+)
+def test_features_create_numerical_features(
+        data_classification_balanced, feature_descriptor_type, expected,
+        feature_descriptor, feature_descriptor_forced_categories
+):
+    """Testing if ._create_numerical_features() returns correct values depending on the Features provided."""
+    X, y = data_classification_balanced
+
+    # couldn't find a way to incorporate fixtures into @pytest.mark.parametrize
+    if feature_descriptor_type == "normal":
+        fd = feature_descriptor
+    elif feature_descriptor_type == "forced":
+        fd = feature_descriptor_forced_categories
+    else:
+        raise
+
+    f = Features(X, y, fd)
+
+    actual = f._create_numerical_features()
+
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    ("feature_list", "target", "expected"),
+    (
+            (["Height", "Price"], "Target", ["Height", "Price"]),
+            (["Height", "Price", "Target"], "Target", ["Height", "Price"]),
+            (["Age", "Sex", "Target", "Zzz"], "Sex", ["Age", "Target", "Zzz"])
+    )
+)
+def test_features_numerical_features_no_target(
+        feature_list, target, expected, data_classification_balanced, feature_descriptor
+):
+    """Testing if .numerical_features() returns correct values when drop_target = True (without Target feature name)."""
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor)
+
+    f._numerical_features = feature_list
+    f.target = target
+    actual = f.numerical_features(drop_target=True)
+
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    ("feature_descriptor_type", "expected"),
+    (
+            ("normal", ["AgeGroup", "bool", "Product", "Sex", "Target"]),
+            ("forced", ["Height", "Price", "Product", "Sex"])
+    )
+)
+def test_features_create_categorical_features(
+        data_classification_balanced, feature_descriptor_type, expected,
+        feature_descriptor, feature_descriptor_forced_categories
+):
+    """Testing if ._create_categorical_features() returns correct values depending on the Features provided."""
+    X, y = data_classification_balanced
+
+    # couldn't find a way to incorporate fixtures into @pytest.mark.parametrize
+    if feature_descriptor_type == "normal":
+        fd = feature_descriptor
+    elif feature_descriptor_type == "forced":
+        fd = feature_descriptor_forced_categories
+    else:
+        raise
+
+    f = Features(X, y, fd)
+
+    actual = f._create_categorical_features()
+
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    ("feature_list", "target", "expected"),
+    (
+            (["Age", "Sex"], "Target", ["Age", "Sex"]),
+            (["Age", "Sex", "Target"], "Target", ["Age", "Sex"]),
+            (["Height", "Price", "Target", "Zzz"], "Height", ["Price", "Target", "Zzz"])
+    )
+)
+def test_features_categorical_features_no_target(
+        feature_list, target, expected, data_classification_balanced, feature_descriptor
+):
+    """Testing if .categorical_features() returns correct values when drop_target = True (without Target feature
+    name). """
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor)
+
+    f._categorical_features = feature_list
+    f.target = target
+    actual = f.categorical_features(drop_target=True)
+
+    assert actual == expected
+
+
+def test_features_unused_features(data_classification_balanced, feature_descriptor):
+    """Testing if unused_features() returns correct values."""
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor)
+
+    assert f.unused_features() == ["Date"]
+
+
+def test_features_create_raw_dataframe(data_classification_balanced, feature_descriptor):
+    """Testing if .create_raw_dataframe returns correct dataframe (the same that was provided as input to the
+    object). """
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor)
+
+    expected_df = pd.concat([X, y], axis=1).drop(["Date"], axis=1)
+    cols = expected_df.columns
+
+    actual_df = f._create_raw_dataframe()[cols]
+
+    assert actual_df.equals(expected_df)
+
+
+def test_features_raw_data_no_target(data_classification_balanced, feature_descriptor):
+    """Testing if raw_dataframe() drops Target column when drop_target=True."""
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor)
+
+    expected_df = X.drop(["Date"], axis=1)
+    cols = expected_df.columns
+
+    actual_df = f.raw_data(drop_target=True)[cols]
+
+    assert actual_df.equals(expected_df)
+
+
+def test_features_create_mapped_dataframe(data_classification_balanced, feature_descriptor, expected_raw_mapping):
+    """Testing if ._create_mapped_dataframe correctly returns mapped dataframe (with replaced values according to
+    mapping). """
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor)
+
+    expected_df = pd.concat([X, y], axis=1).drop(["Date"], axis=1).replace(expected_raw_mapping)
+    cols = expected_df.columns
+
+    actual_df = f._create_mapped_dataframe()[cols]
+
+    assert actual_df.equals(expected_df)
+
+
+def test_features_data(data_classification_balanced, feature_descriptor, expected_raw_mapping):
+    """Testing if .data() returns mapped df (with replaced values according to mapping) but without Target column (
+    when drop_target=True). """
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor)
+
+    expected_df = X.drop(["Date"], axis=1).replace(expected_raw_mapping)
+    cols = expected_df.columns
+
+    actual_df = f.data(drop_target=True)[cols]
+
+    assert actual_df.equals(expected_df)
+
+
+def test_features_create_mapping(data_classification_balanced, feature_descriptor, expected_mapping):
+    """Testing if ._create_mapping() creates a correct mapping dictionary."""
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor)
+
+    expected = expected_mapping
+    for feat in ["Height", "Price"]:
+        expected[feat] = None
+
+    actual = f.mapping()
+
+    assert actual == expected
