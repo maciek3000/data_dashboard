@@ -8,19 +8,23 @@ from .plot_design import PlotDesign
 # Categorical/Numerical variables based on DataFeatures object created
 
 
-def _calculate_numerical_bins(series):
-    # if columns is numerical we calculate the number of bins manually
+def calculate_numerical_bins(series):
     # https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
     n = series.size
     iqr = series.quantile(0.75) - series.quantile(0.25)
-    bins = (series.max() - series.min()) / (2*iqr*pow(n, (-1/3)))
+    bins = (series.max() - series.min()) / ((2*iqr)*pow(n, (-1/3)))
     bins = int(round(bins, 0))
+
+    # if the number of bins is greater than n, n is returned
+    # this can be the case for small, skewed series
+    if bins > n:
+        bins = n
     return bins
 
 
-def modify_histogram_edges(edges):
+def modify_histogram_edges(edges, interval_percentage=0.005):
     # Adding space between the edges to visualize the data properly
-    interval = (max(edges) - min(edges)) * 0.005  # 0.5%
+    interval = (max(edges) - min(edges)) * interval_percentage  # 0.5%
     left_edges = edges[:-1]
     right_edges = [edge - interval for edge in edges[1:]]
     return left_edges, right_edges
@@ -82,7 +86,8 @@ class Analyzer:
             if isinstance(feature, CategoricalFeature):
                 bins = len(series.unique())  # len(df[column].unique())
             elif isinstance(feature, NumericalFeature):
-                bins = _calculate_numerical_bins(series)
+                # if columns is numerical we calculate the number of bins manually
+                bins = calculate_numerical_bins(series)
             else:
                 bins = 1  # placeholder rule
 
