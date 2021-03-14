@@ -38,7 +38,7 @@ def test_modify_histogram_edges(input_edges, interval_percentage, expected_right
     assert actual_right_edge == expected_right_edge
 
 
-def test_data_analyzer_numeric_describe(fixture_features, numerical_features):
+def test_analyzer_numeric_describe(fixture_features, numerical_features):
     """Testing if numerical_describe dataframe returned by the Analyzer is correct."""
     expected_df = pd.DataFrame({
         "count": [99.0, 98],
@@ -53,12 +53,12 @@ def test_data_analyzer_numeric_describe(fixture_features, numerical_features):
     }, index=numerical_features)
 
     analyzer = Analyzer(fixture_features)
-    actual_df = analyzer.numerical_describe_df().round(2)
+    actual_df = analyzer._create_describe_df(numerical_features).round(2)
 
     assert expected_df.equals(actual_df)
 
 
-def test_data_explainer_categorical_describe(fixture_features, categorical_features):
+def test_analyzer_categorical_describe(fixture_features, categorical_features):
     """Testing if categorical_describe dataframe returned by the Analyzer is correct."""
     expected_df = pd.DataFrame({
         "count": [100.0, 100.0, 99.0, 99.0, 100],
@@ -73,6 +73,68 @@ def test_data_explainer_categorical_describe(fixture_features, categorical_featu
     }, index=categorical_features)
 
     analyzer = Analyzer(fixture_features)
-    actual_df = analyzer.categorical_describe_df().round(2)
+    actual_df = analyzer._create_describe_df(categorical_features).round(2)
 
     assert expected_df.equals(actual_df)
+
+
+def test_analyzer_head_dataframe(data_classification_balanced, fixture_features, expected_raw_mapping):
+    """Testing if .df_head() returns correct dataframe."""
+    X = data_classification_balanced[0]
+    y = data_classification_balanced[1]
+    df = pd.concat([X, y], axis=1)
+    cols = sorted(["Sex", "AgeGroup", "Height", "Product", "Price", "bool", "Target"], key=lambda x: x.upper())
+    expected_df = df[cols].head().T
+
+    analyzer = Analyzer(fixture_features)
+    actual_df = analyzer.df_head()
+
+    assert expected_df.equals(actual_df)
+
+
+@pytest.mark.parametrize(
+    ("feature_name", "expected_number_of_bins"),
+    (
+            ("AgeGroup", 9),
+            ("bool", 2),
+            ("Height", 9),
+            ("Price", 9),
+            ("Product", 10),
+            ("Target", 2),
+            ("Sex", 2)
+    )
+)
+def test_analyzer_histogram_data(fixture_features, feature_name, expected_number_of_bins):
+    """Testing if ._histogram_data() method returns correct values.
+        Checking only number of bins for every feature, as edges were 1) tested elsewhere 2) assuming that
+        np.histogram works correctly 3) would be cumbersome to calculate all of that by hand."""
+
+    analyzer = Analyzer(fixture_features)
+    histogram_output = analyzer._histogram_data()
+
+    # number of bins - size of one of the edges array
+    actual_number_of_bins = histogram_output[feature_name][1].shape[0]
+
+    assert actual_number_of_bins == expected_number_of_bins
+
+
+def test_analyzer_scatter_data(
+        fixture_features, data_classification_balanced, expected_raw_mapping, categorical_features
+):
+    """Testing if ._scatter_data() returns correct values."""
+    analyzer = Analyzer(fixture_features)
+    X = data_classification_balanced[0]
+    y = data_classification_balanced[1]
+    df = pd.concat([X, y], axis=1)
+    cols = sorted(["Sex", "AgeGroup", "Height", "Product", "Price", "bool", "Target"], key=lambda x: x.upper())
+    df = df[cols].replace(expected_raw_mapping)
+
+    suffix = analyzer._categorical_suffix
+
+    for feat in categorical_features:
+        df[feat + suffix] = df[feat].apply(lambda x: str(x))
+
+    expected = df.dropna().to_dict(orient="list")
+    actual = analyzer._scatter_data()
+
+    assert expected == actual

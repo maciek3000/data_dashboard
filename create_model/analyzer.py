@@ -38,6 +38,8 @@ class Analyzer:
         happen here and Analyzer should expose methods or properties with the final output.
     """
 
+    _categorical_suffix = "_categorical"
+
     def __init__(self, features):
         self.features = features
         self.max_categories = features.max_categories
@@ -50,13 +52,13 @@ class Analyzer:
         return self._create_describe_df(self.features.categorical_features())
 
     def df_head(self):
-        return self.features.raw_data()[sorted(self.features.features())].head().T
+        return self.features.raw_data()[self.features.features()].head().T
 
     def skipped_features(self):
         return self.features.unused_features()
 
     def features_pairplot_static(self):
-        df = self.features.data()[sorted(self.features.features())]
+        df = self.features.data()[self.features.features()]
         pairplot = PairPlot(self.default_plot_design).pairplot(df)
         return pairplot
 
@@ -74,17 +76,15 @@ class Analyzer:
         return plot
 
     def _histogram_data(self):
-        # TODO: this method might change its signature when InfoGrid is created from Analyzer itself
-        # TODO: might also be moved into InfoGrid as well but its up to debate
         all_histograms = {}
 
         for feature_name in self.features.features():
             feature = self.features[feature_name]
-            # NaNs are not allowed
-            series = feature.data().dropna()  # srs = df[column][df[column].notna()]
+            # TODO: NaNs are not allowed
+            series = feature.data().dropna()
 
             if isinstance(feature, CategoricalFeature):
-                bins = len(series.unique())  # len(df[column].unique())
+                bins = len(series.unique())
             elif isinstance(feature, NumericalFeature):
                 # if columns is numerical we calculate the number of bins manually
                 bins = calculate_numerical_bins(series)
@@ -99,14 +99,14 @@ class Analyzer:
         return all_histograms
 
     def _scatter_data(self):
-        df = self.features.data().copy()
-
         # Every column will be treated as a hue (color) at some point, including categorical Columns
         # However, factor_cmap (function that provides coloring by categorical variables) expects color columns
         # to be Str, not Int/Float. Therefore, we need to create a copy of every categorical column
         # and cast it explicitly to Str (as they're already mapped to Ints so they can be plotted as XY coordinates)
+
+        df = self.features.data().copy()
         for col in self.features.categorical_features():
-            df[col + "_categorical"] = df[col].astype(str)
+            df[col + self._categorical_suffix] = df[col].astype(str)
 
         # TODO: rethink NaNs
         scatter_data = df.dropna().to_dict(orient="list")
