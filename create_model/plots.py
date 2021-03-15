@@ -101,12 +101,16 @@ class MainGrid:
         an end-user, but it can still be accessed (and clicked) by JS scripts in the background.
     """
 
+    _features_dropdown = "features_dropdown"
+
     def __init__(self, features):
         self.features = features
 
-    def _create_features_dropdown(self, name="features_dropdown"):
+    def _create_features_dropdown(self, name=None):
+        if name is None:
+            name = self._features_dropdown
         fts = sorted(self.features)
-        d = Select(options=fts, css_classes=["features_dropdown"], name=name)
+        d = Select(options=fts, css_classes=[self._features_dropdown], name=name)
         return d
 
     def _create_features_dropdown_callbacks(self, **kwargs):
@@ -122,8 +126,50 @@ class InfoGrid(MainGrid):
         another feature is chosen.
     """
 
-    infogrid_dropdown = "info_grid_dropdown"
-    feature_name_id = "feature_name"
+    # HTML elements
+    _info_div_html = "Feature to be discussed: <p id={feature_name_id}>{feature}</p>"
+
+    # CSS elements
+    _infogrid_dropdown = "info_grid_dropdown"
+    _feature_name_id = "feature_name"
+    _info_div = "info_div"
+
+    # JS callbacks
+    _histogram_callback_js = """
+                // new dropdown value
+                var new_val = cb_obj.value;  
+                
+                // new histogram data 
+                var new_hist = hist_data[new_val];
+                var hist = new_hist[0];
+                var left_edges = new_hist[1];
+                var right_edges = new_hist[2];
+                
+                /* var edges = new_hist[1];
+                var left_edges = edges.slice(0, edges.length - 1);
+                var right_edges = edges.slice(1, edges.length); */
+                
+                // histogram source updated
+                hist_source.data["hist"] = hist;
+                hist_source.data["left_edges"] = left_edges;
+                hist_source.data["right_edges"] = right_edges;
+                
+                // updating ColumnDataSources
+                hist_source.change.emit();
+                
+            """
+
+    _info_div_callback = """
+                // new values
+                var new_feature = cb_obj.value;  // new feature
+                
+                // updating 
+                document.querySelector("#" + "{feature_name_id}").innerText = new_feature;
+            """
+
+    # plot elements
+    _fill_color = "#8CA8CD"
+    _histogram_title = "Feature Distribution"
 
     def __init__(self, features):
         super().__init__(features)
@@ -132,7 +178,7 @@ class InfoGrid(MainGrid):
 
         histogram_source, histogram_plot = self._create_histogram(histogram_data, initial_feature)
         info_div = self._create_info_div(initial_feature)
-        dropdown = self._create_features_dropdown(self.infogrid_dropdown)
+        dropdown = self._create_features_dropdown(self._infogrid_dropdown)
 
         callbacks = self._create_features_dropdown_callbacks(
             histogram_data=histogram_data,
@@ -166,43 +212,12 @@ class InfoGrid(MainGrid):
             "hist_data": histogram_data
         }
 
-        callback = CustomJS(args=kwargs, code="""
-                // new dropdown value
-                var new_val = cb_obj.value;  
-                
-                // new histogram data 
-                var new_hist = hist_data[new_val];
-                var hist = new_hist[0];
-                var left_edges = new_hist[1];
-                var right_edges = new_hist[2];
-                
-                /* var edges = new_hist[1];
-                var left_edges = edges.slice(0, edges.length - 1);
-                var right_edges = edges.slice(1, edges.length); */
-                
-                // histogram source updated
-                hist_source.data["hist"] = hist;
-                hist_source.data["left_edges"] = left_edges;
-                hist_source.data["right_edges"] = right_edges;
-                
-                // updating ColumnDataSources
-                hist_source.change.emit();
-                
-            """)
+        callback = CustomJS(args=kwargs, code=self._histogram_callback_js)
         return callback
 
     def _create_info_div_callback(self):
         # this code will need to be updated with every detail added to the Info (Summary) Div
-        callback = CustomJS(code="""
-                // new values
-                var new_feature = cb_obj.value;  // new feature
-                
-                // updating 
-                document.querySelector("#" + "{feature_name_id}").innerText = new_feature;
-            """.format(
-            feature_name_id=self.feature_name_id)
-        )
-
+        callback = CustomJS(code=self._info_div_callback.format(feature_name_id=self._feature_name_id))
         return callback
 
     def _create_histogram(self, histogram_data, feature):
@@ -232,23 +247,23 @@ class InfoGrid(MainGrid):
         kwargs = {
             "plot_height": 460,
             "plot_width": 460,
-            "title": "Feature Distribution"
+            "title": self._histogram_title
         }
 
         p = default_figure(kwargs)
         p.quad(top="hist", bottom=0, left="left_edges", right="right_edges", source=source,
-               fill_color="#8CA8CD", line_color="#8CA8CD")
+               fill_color=self._fill_color, line_color=self._fill_color)
 
         p.y_range.start = 0
         p.yaxis.visible = False
         return p
 
     def _create_info_div(self, feature):
-        text = "Feature to be discussed: <p id={feature_name_id}>{feature}</p>".format(
-            feature_name_id=self.feature_name_id,
+        text = self._info_div_html.format(
+            feature_name_id=self._feature_name_id,
             feature=feature
         )
-        d = Div(name="info_div", css_classes=["info_div"], text=text)
+        d = Div(name=self._info_div, css_classes=[self._info_div], text=text)
 
         return d
 
@@ -269,6 +284,48 @@ class ScatterPlotGrid(MainGrid):
         Dropdown from a parent MainGrid class is connected via JS to dynamically change X values in scatter plots.
     """
 
+    # HTML elements
+    _row_description_html = "{hue}"
+    _legend_no_hue_html = "No color - too many categories!"
+    _legend_template_html = """
+        <div class='legend-row'><span style='background-color: {color}' class='legend-marker'>
+        </span>{category}</div>
+    """
+
+    # CSS elements
+    _scatterplot_grid_dropdown = "scatter_plot_grid_dropdown"
+    _active_feature_hue = "active_feature_hue"
+    _scatterplot_row = "scatter_plot_row"
+    _hue_title = "hue-title"
+    _row_description = "row-description"
+
+    # JS Callbacks
+    _scatterplot_callback_js = """
+                // new dropdown value
+                var new_val = cb_obj.value;  
+                
+                // new x 
+                var new_x = new_val;
+                
+                // scatter source updated
+                for (i=0; i<scatter_sources.length; i++) {
+                    scatter_sources[i].data["x"] = scatter_sources[i].data[new_x];
+                    scatter_sources[i].change.emit();
+                };
+                
+                // removing previous greying out
+                var all_scatter_rows = document.getElementsByClassName("scatter_plot_row");
+                for (j=0; j<all_scatter_rows.length; j++) {
+                    all_scatter_rows[j].classList.remove("active_feature_hue");
+                };
+                
+                // greying out
+                var scatter_row = document.getElementsByClassName("scatter_plot_row_" + new_val);
+                scatter_row[0].classList.add("active_feature_hue");
+
+            """
+
+    # Color Scheme
     categorical_palette = Category10
     linear_palette = Reds4[::-1]
 
@@ -276,10 +333,12 @@ class ScatterPlotGrid(MainGrid):
     categorical_palette[2] = Category10[3][:2]
     categorical_palette[1] = Category10[3][:1]
 
-    scatterplot_grid_dropdown = "scatter_plot_grid_dropdown"
+    _fill_color = "#8CA8CD"
 
-    def __init__(self, features):
+    def __init__(self, features, max_categories, categorical_suffix="_categorical"):
         self.features = features
+        self.max_categories = max_categories
+        self.categorical_suffix = categorical_suffix
         super().__init__(features)
 
     def scattergrid(self, scatter_data, categorical_columns, initial_feature, feature_mapping):
@@ -289,10 +348,11 @@ class ScatterPlotGrid(MainGrid):
         # Issue is relatively minor, I won't be doing any workaround for now.
 
         features = sorted(self.features)
-        scatter_row_sources, scatter_rows = self._create_scatter_rows(scatter_data, features,
-                                                                      initial_feature, categorical_columns, feature_mapping)
+        scatter_row_sources, scatter_rows = self._create_scatter_rows(
+            scatter_data, features, initial_feature, categorical_columns, feature_mapping
+        )
 
-        dropdown = self._create_features_dropdown(self.scatterplot_grid_dropdown)
+        dropdown = self._create_features_dropdown(self._scatterplot_grid_dropdown)
         callbacks = self._create_features_dropdown_callbacks(scatter_row_sources)
         for callback in callbacks:
             dropdown.js_on_change("value", callback)
@@ -319,30 +379,7 @@ class ScatterPlotGrid(MainGrid):
             "scatter_sources": sources
         }
 
-        callback = CustomJS(args=kwargs, code="""
-                // new dropdown value
-                var new_val = cb_obj.value;  
-                
-                // new x 
-                var new_x = new_val;
-                
-                // scatter source updated
-                for (i=0; i<scatter_sources.length; i++) {
-                    scatter_sources[i].data["x"] = scatter_sources[i].data[new_x];
-                    scatter_sources[i].change.emit();
-                };
-                
-                // removing previous greying out
-                var all_scatter_rows = document.getElementsByClassName("scatter_plot_row");
-                for (j=0; j<all_scatter_rows.length; j++) {
-                    all_scatter_rows[j].classList.remove("active_feature_hue");
-                };
-                
-                // greying out
-                var scatter_row = document.getElementsByClassName("scatter_plot_row_" + new_val);
-                scatter_row[0].classList.add("active_feature_hue");
-
-            """)
+        callback = CustomJS(args=kwargs, code=self._scatterplot_callback_js)
         return callback
 
     def _create_scatter_rows(self, scatter_data, features, initial_feature, categorical_columns, feature_mapping):
@@ -354,7 +391,7 @@ class ScatterPlotGrid(MainGrid):
                                                                   feature, categorical_columns, feature_mapping)
 
             if feature == initial_feature:
-                single_row.css_classes.append("active_feature_hue")
+                single_row.css_classes.append(self._active_feature_hue)
 
             all_sources.extend(sources)
             all_rows.append(single_row)
@@ -378,7 +415,7 @@ class ScatterPlotGrid(MainGrid):
         r = row(
             color_legend,
             *plots,
-            css_classes=["scatter_plot_row", "scatter_plot_row_" + hue],
+            css_classes=[self._scatterplot_row, self._scatterplot_row + "_" + hue],
             margin=(0, 48, 0, 0)
         )
 
@@ -402,7 +439,7 @@ class ScatterPlotGrid(MainGrid):
             "y": "y",
             "source": source,
             "size": 10,
-            "fill_color": "#8CA8CD"
+            "fill_color": self._fill_color
         }
 
         if cmap:
@@ -421,13 +458,11 @@ class ScatterPlotGrid(MainGrid):
         return p
 
     def _create_color_map(self, hue, data, categorical_columns):
-        # TODO: "_categorical" needs to be exposed and not hardcoded
         if hue in categorical_columns:
             # adding suffix to column name as described in analyzer._scatter_data
-            factors = sorted(set(data[hue + "_categorical"]))
-            # TODO: get the same max_categories as every other object
-            if len(factors) <= 10:
-                cmap = factor_cmap(hue + "_categorical", palette=self.categorical_palette[len(factors)],
+            factors = sorted(set(data[hue + self.categorical_suffix]))
+            if len(factors) <= self.max_categories:
+                cmap = factor_cmap(hue + self.categorical_suffix, palette=self.categorical_palette[len(factors)],
                                    factors=factors)
             else:
                 # If there is too many categories, None is returned
@@ -441,8 +476,8 @@ class ScatterPlotGrid(MainGrid):
     def _create_row_description(self, hue, cmap, categorical_columns, feature_mapping):
 
         kwargs = {
-            "text": "{hue}".format(hue=hue),
-            "css_classes": ["hue-title"]
+            "text": self._row_description_html.format(hue=hue),
+            "css_classes": [self._hue_title]
         }
 
         legend = self._create_legend(hue, cmap, categorical_columns, feature_mapping)
@@ -455,27 +490,23 @@ class ScatterPlotGrid(MainGrid):
             width=200,
             height=195,
             width_policy="fixed",
-            css_classes=["row-description"]
+            css_classes=[self._row_description]
         )
 
         return c
 
     def _create_legend(self, hue, cmap, categorical_columns, feature_mapping):
-
-        # TODO: include proper mapping for categorical features
-        legend = Div(text="No hue - too many categories!")
+        legend = Div(text=self._legend_no_hue_html)
         if cmap:
             if hue in categorical_columns:
                 mapping = feature_mapping[hue]
                 categories = cmap["transform"].factors
                 colors = cmap["transform"].palette
                 text = ""
-                template = "<div class='legend-row'><span style='background-color: {color}' class='legend-marker'></span>{category}</div>"
-                # text = "<ul style='list-style-type: circle'>"
-                # template = "<li style='color: {color}'>{category}</li>"
+                template = self._legend_template_html
                 for category, color in zip(categories, colors):
-                    #mapped_category = mapping[int(category)]
-                    text += template.format(color=color, category=category)
+                    mapped_category = mapping[float(category)]
+                    text += template.format(color=color, category=mapped_category)
 
                 legend = Div(text=text, css_classes=["legend"])
 

@@ -70,7 +70,7 @@ class Analyzer:
 
     def scatterplot(self, chosen_feature):
         feature_list = self.features.features()
-        scattergrid = ScatterPlotGrid(feature_list)
+        scattergrid = ScatterPlotGrid(feature_list, self.max_categories)
         plot = scattergrid.scattergrid(self._scatter_data(), self.features.categorical_features(), chosen_feature,
                                        self.features.mapping())
         return plot
