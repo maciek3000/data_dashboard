@@ -27,7 +27,7 @@ def feature_descriptions():
             d: "Sex of the Participant"
         },
         "AgeGroup": {
-            d: "Age Group of the Participant.",
+            # d: "Age Group of the Participant.",
             m: {
                 18: "Between 18 and 22",
                 23: "Between 23 and 27",

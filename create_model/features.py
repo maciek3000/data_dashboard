@@ -155,7 +155,9 @@ class Features:
 
     max_categories = 10
 
-    def __init__(self, X, y, descriptions=None):
+    _description_not_available = "Description not Available"
+
+    def __init__(self, X, y, descriptor=None):
 
         self.original_dataframe = pd.concat([X, y], axis=1).copy()
         self.target = y.name
@@ -169,44 +171,37 @@ class Features:
         self._mapped_dataframe = None
 
         self._mapping = None
+        self._descriptions = None
 
         # returns {feature_name: feature object} dict
-        self._features = self._analyze_features(descriptions)
+        self._features = self._analyze_features(descriptor)
 
-    def _analyze_features(self, descriptions):
+    def _analyze_features(self, descriptor):
         features = {}
 
         for column in self.original_dataframe.columns:
             # TODO: rethink if can be split into smaller functions
             try:
-                description = "Description not Available"
+                description = None
                 category = None
                 mapping = None
                 category_imputed = False
 
                 # Provided keys extracted only if object was initialized
-                if descriptions is not None and descriptions.initialized:  # !
-                    if column in descriptions.keys():
+                if descriptor is not None and descriptor.initialized:  # !
+                    if column in descriptor.keys():
+                        description = descriptor.description(column)
+                        category = descriptor.category(column)
+                        mapping = descriptor.mapping(column)
 
-                        try:
-                            description = descriptions.description(column)
-                        except KeyError:
-                            pass
-
-                        try:
-                            category = descriptions.category(column)
-                        except KeyError:
-                            pass
-
-                        try:
-                            mapping = descriptions.mapping(column)
-                        except KeyError:
-                            pass
-
-                # category imputed in case it wasn't extracted from JSON
+                # category imputed in case it wasn't extracted from descriptor
                 if (not category) or (category not in self.available_categories):
                     category = self._impute_column_type(self.original_dataframe[column])
                     category_imputed = True
+
+                # default Description
+                if description is None:
+                    description = self._description_not_available
 
                 if category == self.categorical:  # Categorical
                     feature = CategoricalFeature(
@@ -306,6 +301,11 @@ class Features:
             self._mapping = self._create_mapping()
         return self._mapping
 
+    def descriptions(self):
+        if self._descriptions is None:
+            self._descriptions = self._create_descriptions()
+        return self._descriptions
+
     def unused_features(self):
         return self._unused_columns
 
@@ -348,6 +348,12 @@ class Features:
         output = {}
         for feature in self.features():
             output[feature] = self._features[feature].mapping()
+        return output
+
+    def _create_descriptions(self):
+        output = {}
+        for feature in self.features():
+            output[feature] = self._features[feature].description
         return output
 
     def __getitem__(self, arg):

@@ -1,4 +1,5 @@
 from create_model.features import NumericalFeature, CategoricalFeature, Features, sort_strings
+from create_model.descriptor import FeatureDescriptor
 import pandas as pd
 import pytest
 
@@ -466,3 +467,22 @@ def test_features_create_mapping(data_classification_balanced, feature_descripto
     actual = f.mapping()
 
     assert actual == expected
+
+
+def test_features_create_descriptions(data_classification_balanced, feature_descriptions, feature_descriptor):
+    """Testing if ._create_descriptions creates a correct descriptions dictionary."""
+    placeholder = Features._description_not_available
+    d = FeatureDescriptor._description
+    assert True
+    expected_descriptions = {}
+    for feat in ["Sex", "Height", "Product", "Price", "bool", "Target"]:
+        expected_descriptions[feat] = feature_descriptions[feat][d]
+
+    expected_descriptions["AgeGroup"] = placeholder
+
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor)
+
+    actual_descriptions = f.descriptions()
+
+    assert actual_descriptions == expected_descriptions
