@@ -65,7 +65,6 @@ class Output:
         feature_list = self.analyzer.feature_list()
         first_feature = sorted(feature_list)[0]
 
-
         overview_rendered = self.view_overview.render(
             base_css=base_css,
             creation_date=created_on,
@@ -75,7 +74,8 @@ class Output:
             unused_features=self.analyzer.unused_features(),
             head_df=self.analyzer.df_head(),
             pairplot=self.analyzer.features_pairplot_static(),
-            features=self.analyzer.features  # features object needed for descriptions/mappings
+            mapping=self.analyzer.features_mapping(),
+            descriptions=self.analyzer.features_descriptions()
         )
 
         features_rendered = self.view_features.render(

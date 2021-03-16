@@ -282,7 +282,12 @@ def test_html_table():
         <tbody>
         <tr><th>Sex</th><td></td></tr>
         <tr><th>Target</th><td></td></tr>
-        <tr><th>Invalid Column</th><td></td></tr>
+        <tr><th>Price</th><td></td></tr>
+        <tr><th>AgeGroup</th><td></td></tr>
+        <tr><th>Height</th><td></td></tr>
+        <tr><th>Product</th><td></td></tr>
+        <tr><th>bool</th><td></td></tr>
+        <tr><th>Target</th><td></td></tr>
         </tbody>
         </table>
     """

@@ -14,21 +14,21 @@ class BaseView:
         standard_params() method should be called to get the dictionary of those HTML variables:
             jinja template id: content
     """
-    base_css_id = "base_css"
-    creation_date_id = "created_on"
-    file_suffix = "_file"
+    _base_css = "base_css"
+    _creation_date = "created_on"
+    _file_suffix = "_file"
 
     def __init__(self):
         pass
 
     def standard_params(self, base_css, creation_date, hyperlinks):
         output = {
-            self.base_css_id: base_css,
-            self.creation_date_id: creation_date
+            self._base_css: base_css,
+            self._creation_date: creation_date
         }
 
         for view, path in hyperlinks.items():
-            output[(view + self.file_suffix)] = path
+            output[(view + self._file_suffix)] = path
 
         return output
 
@@ -49,19 +49,17 @@ class Overview(BaseView):
         (provided in JSON file and/or appropriate mapping of the values).
     """
 
-    # TODO: change names
-    numerical_table_id = "described_numeric"
-    categorical_table_id = "described_categorical"
-    table_head = "head"
+    # Template Elements
+    _numerical_table = "described_numeric"
+    _categorical_table = "described_categorical"
+    _table_head = "head"
+    _unused_columns = "unused_cols"
+    _pairplot_id = "pairplot"
+    _pairplot_filename = "pairplot"
+    _overview_css = "overview_css"
+    _assets = "assets"
 
-    unused_columns = "unused_cols"
 
-    pairplot = "pairplot"
-    pairplot_filename = "pairplot"
-
-    css_id = "overview_css"
-
-    assets = "assets"
 
     def __init__(self, template, css_path, output_directory):
         super().__init__()
@@ -69,7 +67,11 @@ class Overview(BaseView):
         self.css = css_path
         self.output_directory = output_directory
 
-    def render(self, base_css, creation_date, hyperlinks, numerical_df, categorical_df, unused_features, head_df, pairplot, features):
+    def render(self,
+               base_css, creation_date, hyperlinks,  # base template params
+               numerical_df, categorical_df, unused_features, head_df, pairplot,  # main elements of the View
+               mapping, descriptions  # auxilliary dictionaries
+               ):
 
         output = {}
 
@@ -77,30 +79,30 @@ class Overview(BaseView):
         standard = super().standard_params(base_css, creation_date, hyperlinks)
         output.update(standard)
 
-        output[self.css_id] = self.css
+        output[self._overview_css] = self.css
 
         # Tables
-        tables = self._tables(numerical_df, categorical_df, head_df, features)
+        tables = self._tables(numerical_df, categorical_df, head_df, mapping, descriptions)
         output.update(tables)
 
         # unused columns list
         unused_features_list = self._unused_features_html(unused_features)
-        output[self.unused_columns] = unused_features_list
+        output[self._unused_columns] = unused_features_list
 
         pairplot_img = self._pairplot(pairplot)
-        output[self.pairplot] = pairplot_img
+        output[self._pairplot_id] = pairplot_img
 
         return self.template.render(**output)
 
-    def _tables(self, numerical_df, categorical_df, head_df, features):
+    def _tables(self, numerical_df, categorical_df, head_df, mapping, descriptions):
         output = {}
 
-        tables_ids = [self.numerical_table_id, self.categorical_table_id, self.table_head]
+        tables_ids = [self._numerical_table, self._categorical_table, self._table_head]
         dataframes = [numerical_df, categorical_df, head_df]
 
         for table_id, dataframe in zip(tables_ids, dataframes):
             raw_html = self._change_dataframe_to_html(dataframe)
-            html_with_descriptions = self._append_descriptions_to_features(raw_html, features)
+            html_with_descriptions = self._stylize_html_table(raw_html, mapping, descriptions)
             output[table_id] = html_with_descriptions
 
         return output
@@ -108,49 +110,51 @@ class Overview(BaseView):
     def _change_dataframe_to_html(self, dataframe):
         return dataframe.to_html(float_format="{:.2f}".format)
 
-    def _append_descriptions_to_features(self, html_table, features):
-        # TODO: split into smaller functions
-
+    def _stylize_html_table(self, html_table, mapping, descriptions):
         table = BeautifulSoup(html_table, "html.parser")
         headers = table.select("table tbody tr th")
+
         for header in headers:
-            try:
-                description = features[header.string].description
-            except KeyError:
-                continue
+            description = descriptions[header.string]
+            new_description = self._append_description(header, description, table)
+            header_mapping = mapping[header.string]
+            self._append_mapping(new_description, header_mapping, table)
+            header.p.append(new_description)
 
-            # adding <span> that will hold description of a feature
-            # every \n is replaced with <br> tag
-            header.string.wrap(table.new_tag("p"))
-            new_tag = table.new_tag("span")
-            lines = description.split("\n")
-            new_tag.string = lines[0]
-            if len(lines) > 1:
-                for line in lines[1:]:
-                    new_tag.append(table.new_tag("br"))
-                    new_tag.append(table.new_string("{}".format(line)))
-
-            # appending mappings to descriptions as long as they exist (they are not none)
-            mappings = features[header.string].mapping()
-            if mappings:
-                new_tag.append(table.new_tag("br"))
-                new_tag.append(table.new_tag("br"))
-                new_tag.append(table.new_string("Category - Original (Transformed)"))
-                i = 0
-                for key, val in mappings.items():
-                    new_tag.append(table.new_tag("br"))
-                    new_tag.append(table.new_string("{} - {}".format(key, val)))
-                    if i >= 10:
-                        new_tag.append(table.new_tag("br"))
-                        new_tag.append(table.new_string("(...) Showing only first 10 categories"))
-                        break
-                    i += 1
-
-            header.p.append(new_tag)
         return str(table)
 
+    def _append_description(self, table_header, description, table):
+        # adding <span> that will hold description of a feature
+        # every \n is replaced with <br> tag
+        table_header.string.wrap(table.new_tag("p"))
+        new_tag = table.new_tag("span")
+        lines = description.split("\n")
+        new_tag.string = lines[0]
+        if len(lines) > 1:
+            for line in lines[1:]:
+                new_tag.append(table.new_tag("br"))
+                new_tag.append(table.new_string("{}".format(line)))
+        return new_tag
+
+    def _append_mapping(self, html, mapping, table):
+        # appending mappings to descriptions as long as they exist (they are not none)
+        if mapping:
+            html.append(table.new_tag("br"))
+            html.append(table.new_tag("br"))
+            html.append(table.new_string("Category - Original (Transformed)"))
+            i = 0
+            for key, val in mapping.items():
+                html.append(table.new_tag("br"))
+                html.append(table.new_string("{} - {}".format(key, val)))
+                if i >= 10:
+                    html.append(table.new_tag("br"))
+                    html.append(table.new_string("(...) Showing only first 10 categories"))
+                    break
+                i += 1
+
     def _unused_features_html(self, unused_features):
-        # TODO: redesign with bs4 and append descriptions
+        # Descriptions or mapping won't be appended - when the feature is unused, no calculations
+        # are being done on this. Therefore, there might not be a respective description or mapping to append.
 
         html = "<ul>"
         for feature in unused_features:
@@ -161,7 +165,7 @@ class Overview(BaseView):
     def _pairplot(self, pairplot):
         template = "<a href={path}><img src={path} title='Click to open larger version'></img></a>"
 
-        path = os.path.join(self.output_directory, self.assets, (self.pairplot_filename + ".png"))
+        path = os.path.join(self.output_directory, self._assets, (self._pairplot_filename + ".png"))
         pairplot.savefig(path)
         html = template.format(path=path)
         return html
@@ -183,19 +187,19 @@ class FeatureView(BaseView):
         ScatterPlotGrid for explanation.
     """
 
-    first_feature = "chosen_feature"
-    features_css = "features_css"
-    features_js = "features_js"
-    features_menu = "features_menu"
+    _first_feature = "chosen_feature"
+    _features_css = "features_css"
+    _features_js = "features_js"
+    _features_menu = "features_menu"
 
-    infogrid_script = "bokeh_script_info_grid"
-    infogrid = "info_grid"
+    _infogrid_script = "bokeh_script_info_grid"
+    _infogrid = "info_grid"
 
-    scatterplot_script = "bokeh_script_scatter_plot_grid"
-    scatterplot = "scatter_plot_grid"
+    _scatterplot_script = "bokeh_script_scatter_plot_grid"
+    _scatterplot = "scatter_plot_grid"
 
-    feature_menu_header = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
-    feature_menu_single_feature = "<div class='single-feature'>{:03}. {}</div>"
+    _feature_menu_header = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
+    _feature_menu_single_feature = "<div class='single-feature'>{:03}. {}</div>"
 
     def __init__(self, template, css_path, js_path):
         super().__init__()
@@ -212,30 +216,30 @@ class FeatureView(BaseView):
         output.update(standard)
 
         # JS/CSS
-        output[self.features_css] = self.css
-        output[self.features_js] = self.js
+        output[self._features_css] = self.css
+        output[self._features_js] = self.js
 
         # First Feature
-        output[self.first_feature] = first_feature
-        output[self.features_menu] = self._features_menu(feature_list)
+        output[self._first_feature] = first_feature
+        output[self._features_menu] = self._create_features_menu(feature_list)
 
         # Histogram
         infogrid_script, infogrid_div = components(histogram)
-        output[self.infogrid_script] = infogrid_script
-        output[self.infogrid] = infogrid_div
+        output[self._infogrid_script] = infogrid_script
+        output[self._infogrid] = infogrid_div
 
         # Scatter Plot
         scatterplot_script, scatterplot_div = components(scatterplot)
-        output[self.scatterplot_script] = scatterplot_script
-        output[self.scatterplot] = scatterplot_div
+        output[self._scatterplot_script] = scatterplot_script
+        output[self._scatterplot] = scatterplot_div
 
         return self.template.render(**output)
 
-    def _features_menu(self, features):
-        html = self.feature_menu_header
-        template = self.feature_menu_single_feature
+    def _create_features_menu(self, features):
+        html = self._feature_menu_header
+        template = self._feature_menu_single_feature
         i = 0
-        for feat in sorted(features):
+        for feat in features:
             html += template.format(i, feat)
             i += 1
 

@@ -124,6 +124,12 @@ class Analyzer:
     def unused_features(self):
         return self.features.unused_features()
 
+    def features_mapping(self):
+        return self.features.mapping()
+
+    def features_descriptions(self):
+        return self.features.descriptions()
+
 #
 # #### ---------- DONT DELETE YET ------------ #####
 #
