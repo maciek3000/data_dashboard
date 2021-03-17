@@ -22,7 +22,9 @@ class Coordinator:
         .full_analysis() function which tries to build the whole analysis from the ground up.
     """
 
-    name = "create_model"
+    _name = "create_model"
+    _output_created_text = "Created output at {directory}"
+    _model_found_text = "Model: {name}\nScore: {score}\nParams: {params}"
 
     def __init__(self, X, y, scoring=None, feature_descriptions_dict=None, root_path=None):
 
@@ -48,7 +50,7 @@ class Coordinator:
                                        self.features.numerical_features(drop_target=True),
                                        self.features.categorical_features(drop_target=True))
 
-        self.output = Output(self.root_path, analyzer=self.analyzer, package_name=self.name)
+        self.output = Output(self.root_path, analyzer=self.analyzer, package_name=self._name)
 
     def find_model(self):
         if not self.transformed_X:
@@ -58,7 +60,7 @@ class Coordinator:
         model_finder = ModelFinder(self.transformed_X, self.y, scoring=self.scoring, random_state=2862)
 
         model, score, params = model_finder.find_best_model()
-        print("Model: {}\nScore: {}\nParams: {}".format(model.__name__, score, params))
+        print(self._model_found_text.format(name=model.__name__, score=score, params=params))
 
         return model(**params).fit(self.transformed_X, self.y)
 
@@ -67,7 +69,7 @@ class Coordinator:
 
     def create_html(self):
         self.output.create_html()
-        print("Created output at {directory}".format(directory=self.output.output_directory))
+        print(self._output_created_text.format(directory=self.output.output_directory))
 
     def full_analysis(self):
         raise NotImplementedError

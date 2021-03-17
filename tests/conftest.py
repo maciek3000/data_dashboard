@@ -1,8 +1,6 @@
 # built-in
 import pytest
 import random
-import json
-import tempfile
 import os
 import copy
 
@@ -28,7 +26,7 @@ def feature_descriptions():
             d: "Sex of the Participant"
         },
         "AgeGroup": {
-            # d: "Age Group of the Participant.",
+            # d: "Age Group of the Participant.",  # description removed for testing purposes
             m: {
                 18: "Between 18 and 22",
                 23: "Between 23 and 27",
@@ -111,7 +109,6 @@ def feature_descriptor_broken(feature_descriptions):
 
 @pytest.fixture
 def data_classification_balanced():
-
     random_seed = 56
 
     columns = ["Sex", "AgeGroup", "Height", "Date", "Product", "Price", "bool", "Target"]
@@ -127,7 +124,7 @@ def data_classification_balanced():
     # Age is treated here as a Categorical Variable, because there are only 9 unique values presented
     age_data = random.choices(
         range(18, 63, 5),
-        weights=([0.12]*5) + ([0.1]*4),
+        weights=([0.12] * 5) + ([0.1] * 4),
         k=length
     )
 
@@ -156,10 +153,11 @@ def data_classification_balanced():
     # Target
     target_data = random.choices([1, 0], k=length)
 
+    data_list = [sex_data, age_data, height_data, date_data, product_data, price_data, bool_data, target_data]
     data = {
-        col: series for col, series in zip(columns,
-        [sex_data, age_data, height_data, date_data, product_data, price_data, bool_data, target_data])
+        col: series for col, series in zip(columns, data_list)
     }
+
     df = pd.DataFrame(data=data)
 
     # random missing data
@@ -234,6 +232,7 @@ def expected_raw_mapping():
     }
     return expected_raw_mapping
 
+
 @pytest.fixture
 def expected_mapping():
     expected_mapping = {
@@ -275,6 +274,7 @@ def expected_mapping():
     }
     return expected_mapping
 
+
 @pytest.fixture
 def html_test_table():
     _ = """
@@ -305,4 +305,3 @@ def root_path_to_package():
     root_path = os.path.split(os.getcwd())[0]
 
     return root_path, package_name
-
