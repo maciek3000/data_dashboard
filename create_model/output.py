@@ -44,7 +44,8 @@ class Output:
         self.view_overview = Overview(
                     template=self.env.get_template("overview.html"),
                     css_path=os.path.join(self.static_path, "overview.css"),
-                    output_directory=self.output_directory
+                    output_directory=self.output_directory,
+                    max_categories=self.analyzer.max_categories
                 )
 
         self.view_features = FeatureView(

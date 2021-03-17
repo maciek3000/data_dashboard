@@ -59,13 +59,17 @@ class Overview(BaseView):
     _overview_css = "overview_css"
     _assets = "assets"
 
+    # Strings for HTML
+    _mapping_title = "Category - Original"
+    _mapping_format = "{mapped} - {original}"
+    _too_many_categories = "(...) Showing only first {} categories"
 
-
-    def __init__(self, template, css_path, output_directory):
+    def __init__(self, template, css_path, output_directory, max_categories):
         super().__init__()
         self.template = template
         self.css = css_path
         self.output_directory = output_directory
+        self.max_categories = max_categories
 
     def render(self,
                base_css, creation_date, hyperlinks,  # base template params
@@ -141,15 +145,15 @@ class Overview(BaseView):
         if mapping:
             html.append(table.new_tag("br"))
             html.append(table.new_tag("br"))
-            html.append(table.new_string("Category - Original (Transformed)"))
-            i = 0
-            for key, val in mapping.items():
-                html.append(table.new_tag("br"))
-                html.append(table.new_string("{} - {}".format(key, val)))
-                if i >= 10:
+            html.append(table.new_string(self._mapping_title))
+            i = 1
+            for mapped, original in mapping.items():
+                if i > self.max_categories:  # 0 indexing
                     html.append(table.new_tag("br"))
-                    html.append(table.new_string("(...) Showing only first 10 categories"))
+                    html.append(table.new_string(self._too_many_categories.format(i - 1)))
                     break
+                html.append(table.new_tag("br"))
+                html.append(table.new_string(self._mapping_format.format(mapped=mapped, original=original)))
                 i += 1
 
     def _unused_features_html(self, unused_features):

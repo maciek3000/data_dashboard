@@ -264,8 +264,8 @@ def expected_mapping():
             9: "Between 58 and 62"
         },
         "bool": {
-            1: 0,
-            2: 1
+            1: False,
+            2: True
         },
         "Target": {
             1: "No",
@@ -275,7 +275,7 @@ def expected_mapping():
     return expected_mapping
 
 @pytest.fixture
-def test_html_table():
+def html_test_table():
     _ = """
         <table>
         <thead><tr><th></th><th></th></tr></thead>
@@ -287,7 +287,6 @@ def test_html_table():
         <tr><th>Height</th><td></td></tr>
         <tr><th>Product</th><td></td></tr>
         <tr><th>bool</th><td></td></tr>
-        <tr><th>Target</th><td></td></tr>
         </tbody>
         </table>
     """
