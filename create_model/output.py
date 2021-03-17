@@ -20,51 +20,66 @@ class Output:
         all templates.
     """
 
-    time_format = "%d-%b-%Y %H:%M:%S"
-    footer_note = "Created on {time}"
+    # base template
+    _base_css = "style.css"
+    _time_format = "%d-%b-%Y %H:%M:%S"
+    _footer_note = "Created on {time}"
 
-    view_overview_filename = "overview"
-    view_features_filename = "features"
+    # views
+    _view_overview = "overview"
+    _view_overview_html = "overview.html"
+    _view_overview_css = "overview.css"
+    _view_features = "features"
+    _view_features_html = "features.html"
+    _view_features_css = "features.css"
+    _view_features_js = "features.js"
 
-    def __init__(self, root_path, analyzer, data_name, package_name):
+    # directories
+    _output_directory_name = "output"
+    _static_directory_name = "static"
+    _templates_directory_name = "templates"
+
+    def __init__(self, root_path, analyzer, package_name):
 
         self.analyzer = analyzer
-        # self.naive_mapping = self.analyzer.features.mapping()  # TODO
 
         # TODO:
         # this solution is sufficient right now but nowhere near satisfying
         # if the Coordinator is imported as a package, this whole facade might crumble with directories
         # being created in seemingly random places.
         self.root_path = root_path
-        self.output_directory = os.path.join(self.root_path, "output")
-        self.templates_path = os.path.join(self.root_path, package_name, "templates")
-        self.static_path = os.path.join(self.root_path, package_name, "static")
+        self.output_directory = os.path.join(self.root_path, self._output_directory_name)
+        self.templates_path = os.path.join(self.root_path, package_name, self._templates_directory_name)
+        self.static_path = os.path.join(self.root_path, package_name, self._static_directory_name)
         self.env = Environment(loader=FileSystemLoader(self.templates_path))
 
         self.view_overview = Overview(
-                    template=self.env.get_template("overview.html"),
-                    css_path=os.path.join(self.static_path, "overview.css"),
+                    template=self.env.get_template(self._view_overview_html),
+                    css_path=os.path.join(self.static_path, self._view_overview_css),
                     output_directory=self.output_directory,
                     max_categories=self.analyzer.max_categories
                 )
 
         self.view_features = FeatureView(
-                    template=self.env.get_template("features.html"),
-                    css_path=os.path.join(self.static_path, "features.css"),
-                    js_path=os.path.join(self.static_path, "features.js"),
+                    template=self.env.get_template(self._view_features_html),
+                    css_path=os.path.join(self.static_path, self._view_features_css),
+                    js_path=os.path.join(self.static_path, self._view_features_js),
                 )
 
     def create_html(self):
 
-        base_css = os.path.join(self.static_path, "style.css")
+        base_css = os.path.join(self.static_path, self._base_css)
 
-        current_time = datetime.datetime.now().strftime(self.time_format)
-        created_on = self.footer_note.format(time=current_time)
+        current_time = datetime.datetime.now().strftime(self._time_format)
+        created_on = self._footer_note.format(time=current_time)
 
-        hyperlinks = self._views_hyperlinks()
+        hyperlinks = {
+            self._view_overview: self._path_to_file(self._view_overview_html),
+            self._view_features: self._path_to_file(self._view_features_html)
+        }
 
         feature_list = self.analyzer.feature_list()
-        first_feature = sorted(feature_list)[0]
+        first_feature = feature_list[0]
 
         overview_rendered = self.view_overview.render(
             base_css=base_css,
@@ -90,18 +105,12 @@ class Output:
         )
 
         rendered_templates = {
-            self.view_overview_filename: overview_rendered,
-            self.view_features_filename: features_rendered
+            self._view_overview_html: overview_rendered,
+            self._view_features_html: features_rendered
         }
 
-        for template_filename, template in rendered_templates.items():
-            self._write_html(template_filename, template)
-
-    def _views_hyperlinks(self):
-        views_links = {}
-        for filename in [self.view_overview_filename, self.view_features_filename]:
-            views_links[filename] = self._path_to_file(filename)
-        return views_links
+        for template_filepath, template in rendered_templates.items():
+            self._write_html(template_filepath, template)
 
     def _write_html(self, template_filename, template):
         template_filepath = self._path_to_file(template_filename)
@@ -109,4 +118,4 @@ class Output:
             f.write(template)
 
     def _path_to_file(self, filename):
-        return os.path.join(self.output_directory, (filename + ".html"))
+        return os.path.join(self.output_directory, filename)

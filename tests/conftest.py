@@ -14,6 +14,7 @@ from scipy.stats import truncnorm, skewnorm
 # this package
 from create_model.descriptor import FeatureDescriptor
 from create_model.features import Features
+from create_model.analyzer import Analyzer
 
 
 @pytest.fixture
@@ -291,3 +292,17 @@ def html_test_table():
         </table>
     """
     return _
+
+
+@pytest.fixture
+def analyzer_fixture(fixture_features):
+    return Analyzer(fixture_features)
+
+
+@pytest.fixture
+def root_path_to_package():
+    package_name = "create_model"
+    root_path = os.path.split(os.getcwd())[0]
+
+    return root_path, package_name
+

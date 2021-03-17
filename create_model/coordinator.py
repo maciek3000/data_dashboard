@@ -48,7 +48,7 @@ class Coordinator:
                                        self.features.numerical_features(drop_target=True),
                                        self.features.categorical_features(drop_target=True))
 
-        self.output = Output(self.root_path, analyzer=self.analyzer, data_name="test", package_name=self.name)
+        self.output = Output(self.root_path, analyzer=self.analyzer, package_name=self.name)
 
     def find_model(self):
         if not self.transformed_X:
