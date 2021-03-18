@@ -141,8 +141,8 @@
 }
 
 .bk .legend {
-    border: 1px solid var(--light-gray);
-    width: 50%;
+    border: 0px solid var(--light-gray);
+    width: 100%;
     margin-left: 24px;
     padding-left: 8px;
     padding-right: 24px;
@@ -150,7 +150,10 @@
 
 .legend-row {
     width: 100%;
-    text-align: center;
+    text-align: left;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
 }
 
 .legend-marker {
@@ -158,8 +161,9 @@
   width: 10px;
   border-radius: 50%;
   display: inline-block;
-  margin-right: 16px;
+  margin-right: 6px;
 }
+
 
 .hue-title {
     font-size: 1.7em !important;

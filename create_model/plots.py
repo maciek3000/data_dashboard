@@ -288,8 +288,8 @@ class ScatterPlotGrid(MainGrid):
     _row_description_html = "{hue}"
     _legend_no_hue_html = "No color - too many categories!"
     _legend_template_html = """
-        <div class='legend-row'><span style='background-color: {color}' class='legend-marker'>
-        </span>{category}</div>
+        <div class='legend-row'><div style='background-color: {color}' class='legend-marker'>
+        </div><div class='legend-description'>{category}</div></div>
     """
 
     # CSS elements
@@ -398,7 +398,9 @@ class ScatterPlotGrid(MainGrid):
 
         return all_sources, all_rows
 
-    def _create_single_scatter_row(self, scatter_data, features, initial_feature, hue, categorical_columns, feature_mapping):
+    def _create_single_scatter_row(
+            self, scatter_data, features, initial_feature, hue, categorical_columns, feature_mapping
+    ):
         sources = []
         plots = []
 

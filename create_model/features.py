@@ -1,8 +1,8 @@
 import pandas as pd
 
 
-def sort_strings(l):
-    return sorted(l, key=lambda x: x.upper())
+def sort_strings(list_of_strings):
+    return sorted(list_of_strings, key=lambda x: x.upper())
 
 
 class FeatureNotSupported(Exception):

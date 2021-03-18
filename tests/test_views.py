@@ -117,6 +117,21 @@ def test_stylize_html_table(html_test_table, expected_mapping, fixture_features)
 
 
 @pytest.mark.parametrize(
+    ("input_list", "expected_string"),
+    (
+            (["test1", "Test2"], "<ul><li>test1</li><li>Test2</li></ul>"),
+            (["feature 2", "feature 1", "aaaa"], "<ul><li>feature 2</li><li>feature 1</li><li>aaaa</li></ul>"),
+            (["Test", "test", "TEST"], "<ul><li>Test</li><li>test</li><li>TEST</li></ul>")
+    )
+)
+def test_overview_unused_features_html(input_list, expected_string):
+    o = Overview("test_template", "test_css", "test_output_directory", 5)
+    actual_html = o._unused_features_html(input_list)
+
+    assert actual_html == expected_string
+
+
+@pytest.mark.parametrize(
     ("input_features",),
     (
             (["Feature1", "Feature2", "Feature 3"],),
@@ -124,7 +139,7 @@ def test_stylize_html_table(html_test_table, expected_mapping, fixture_features)
             (["Feature3", "Feature1", "Feature2", "Feature5", "Feature8"],)
     )
 )
-def test_featureview_create_features_menu(input_features):
+def test_feature_view_create_features_menu(input_features):
     """Testing if Features menu is created properly given the input features."""
     title = "<div>Title</div>"
     single_feature = "<span>{}. {}</span>"
