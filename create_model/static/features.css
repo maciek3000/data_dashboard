@@ -129,9 +129,11 @@
     border: 1px solid black;
 }
 */
-.active_feature_hue div {
+
+.active_feature_hue > div {
     filter: grayscale(1) !important;
 }
+
 
 .bk .row-description {
     border-style: solid;
@@ -143,9 +145,7 @@
 .bk .legend {
     border: 0px solid var(--light-gray);
     width: 100%;
-    margin-left: 24px;
-    padding-left: 8px;
-    padding-right: 24px;
+    padding-left: 12px;
 }
 
 .legend-row {
@@ -160,15 +160,21 @@
   height: 10px;
   width: 10px;
   border-radius: 50%;
-  display: inline-block;
   margin-right: 6px;
 }
 
 
-.hue-title {
+.bk.hue-title {
     font-size: 1.7em !important;
-    text-align: center;
+    /* text-align: center; */
     font-weight: bold;
     width: 100% !important;
     font-family: inherit !important;
+    padding-left: 12px;
+}
+
+
+.feature-name-w-desc span {
+    font-size: 12px;
+    z-index: 2;
 }

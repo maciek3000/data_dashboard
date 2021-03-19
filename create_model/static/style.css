@@ -130,17 +130,17 @@ tbody tr:hover {
 /* Description box */
 
 
-tbody tr th p {
+/* tbody tr th p*/ .feature-name-w-desc {
     position: relative;
     display: inline;
 }
 
-tbody tr th p span {
+/*tbody tr th p  span */ .feature-name-w-desc span {
     position: absolute;
     display:none;
     background: #FAFAFA;
     border: 1px solid var(--gray-title);
-    font-size: 0.85em;
+    font-size: *0.85em;
     color: var(--normal-text-color);/* var(--table-text); */
     margin: 12px;
     padding: 8px;
@@ -165,8 +165,16 @@ tbody tr th p span {
 */
 }
 
-tbody th p:hover span {
+/* tbody th  p:hover span */ .feature-name-w-desc:hover span {
     display: block;
+}
+
+/* Info Symbol */
+
+.info-symbol {
+    font-size: 0.7em;
+    color: red;
+    text-align: top;
 }
 
 /*
