@@ -62,17 +62,27 @@ class Analyzer:
         pairplot = PairPlot(self.default_plot_design).pairplot(df)
         return pairplot
 
-    def histogram(self, chosen_feature):
+    def histogram(self, chosen_feature, feature_description_class):
         feature_list = self.features.features()
-        infogrid = InfoGrid(feature_list)
+        infogrid = InfoGrid(
+            features=feature_list,
+            plot_design=self.default_plot_design,
+            feature_description_class=feature_description_class
+        )
         plot = infogrid.infogrid(self._histogram_data(), chosen_feature)
         return plot
 
-    def scatterplot(self, chosen_feature):
+    def scatterplot(self, chosen_feature, feature_description_class):
         feature_list = self.features.features()
-        scattergrid = ScatterPlotGrid(feature_list, self.max_categories)
-        plot = scattergrid.scattergrid(self._scatter_data(), self.features.categorical_features(), chosen_feature,
-                                       self.features.mapping())
+        scattergrid = ScatterPlotGrid(
+            features=feature_list,
+            plot_design=self.default_plot_design,
+            categorical_features=self.features.categorical_features(),
+            feature_descriptions=self.features.descriptions(),
+            feature_mapping=self.features.mapping(),
+            feature_description_class=feature_description_class
+        )
+        plot = scattergrid.scattergrid(self._scatter_data(), chosen_feature)
         return plot
 
     def _histogram_data(self):

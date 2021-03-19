@@ -39,6 +39,9 @@ class Output:
     _static_directory_name = "static"
     _templates_directory_name = "templates"
 
+    # CSS elements
+    _feature_name_with_description_class = "feature-name-w-desc"
+
     def __init__(self, root_path, analyzer, package_name):
 
         self.analyzer = analyzer
@@ -57,7 +60,8 @@ class Output:
                     template=self.env.get_template(self._view_overview_html),
                     css_path=os.path.join(self.static_path, self._view_overview_css),
                     output_directory=self.output_directory,
-                    max_categories=self.analyzer.max_categories
+                    max_categories=self.analyzer.max_categories,
+                    feature_description_class=self._feature_name_with_description_class
                 )
 
         self.view_features = FeatureView(
@@ -98,8 +102,8 @@ class Output:
             base_css=base_css,
             creation_date=created_on,
             hyperlinks=hyperlinks,
-            histogram=self.analyzer.histogram(first_feature),
-            scatterplot=self.analyzer.scatterplot(first_feature),
+            histogram=self.analyzer.histogram(first_feature, self._feature_name_with_description_class),
+            scatterplot=self.analyzer.scatterplot(first_feature, self._feature_name_with_description_class),
             feature_list=feature_list,
             first_feature=first_feature
         )

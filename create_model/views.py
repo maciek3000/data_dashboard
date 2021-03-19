@@ -3,6 +3,24 @@ from bs4 import BeautifulSoup
 from bokeh.embed import components
 
 
+def info_symbol_html():
+    # TODO: check if used anywhere
+    return "<span class='info-symbol'>&#x1F6C8;</span>"
+
+
+def append_description(description, parsed_html):
+    # adding <span> that will hold description of a feature
+    # every \n is replaced with <br> tag
+    new_tag = parsed_html.new_tag("span")
+    lines = description.split("\n")
+    new_tag.string = lines[0]
+    if len(lines) > 1:
+        for line in lines[1:]:
+            new_tag.append(parsed_html.new_tag("br"))
+            new_tag.append(parsed_html.new_string("{}".format(line)))
+    return new_tag
+
+
 class BaseView:
     """Parent Class for Views (Subpages) in the created HTML.
 
@@ -64,12 +82,13 @@ class Overview(BaseView):
     _mapping_format = "{mapped} - {original}"
     _too_many_categories = "(...) Showing only first {} categories"
 
-    def __init__(self, template, css_path, output_directory, max_categories):
+    def __init__(self, template, css_path, output_directory, max_categories, feature_description_class):
         super().__init__()
         self.template = template
         self.css = css_path
         self.output_directory = output_directory
         self.max_categories = max_categories
+        self.feature_name_with_description_class = feature_description_class
 
     def render(self,
                base_css, creation_date, hyperlinks,  # base template params
@@ -115,45 +134,39 @@ class Overview(BaseView):
         return dataframe.to_html(float_format="{:.2f}".format)
 
     def _stylize_html_table(self, html_table, mapping, descriptions):
+        # TODO:
+        # new HTML is created and appended via functions, but the reference to the table object is passed nonetheless
+        # this is sloppy and should be changed (or can it?)
         table = BeautifulSoup(html_table, "html.parser")
         headers = table.select("table tbody tr th")
 
         for header in headers:
             description = descriptions[header.string]
-            new_description = self._append_description(header, description, table)
             header_mapping = mapping[header.string]
+
+            new_description = append_description(description, table)
             self._append_mapping(new_description, header_mapping, table)
+
+            header.string.wrap(table.new_tag("p"))
             header.p.append(new_description)
+            header.p["class"] = self.feature_name_with_description_class
 
         return str(table)
 
-    def _append_description(self, table_header, description, table):
-        # adding <span> that will hold description of a feature
-        # every \n is replaced with <br> tag
-        table_header.string.wrap(table.new_tag("p"))
-        new_tag = table.new_tag("span")
-        lines = description.split("\n")
-        new_tag.string = lines[0]
-        if len(lines) > 1:
-            for line in lines[1:]:
-                new_tag.append(table.new_tag("br"))
-                new_tag.append(table.new_string("{}".format(line)))
-        return new_tag
-
-    def _append_mapping(self, html, mapping, table):
+    def _append_mapping(self, html, mapping, parsed_html):
         # appending mappings to descriptions as long as they exist (they are not none)
         if mapping:
-            html.append(table.new_tag("br"))
-            html.append(table.new_tag("br"))
-            html.append(table.new_string(self._mapping_title))
+            html.append(parsed_html.new_tag("br"))
+            html.append(parsed_html.new_tag("br"))
+            html.append(parsed_html.new_string(self._mapping_title))
             i = 1
             for mapped, original in mapping.items():
                 if i > self.max_categories:  # 0 indexing
-                    html.append(table.new_tag("br"))
-                    html.append(table.new_string(self._too_many_categories.format(i - 1)))
+                    html.append(parsed_html.new_tag("br"))
+                    html.append(parsed_html.new_string(self._too_many_categories.format(i - 1)))
                     break
-                html.append(table.new_tag("br"))
-                html.append(table.new_string(self._mapping_format.format(mapped=mapped, original=original)))
+                html.append(parsed_html.new_tag("br"))
+                html.append(parsed_html.new_string(self._mapping_format.format(mapped=mapped, original=original)))
                 i += 1
 
     def _unused_features_html(self, unused_features):

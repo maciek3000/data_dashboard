@@ -1,5 +1,5 @@
 import pytest
-from create_model.views import Overview, FeatureView
+from create_model.views import Overview, FeatureView, append_description
 from bs4 import BeautifulSoup
 
 
@@ -18,11 +18,8 @@ from bs4 import BeautifulSoup
 )
 def test_overview_append_descriptions(html_test_table, header_index, description, expected_html):
     """Testing if appending description (wrapped in HTML tags) to the element works properly."""
-    html_table = BeautifulSoup(html_test_table)
-    headers = html_table.table.select("table tbody tr th")
-
-    o = Overview("test_template", "test_css", "test_output_directory", 10)
-    actual_html = str(o._append_description(headers[header_index], description, html_table))
+    html_table = BeautifulSoup(html_test_table, "html.parser")
+    actual_html = str(append_description(description, html_table))
 
     assert actual_html == expected_html
 
@@ -44,10 +41,10 @@ def test_overview_append_descriptions(html_test_table, header_index, description
 )
 def test_overview_append_mappings(html_test_table, header_index, fixture_features, expected_html):
     """Testing if appending mappings (wrapped in HTML) to the element works properly."""
-    html_table = BeautifulSoup(html_test_table)
+    html_table = BeautifulSoup(html_test_table, "html.parser")
     headers = html_table.table.select("table tbody tr th")
     mapping = fixture_features.mapping()[headers[header_index].string]
-    o = Overview("test_template", "test_css", "test_output_directory", 10)
+    o = Overview("test_template", "test_css", "test_output_directory", 10, "test-description")
     o._append_mapping(headers[header_index], mapping, html_table)
 
     header = o._mapping_title
@@ -69,45 +66,45 @@ def test_overview_append_mappings(html_test_table, header_index, fixture_feature
 def test_overview_append_mappings_more_than_limit(html_test_table, fixture_features, header_index, expected_html):
     """Testing if the amount of mapped categories exceeds the limit then the HTML mappings are chopped off
     appropriately. """
-    html_table = BeautifulSoup(html_test_table)
+    html_table = BeautifulSoup(html_test_table, "html.parser")
     headers = html_table.table.select("table tbody tr th")
     mapping = fixture_features.mapping()[headers[header_index].string]
     mapping[10] = "Test Value"
     mapping[11] = "Test Value"
-    o = Overview("test_template", "test_css", "test_output_directory", 10)
+    o = Overview("test_template", "test_css", "test_output_directory", 10, "test-description")
     o._append_mapping(headers[header_index], mapping, html_table)
 
     header = o._mapping_title
     footer = o._too_many_categories.format(10)
 
-    print(str(html_table))
     assert expected_html.format(header=header, footer=footer) in str(html_table)
 
 
 def test_stylize_html_table(html_test_table, expected_mapping, fixture_features):
     """Testing if the ._stylize_html_table() function creates correct HTML output."""
-
     # text is 'dedented' to match the output provided by the function.
     expected_html = """
 <table>
 <thead><tr><th></th><th></th></tr></thead>
 <tbody>
-<tr><th><p>Sex<span>Sex of the Participant<br/><br/>{header}<br/>1 - Female<br/>2 - Male</span></p></th><td></td></tr>
-<tr><th><p>Target<span>Was the Transaction satisfactory?<br/>Target Feature<br/><br/>{header}<br/>1 - No<br/>2 - Yes</span></p></th><td></td></tr>
-<tr><th><p>Price<span>Price of the Product</span></p></th><td></td></tr>
-<tr><th><p>AgeGroup<span>Description not Available<br/><br/>{header}<br/>1 - Between 18 and 22<br/>2 - Between 23 and 27<br/>3 - Between 28 and 32<br/>4 - Between 33 and 37<br/>5 - Between 38 and 42<br/>{footer}</span></p></th><td></td></tr>
-<tr><th><p>Height<span>Height of the Participant</span></p></th><td></td></tr>
-<tr><th><p>Product<span>Product bought within the Transaction<br/><br/>{header}<br/>1 - Apples<br/>2 - Bananas<br/>3 - Bread<br/>4 - Butter<br/>5 - Cheese<br/>{footer}</span></p></th><td></td></tr>
-<tr><th><p>bool<span>Random Flag<br/><br/>{header}<br/>1 - False<br/>2 - True</span></p></th><td></td></tr>
+<tr><th><p class="{test_description}">Sex<span>Sex of the Participant<br/><br/>{header}<br/>1 - Female<br/>2 - Male</span></p></th><td></td></tr>
+<tr><th><p class="{test_description}">Target<span>Was the Transaction satisfactory?<br/>Target Feature<br/><br/>{header}<br/>1 - No<br/>2 - Yes</span></p></th><td></td></tr>
+<tr><th><p class="{test_description}">Price<span>Price of the Product</span></p></th><td></td></tr>
+<tr><th><p class="{test_description}">AgeGroup<span>Description not Available<br/><br/>{header}<br/>1 - Between 18 and 22<br/>2 - Between 23 and 27<br/>3 - Between 28 and 32<br/>4 - Between 33 and 37<br/>5 - Between 38 and 42<br/>{footer}</span></p></th><td></td></tr>
+<tr><th><p class="{test_description}">Height<span>Height of the Participant</span></p></th><td></td></tr>
+<tr><th><p class="{test_description}">Product<span>Product bought within the Transaction<br/><br/>{header}<br/>1 - Apples<br/>2 - Bananas<br/>3 - Bread<br/>4 - Butter<br/>5 - Cheese<br/>{footer}</span></p></th><td></td></tr>
+<tr><th><p class="{test_description}">bool<span>Random Flag<br/><br/>{header}<br/>1 - False<br/>2 - True</span></p></th><td></td></tr>
 </tbody>
 </table>
 """
 
     descriptions = fixture_features.descriptions()
-    o = Overview("test_template", "test_css", "test_output_directory", 5)  # max_categories == 5
     header = "Category - Original"
     footer = "(...) Showing only first 5 categories"
-    expected_html = expected_html.format(header=header, footer=footer)
+    test_description = "test-description"
+    expected_html = expected_html.format(header=header, footer=footer, test_description=test_description)
+
+    o = Overview("test_template", "test_css", "test_output_directory", 5, test_description)  # max_categories == 5
 
     expected_mapping["Price"] = None
     expected_mapping["Height"] = None
@@ -125,7 +122,7 @@ def test_stylize_html_table(html_test_table, expected_mapping, fixture_features)
     )
 )
 def test_overview_unused_features_html(input_list, expected_string):
-    o = Overview("test_template", "test_css", "test_output_directory", 5)
+    o = Overview("test_template", "test_css", "test_output_directory", 5, "test-description")
     actual_html = o._unused_features_html(input_list)
 
     assert actual_html == expected_string
