@@ -15,8 +15,7 @@ def test_output_path_to_file(analyzer_fixture, root_path_to_package, output_dire
     """Testing if creating filepaths with provided output_directory works correctly."""
     package_path = root_path_to_package[0]
     package_name = root_path_to_package[1]
-    o = Output(package_path, analyzer_fixture, package_name)
-    o.output_directory = output_directory
+    o = Output(package_path, output_directory, analyzer_fixture, package_name)
     actual = o._path_to_file(filename)
     expected = os.path.join(output_directory, filename)
 
@@ -35,8 +34,7 @@ def test_output_write_html(analyzer_fixture, root_path_to_package, tmpdir, filen
     """Testing if writing content to the file works correctly."""
     package_path = root_path_to_package[0]
     package_name = root_path_to_package[1]
-    o = Output(package_path, analyzer_fixture, package_name)
-    o.output_directory = tmpdir
+    o = Output(package_path, tmpdir, analyzer_fixture, package_name)
     o._write_html(filename, template)
 
     created_file = os.path.join(tmpdir, filename)

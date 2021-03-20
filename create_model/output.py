@@ -35,14 +35,13 @@ class Output:
     _view_features_js = "features.js"
 
     # directories
-    _output_directory_name = "output"
     _static_directory_name = "static"
     _templates_directory_name = "templates"
 
     # CSS elements
     _feature_name_with_description_class = "feature-name-w-desc"
 
-    def __init__(self, root_path, analyzer, package_name):
+    def __init__(self, root_path, output_directory, analyzer, package_name):
 
         self.analyzer = analyzer
 
@@ -51,10 +50,11 @@ class Output:
         # if the Coordinator is imported as a package, this whole facade might crumble with directories
         # being created in seemingly random places.
         self.root_path = root_path
-        self.output_directory = os.path.join(self.root_path, self._output_directory_name)
         self.templates_path = os.path.join(self.root_path, package_name, self._templates_directory_name)
         self.static_path = os.path.join(self.root_path, package_name, self._static_directory_name)
         self.env = Environment(loader=FileSystemLoader(self.templates_path))
+
+        self.output_directory = output_directory
 
         self.view_overview = Overview(
                     template=self.env.get_template(self._view_overview_html),

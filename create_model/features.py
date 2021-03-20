@@ -173,6 +173,7 @@ class Features:
         self._mapping = None
         self._descriptions = None
 
+        # TODO: replace spaces or weird characters in feature names
         # returns {feature_name: feature object} dict
         self._features = self._analyze_features(descriptor)
 

@@ -26,7 +26,7 @@ class Coordinator:
     _output_created_text = "Created output at {directory}"
     _model_found_text = "Model: {name}\nScore: {score}\nParams: {params}"
 
-    def __init__(self, X, y, scoring=None, feature_descriptions_dict=None, root_path=None):
+    def __init__(self, X, y, output_directory, scoring=None, feature_descriptions_dict=None, root_path=None):
 
         # copy original dataframes to avoid changing the originals
         self.X = X.copy()
@@ -50,7 +50,7 @@ class Coordinator:
                                        self.features.numerical_features(drop_target=True),
                                        self.features.categorical_features(drop_target=True))
 
-        self.output = Output(self.root_path, analyzer=self.analyzer, package_name=self._name)
+        self.output = Output(self.root_path, output_directory, analyzer=self.analyzer, package_name=self._name)
 
     def find_model(self):
         if not self.transformed_X:
