@@ -303,6 +303,7 @@ class ScatterPlotGrid(MainGrid):
     _hue_title = "hue-title"
     _row_description = "row-description"
 
+    # TODO: make js callback dynamic
     # JS Callbacks
     _scatterplot_callback_js = """
                 // new dropdown value
@@ -346,6 +347,7 @@ class ScatterPlotGrid(MainGrid):
 
     # CSS element
     _legend = "legend"
+    _legend_categorical = "legend-categorical"
 
     def __init__(self, features, plot_design, categorical_features, feature_descriptions, feature_mapping, feature_description_class, categorical_suffix="_categorical"):
         self.categorical_columns = categorical_features
@@ -529,7 +531,7 @@ class ScatterPlotGrid(MainGrid):
                     mapped_category = mapping[float(category)]
                     text += template.format(color=color, category=mapped_category)
 
-                legend = Div(text=text, css_classes=[self._legend])
+                legend = Div(text=text, css_classes=[self._legend, self._legend_categorical])
 
             else:
                 colorbar = ColorBar(color_mapper=cmap["transform"], ticker=BasicTicker(desired_num_ticks=4),

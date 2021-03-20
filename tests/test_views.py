@@ -64,7 +64,7 @@ def test_overview_append_mappings(html_test_table, header_index, fixture_feature
     )
 )
 def test_overview_append_mappings_more_than_limit(html_test_table, fixture_features, header_index, expected_html):
-    """Testing if the amount of mapped categories exceeds the limit then the HTML mappings are chopped off
+    """Testing if, when the amount of mapped categories exceeds the limit, then the HTML mappings are chopped off
     appropriately. """
     html_table = BeautifulSoup(html_test_table, "html.parser")
     headers = html_table.table.select("table tbody tr th")
@@ -122,6 +122,7 @@ def test_stylize_html_table(html_test_table, expected_mapping, fixture_features)
     )
 )
 def test_overview_unused_features_html(input_list, expected_string):
+    """Testing if creating HTML output of unused features works properly."""
     o = Overview("test_template", "test_css", "test_output_directory", 5, "test-description")
     actual_html = o._unused_features_html(input_list)
 

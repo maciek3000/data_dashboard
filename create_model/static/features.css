@@ -148,6 +148,10 @@
     padding-left: 12px;
 }
 
+.legend-categorical {
+    width: 100% !important;
+}
+
 .legend-row {
     width: 100%;
     text-align: left;
@@ -168,7 +172,7 @@
     font-size: 1.7em !important;
     /* text-align: center; */
     font-weight: bold;
-    width: 100% !important;
+    /* width: 80% !important; */
     font-family: inherit !important;
     padding-left: 12px;
 }
