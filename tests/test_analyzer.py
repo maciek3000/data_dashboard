@@ -2,6 +2,7 @@ from create_model.analyzer import Analyzer, calculate_numerical_bins, modify_his
 from create_model.features import CategoricalFeature, NumericalFeature
 import pandas as pd
 import pytest
+import math
 
 
 @pytest.mark.parametrize(
@@ -94,31 +95,6 @@ def test_analyzer_head_dataframe(data_classification_balanced, fixture_features,
 
 
 @pytest.mark.parametrize(
-    ("feature_name", "expected_number_of_bins"),
-    (
-            ("AgeGroup", 9),
-            ("bool", 2),
-            ("Height", 9),
-            ("Price", 9),
-            ("Product", 10),
-            ("Target", 2),
-            ("Sex", 2)
-    )
-)
-def test_analyzer_histogram_data(fixture_features, feature_name, expected_number_of_bins):
-    """Testing if ._histogram_data() method returns correct values.
-        Checking only number of bins for every feature, as edges were 1) tested elsewhere 2) assuming that
-        np.histogram works correctly 3) would be cumbersome to calculate all of that by hand."""
-
-    analyzer = Analyzer(fixture_features)
-    histogram_output = analyzer._histogram_data()
-
-    # number of bins - size of one of the edges array
-    actual_number_of_bins = histogram_output[feature_name][1].shape[0]
-
-    assert actual_number_of_bins == expected_number_of_bins
-
-@pytest.mark.parametrize(
     ("feature", "desc", "missing", "category"),
     (
             ("Sex", "Sex of the Participant", 1.0, "cat"),
@@ -158,6 +134,61 @@ def test_analyzer_summary_statistics(
     actual_dict = a._summary_statistics()[feature]
 
     assert actual_dict == expected_dict
+
+
+@pytest.mark.parametrize(
+    ("feature_name", "expected_number_of_bins"),
+    (
+            ("AgeGroup", 9),
+            ("bool", 2),
+            ("Height", 9),
+            ("Price", 9),
+            ("Product", 10),
+            ("Target", 2),
+            ("Sex", 2)
+    )
+)
+def test_analyzer_histogram_data(fixture_features, feature_name, expected_number_of_bins):
+    """Testing if ._histogram_data() method returns correct values.
+        Checking only number of bins for every feature, as edges were 1) tested elsewhere 2) assuming that
+        np.histogram works correctly 3) would be cumbersome to calculate all of that by hand."""
+
+    analyzer = Analyzer(fixture_features)
+    histogram_output = analyzer._histogram_data()
+
+    # number of bins - size of one of the edges array
+    actual_number_of_bins = histogram_output[feature_name][1].shape[0]
+
+    assert actual_number_of_bins == expected_number_of_bins
+
+
+@pytest.mark.parametrize(
+    ("feature",),
+    (
+            ("Sex",),
+            ("AgeGroup",),
+            ("Height",),
+            ("Product",),
+            ("Price",),
+            ("bool",),
+            ("Target",),
+    )
+)
+def test_analyzer_correlation_data(fixture_features, feature):
+    """Testing if correlations between features are calculated correctly. Even though the method exposes random_state
+    parameter, we're not checking if the calculated correlations are as expected. Instead, correlation of the same
+    feature is checked (expected as 1.0) and the rest of correlations should be between -1.0 and 1.0."""
+    rs = 1
+    analyzer = Analyzer(fixture_features)
+    corr = analyzer._correlation_data(random_state=rs)
+
+    actual_result = corr[feature]
+
+    assert math.isclose(actual_result[feature], 1.00)
+
+    for f in corr.keys():
+        if f != feature:
+            assert -1.0 <= actual_result[f] <= 1.0
 
 
 def test_analyzer_scatter_data(

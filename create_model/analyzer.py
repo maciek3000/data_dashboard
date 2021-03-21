@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from sklearn.preprocessing import QuantileTransformer
 from .features import NumericalFeature, CategoricalFeature
 from .plots import InfoGrid, ScatterPlotGrid
 from .plots import PairPlot
@@ -74,8 +76,9 @@ class Analyzer:
             feature_description_class=feature_description_class
         )
         plot = infogrid.infogrid(
-            histogram_data=self._histogram_data(),
             summary_statistics=self._summary_statistics(),
+            histogram_data=self._histogram_data(),
+            correlation_data=self._correlation_data(),
             initial_feature=chosen_feature
         )
         return plot
@@ -92,6 +95,19 @@ class Analyzer:
         )
         plot = scattergrid.scattergrid(self._scatter_data(), chosen_feature)
         return plot
+
+    def _summary_statistics(self):
+        df = self.features.data().describe().T
+        df[self._feature_missing] = self.features.data().isna().sum()
+
+        # rounding here as JS doesn't have anything quick for nice formatting of numbers and it breaks the padding
+        # later on
+        d = df.T.round(4).to_dict()
+        for key, feat_dict in d.items():
+            feat_dict[self._feature_description] = self.features[key].description
+            feat_dict[self._feature_type] = self.features[key].type
+
+        return d
 
     def _histogram_data(self):
         all_histograms = {}
@@ -116,18 +132,13 @@ class Analyzer:
 
         return all_histograms
 
-    def _summary_statistics(self):
-        df = self.features.data().describe().T
-        df[self._feature_missing] = self.features.data().isna().sum()
-
-        # rounding here as JS doesn't have anything quick for nice formatting of numbers and it breaks the padding
-        # later on
-        d = df.T.round(4).to_dict()
-        for key, feat_dict in d.items():
-            feat_dict[self._feature_description] = self.features[key].description
-            feat_dict[self._feature_type] = self.features[key].type
-
-        return d
+    def _correlation_data(self, random_state=None):
+        # using Pearson coefficient - data should follow Normal Distribution
+        df = self.features.data()
+        qt = QuantileTransformer(output_distribution="normal", random_state=random_state)
+        new_df = qt.fit_transform(df)
+        corr = pd.DataFrame(new_df, columns=df.columns).corr(method="pearson").to_dict()
+        return corr
 
     def _scatter_data(self):
         # Every column will be treated as a hue (color) at some point, including categorical Columns

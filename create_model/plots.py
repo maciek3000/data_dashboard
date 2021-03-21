@@ -149,6 +149,7 @@ class InfoGrid(MainGrid):
     _info_div_content = "info-div-content"
     _infogrid_row = "infogrid-row"
     _infogrid_all = "infogrid"
+    _histogram = "histogram-plot"
 
     # JS callbacks
     _histogram_callback_js = """
@@ -201,16 +202,19 @@ class InfoGrid(MainGrid):
     def __init__(self, features, plot_design, feature_description_class):
         super().__init__(features, plot_design, feature_description_class)
 
-    def infogrid(self, histogram_data, summary_statistics, initial_feature):
+    def infogrid(self, summary_statistics, histogram_data, correlation_data, initial_feature):
 
         histogram_source, histogram_plot = self._create_histogram(histogram_data, initial_feature)
         info_div = self._create_info_div(summary_statistics, initial_feature)
         dropdown = self._create_features_dropdown(self._infogrid_dropdown)
+        correlation_source, correlation_plot = self._create_correlation(correlation_data, initial_feature)
 
         callbacks = self._create_features_dropdown_callbacks(
+            summary_statistics=summary_statistics,
             histogram_data=histogram_data,
             histogram_source=histogram_source,
-            summary_statistics=summary_statistics
+            correlation_data=correlation_data,
+            correlation_source=correlation_source
         )
         for callback in callbacks:
             dropdown.js_on_change("value", callback)
@@ -218,17 +222,21 @@ class InfoGrid(MainGrid):
         output = column(
             dropdown,  # this dropdown will be invisible (display: none)
             row(
-                info_div, histogram_plot, css_classes=[self._infogrid_row]
+                info_div, histogram_plot, correlation_plot,
+                css_classes=[self._infogrid_row]
             ), css_classes=[self._infogrid_all]
         )
         return output
 
-    def _create_features_dropdown_callbacks(self, histogram_data, histogram_source, summary_statistics):
+    def _create_features_dropdown_callbacks(
+            self, summary_statistics, histogram_data, histogram_source, correlation_data, correlation_source
+    ):
         callbacks = []
 
         for call in [
             self._create_histogram_callback(histogram_data, histogram_source),
-            self._create_info_div_callback(summary_statistics)
+            self._create_info_div_callback(summary_statistics),
+            self._create_correlation_callback(correlation_data, correlation_source)
         ]:
             callbacks.append(call)
 
@@ -253,6 +261,29 @@ class InfoGrid(MainGrid):
             code=self._info_div_callback
         )
         return callback
+
+    def _create_correlation_callback(self, correlation_data, correlation_source):
+        return
+
+    def _create_info_div(self, summary_statistics, feature):
+
+        feature_dict = summary_statistics[feature]
+
+        text = self._info_div_html.format(
+            feature_description_class=self.feature_description_class,
+            info_div_content=self._info_div_content,
+            type=feature_dict["type"],
+            description=feature_dict["description"],
+            mean=feature_dict["mean"],
+            median=feature_dict["50%"],
+            min=feature_dict["min"],
+            max=feature_dict["max"],
+            std=feature_dict["std"],
+            missing=feature_dict["missing"]
+        )
+        d = Div(name=self._info_div, css_classes=[self._info_div], text=text)
+
+        return d
 
     def _create_histogram(self, histogram_data, feature):
 
@@ -279,9 +310,11 @@ class InfoGrid(MainGrid):
     def _create_histogram_plot(self, source):
 
         kwargs = {
-            "plot_height": 460,
-            "plot_width": 460,
-            "title": self._histogram_title
+            "plot_height": 300,
+            "height_policy": "fit",
+            "plot_width": 300,
+            "title": self._histogram_title,
+            "css_classes": [self._histogram]
         }
 
         fcolor = self.plot_design.fill_color
@@ -293,26 +326,8 @@ class InfoGrid(MainGrid):
         p.yaxis.visible = False
         return p
 
-    def _create_info_div(self, summary_statistics, feature):
-
-        feature_dict = summary_statistics[feature]
-
-        text = self._info_div_html.format(
-            feature_description_class=self.feature_description_class,
-            info_div_content=self._info_div_content,
-            type=feature_dict["type"],
-            description=feature_dict["description"],
-            mean=feature_dict["mean"],
-            median=feature_dict["50%"],
-            min=feature_dict["min"],
-            max=feature_dict["max"],
-            std=feature_dict["std"],
-            missing=feature_dict["missing"]
-        )
-        d = Div(name=self._info_div, css_classes=[self._info_div], text=text)
-
-        return d
-
+    def _create_correlation(self, correlation_data):
+        return
 
 class ScatterPlotGrid(MainGrid):
     """Grid of Scatter Plots created with bokeh.
