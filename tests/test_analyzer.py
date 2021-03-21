@@ -184,7 +184,7 @@ def test_analyzer_correlation_data(fixture_features, feature):
 
     actual_result = corr[feature]
 
-    assert math.isclose(actual_result[feature], 1.00)
+    assert math.isclose(actual_result[feature], 1.0)
 
     for f in corr.keys():
         if f != feature:

@@ -150,9 +150,29 @@ class InfoGrid(MainGrid):
     _infogrid_row = "infogrid-row"
     _infogrid_all = "infogrid"
     _histogram = "histogram-plot"
+    _correlation = "correlation-plot"
 
     # JS callbacks
-    _histogram_callback_js = """
+    _info_div_callback = """
+                // new values
+                var new_feature = cb_obj.value;  // new feature
+                
+                // updating 
+                
+                function update_span(id, group) {
+                    document.querySelector(id).innerText = summary_statistics[new_feature][group];
+                };
+                
+                var ids = ["#info_div_type", "#info_div_description", "#info_div_mean", "#info_div_median", 
+                        "#info_div_min", "#info_div_max", "#info_div_std", "#info_div_missing"];
+                var types = ["type", "description", "mean", "50%", "min", "max", "std", "missing"];
+                
+                for (i=0; i < ids.length; i++) {
+                    update_span(ids[i], types[i]);
+                };
+            """
+
+    _histogram_callback = """
                 // new dropdown value
                 var new_val = cb_obj.value;  
                 
@@ -173,28 +193,23 @@ class InfoGrid(MainGrid):
                 
                 // updating ColumnDataSources
                 hist_source.change.emit();
-                
             """
 
-    _info_div_callback = """
-                // new values
-                var new_feature = cb_obj.value;  // new feature
-                
-                // updating 
-                
-                function update_span(id, group) {
-                    document.querySelector(id).innerText = summary_statistics[new_feature][group];
-                };
-                
-                var ids = ["#info_div_type", "#info_div_description", "#info_div_mean", "#info_div_median", 
-                        "#info_div_min", "#info_div_max", "#info_div_std", "#info_div_missing"];
-                var types = ["type", "description", "mean", "50%", "min", "max", "std", "missing"];
-                
-                for (i=0; i < ids.length; i++) {
-                    update_span(ids[i], types[i]);
-                };
-                
-            """
+    _correlation_callback = """
+    var new_val = cb_obj.value;
+    
+    // new values
+    var new_dict = corr_data[new_val];
+    var new_x = Object.keys(new_dict);
+    var new_y = Object.values(new_dict);
+    
+    // updating plot
+    corr_source.data["x"] = new_x;
+    corr_source.data["y"] = new_y;
+    
+    // updating ColumnDataSources
+    corr_source.change.emit();
+    """
 
     # plot elements
     _histogram_title = "Feature Distribution"
@@ -248,11 +263,10 @@ class InfoGrid(MainGrid):
             "hist_data": histogram_data
         }
 
-        callback = CustomJS(args=kwargs, code=self._histogram_callback_js)
+        callback = CustomJS(args=kwargs, code=self._histogram_callback)
         return callback
 
     def _create_info_div_callback(self, summary_statistics):
-        # this code will need to be updated with every detail added to the Info (Summary) Div
         kwargs = {
             "summary_statistics": summary_statistics
         }
@@ -263,7 +277,16 @@ class InfoGrid(MainGrid):
         return callback
 
     def _create_correlation_callback(self, correlation_data, correlation_source):
-        return
+        kwargs = {
+            "corr_data": correlation_data,
+            "corr_source": correlation_source
+        }
+        callback = CustomJS(
+            args=kwargs,
+            code=self._correlation_callback
+        )
+
+        return callback
 
     def _create_info_div(self, summary_statistics, feature):
 
@@ -326,8 +349,40 @@ class InfoGrid(MainGrid):
         p.yaxis.visible = False
         return p
 
-    def _create_correlation(self, correlation_data):
-        return
+    def _create_correlation(self, correlation_data, feature):
+        corr_source = self._create_correlation_source(correlation_data, feature)
+        corr_plot = self._create_correlation_plot(corr_source)
+        return corr_source, corr_plot
+
+    def _create_correlation_source(self, data, feature):
+        source = ColumnDataSource()
+        first_values = data[feature]
+
+        x = list(first_values.keys())
+        y = list(first_values.values())
+
+        source.data = {
+            "x": x,
+            "y": y
+        }
+
+        return source
+
+    @stylize()
+    def _create_correlation_plot(self, source):
+        kwargs = {
+            "css_classes": [self._correlation],
+            "x_range": source.data["x"],
+            "plot_height": 300,
+            "height_policy": "fit",
+            "plot_width": 300,
+        }
+
+        p = default_figure(kwargs)
+        p.vbar(x="x", top="y", width=0.9, source=source)
+
+        return p
+
 
 class ScatterPlotGrid(MainGrid):
     """Grid of Scatter Plots created with bokeh.

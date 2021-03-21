@@ -142,6 +142,10 @@
     left: 30% !important;
 }
 
+.infogrid-row > div:last-child {
+    left: 60% !important;
+}
+
 .info-div-content div {
     width: 100%;
     font-size: 1.35em;
