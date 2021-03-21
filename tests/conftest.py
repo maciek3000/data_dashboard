@@ -164,6 +164,7 @@ def data_classification_balanced():
     np_rows = random.choices(range(length), k=10)
     np_cols = random.choices(range(len(df.columns) - 1), k=10)
 
+    # not including nans in bool column as it automatically converts the category to Object
     for row, col in zip(np_rows, np_cols):
         if col != df.columns.to_list().index("bool"):
             df.iloc[row, col] = np.nan

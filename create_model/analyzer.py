@@ -39,6 +39,10 @@ class Analyzer:
     """
 
     _categorical_suffix = "_categorical"
+    _feature_description = "description"
+    _feature_type = "type"
+    _feature_mapping = "mapping"
+    _feature_missing = "missing"
 
     def __init__(self, features):
         self.features = features
@@ -62,17 +66,21 @@ class Analyzer:
         pairplot = PairPlot(self.default_plot_design).pairplot(df)
         return pairplot
 
-    def histogram(self, chosen_feature, feature_description_class):
+    def infogrid(self, chosen_feature, feature_description_class):
         feature_list = self.features.features()
         infogrid = InfoGrid(
             features=feature_list,
             plot_design=self.default_plot_design,
             feature_description_class=feature_description_class
         )
-        plot = infogrid.infogrid(self._histogram_data(), chosen_feature)
+        plot = infogrid.infogrid(
+            histogram_data=self._histogram_data(),
+            summary_statistics=self._summary_statistics(),
+            initial_feature=chosen_feature
+        )
         return plot
 
-    def scatterplot(self, chosen_feature, feature_description_class):
+    def scattergrid(self, chosen_feature, feature_description_class):
         feature_list = self.features.features()
         scattergrid = ScatterPlotGrid(
             features=feature_list,
@@ -107,6 +115,19 @@ class Analyzer:
             all_histograms[feature_name] = (hist, left_edges, right_edges)
 
         return all_histograms
+
+    def _summary_statistics(self):
+        df = self.features.data().describe().T
+        df[self._feature_missing] = self.features.data().isna().sum()
+
+        # rounding here as JS doesn't have anything quick for nice formatting of numbers and it breaks the padding
+        # later on
+        d = df.T.round(4).to_dict()
+        for key, feat_dict in d.items():
+            feat_dict[self._feature_description] = self.features[key].description
+            feat_dict[self._feature_type] = self.features[key].type
+
+        return d
 
     def _scatter_data(self):
         # Every column will be treated as a hue (color) at some point, including categorical Columns

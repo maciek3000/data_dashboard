@@ -1,4 +1,5 @@
 from create_model.analyzer import Analyzer, calculate_numerical_bins, modify_histogram_edges
+from create_model.features import CategoricalFeature, NumericalFeature
 import pandas as pd
 import pytest
 
@@ -116,6 +117,47 @@ def test_analyzer_histogram_data(fixture_features, feature_name, expected_number
     actual_number_of_bins = histogram_output[feature_name][1].shape[0]
 
     assert actual_number_of_bins == expected_number_of_bins
+
+@pytest.mark.parametrize(
+    ("feature", "desc", "missing", "category"),
+    (
+            ("Sex", "Sex of the Participant", 1.0, "cat"),
+            ("AgeGroup", "Description not Available", 0.0, "cat"),
+            ("Height", "Height of the Participant", 1.0, "num"),
+            ("Product", "Product bought within the Transaction", 1.0, "cat"),
+            ("Price", "Price of the Product", 2.0, "num"),
+            ("bool", "Random Flag", 0.0, "cat"),
+            ("Target", "Was the Transaction satisfactory?\nTarget Feature", 0.0, "cat")
+    )
+)
+def test_analyzer_summary_statistics(
+        data_classification_balanced, fixture_features, expected_mapping, feature, desc, missing, category
+):
+    """Testing if _summary_statistics() method generates correct output."""
+    df = fixture_features.data()
+    describe_dict = df.describe().round(4).to_dict()
+    print(describe_dict)
+    if category == "cat":
+        expected_category = CategoricalFeature.type
+    elif category == "num":
+        expected_category = NumericalFeature.type
+    else:
+        raise
+
+    a = Analyzer(fixture_features)
+
+    desc_keyword = a._feature_description
+    cat_keyword = a._feature_type
+    missing_keyword = a._feature_missing
+
+    expected_dict = describe_dict[feature]
+    expected_dict[desc_keyword] = desc
+    expected_dict[cat_keyword] = expected_category
+    expected_dict[missing_keyword] = missing
+
+    actual_dict = a._summary_statistics()[feature]
+
+    assert actual_dict == expected_dict
 
 
 def test_analyzer_scatter_data(

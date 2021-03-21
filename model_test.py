@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     # titanic
     data_directory = os.path.join(os.getcwd(), "data", "titanic")
-    output_directory = os.path.join(os.getcwd(), "output", "titanic")
+    output_directory = os.path.join(os.getcwd(), "output")
     train_file = os.path.join(data_directory, "train.csv")
     test_file = os.path.join(data_directory, "test.csv")
 

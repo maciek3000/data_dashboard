@@ -6,12 +6,18 @@
     position: relative;
 }
 
+.chosen-feature {
+    font-size: 1.2em;
+}
+
 .burger-menu {
     display: flex;
     flex-direction: row;
     font-size: 2em;
     align-items: flex-end;
     color: var(--normal-link-color);
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--light-gray);
 }
 
 .burger-menu div {
@@ -83,7 +89,7 @@
 .submenu {
     width: 100%;
     cursor: pointer;
-    font-size: 1.7em;
+    font-size: 1.9em;
     margin: 8px 0px;
     color: var(--gray-title);
     border-top: 0px solid var(--light-gray);
@@ -182,3 +188,59 @@
     font-size: 12px;
     z-index: 2;
 }
+
+.chosen-feature-scatter {
+    font-size: 3em !important;
+    font-weight: bold;
+    width: 100% !important;
+    font-family: inherit !important;
+    text-align: center;
+    color: var(--normal-link-color);
+    border-bottom: 1px solid var(--light-gray) !important;
+}
+
+
+
+
+.infogrid {
+    width: 100% !important;
+}
+
+.infogrid-row {
+    width: 100% !important;
+}
+
+.info-div {
+    width: 15% !important;
+}
+
+.info-div > div {
+    width: 100% !important;
+}
+
+.infogrid-row > div:nth-child(2) {
+    left: 30% !important;
+}
+
+.info-div-content div {
+    width: 100%;
+    font-size: 1.35em;
+    color: var(--normal-text-color);
+    border-bottom: 1px solid var(--light-gray);
+    padding-top: 12px;
+}
+
+.info-div-content div > span {
+    float: right;
+    color: var(--contrary-color);
+    font-weight: bold;
+}
+
+#info-div-description {
+    /* text-decoration: underline var(--light-gray);
+    text-decoration-style: dashed; */
+    color: var(--normal-link-color);
+    font-size: 1.75em;
+    cursor: context-menu;
+}
+

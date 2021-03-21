@@ -131,12 +131,24 @@ class InfoGrid(MainGrid):
     """
 
     # HTML elements
-    _info_div_html = "Feature to be discussed: <p><span id={feature_name_id}>{feature}</span></p>"
+    _info_div_html = """<div class="{info_div_content}">
+    <div id="info-div-description"><p class="{feature_description_class}">Description<span id="info_div_description">{description}</span></p></div>
+    <div>Type: <span id="info_div_type">{type}</span></div>
+    <div>Mean: <span id="info_div_mean">{mean:.4f}</span></div>
+    <div>Median: <span id="info_div_median">{median:.4f}</span></div>
+    <div>Min: <span id="info_div_min">{min:.4f}</span></div>
+    <div>Max: <span id="info_div_max">{max:.4f}</span></div>
+    <div>Standard deviation: <span id="info_div_std">{std:.4f}</span></div>
+    <div># of Missing: <span id="info_div_missing">{missing:.4f}</span></div>
+    </div>"""
 
     # CSS elements
     _infogrid_dropdown = "info_grid_dropdown"
-    _feature_name_id = "feature_name"
-    _info_div = "info_div"
+    _feature_name = "feature_name"
+    _info_div = "info-div"
+    _info_div_content = "info-div-content"
+    _infogrid_row = "infogrid-row"
+    _infogrid_all = "infogrid"
 
     # JS callbacks
     _histogram_callback_js = """
@@ -168,7 +180,19 @@ class InfoGrid(MainGrid):
                 var new_feature = cb_obj.value;  // new feature
                 
                 // updating 
-                document.querySelector("#" + "{feature_name_id}").innerText = new_feature;
+                
+                function update_span(id, group) {
+                    document.querySelector(id).innerText = summary_statistics[new_feature][group];
+                };
+                
+                var ids = ["#info_div_type", "#info_div_description", "#info_div_mean", "#info_div_median", 
+                        "#info_div_min", "#info_div_max", "#info_div_std", "#info_div_missing"];
+                var types = ["type", "description", "mean", "50%", "min", "max", "std", "missing"];
+                
+                for (i=0; i < ids.length; i++) {
+                    update_span(ids[i], types[i]);
+                };
+                
             """
 
     # plot elements
@@ -177,15 +201,16 @@ class InfoGrid(MainGrid):
     def __init__(self, features, plot_design, feature_description_class):
         super().__init__(features, plot_design, feature_description_class)
 
-    def infogrid(self, histogram_data, initial_feature):
+    def infogrid(self, histogram_data, summary_statistics, initial_feature):
 
         histogram_source, histogram_plot = self._create_histogram(histogram_data, initial_feature)
-        info_div = self._create_info_div(initial_feature)
+        info_div = self._create_info_div(summary_statistics, initial_feature)
         dropdown = self._create_features_dropdown(self._infogrid_dropdown)
 
         callbacks = self._create_features_dropdown_callbacks(
             histogram_data=histogram_data,
             histogram_source=histogram_source,
+            summary_statistics=summary_statistics
         )
         for callback in callbacks:
             dropdown.js_on_change("value", callback)
@@ -193,17 +218,17 @@ class InfoGrid(MainGrid):
         output = column(
             dropdown,  # this dropdown will be invisible (display: none)
             row(
-                histogram_plot, info_div,
-            ),
+                info_div, histogram_plot, css_classes=[self._infogrid_row]
+            ), css_classes=[self._infogrid_all]
         )
         return output
 
-    def _create_features_dropdown_callbacks(self, histogram_data, histogram_source):
+    def _create_features_dropdown_callbacks(self, histogram_data, histogram_source, summary_statistics):
         callbacks = []
 
         for call in [
             self._create_histogram_callback(histogram_data, histogram_source),
-            self._create_info_div_callback()
+            self._create_info_div_callback(summary_statistics)
         ]:
             callbacks.append(call)
 
@@ -218,9 +243,15 @@ class InfoGrid(MainGrid):
         callback = CustomJS(args=kwargs, code=self._histogram_callback_js)
         return callback
 
-    def _create_info_div_callback(self):
+    def _create_info_div_callback(self, summary_statistics):
         # this code will need to be updated with every detail added to the Info (Summary) Div
-        callback = CustomJS(code=self._info_div_callback.format(feature_name_id=self._feature_name_id))
+        kwargs = {
+            "summary_statistics": summary_statistics
+        }
+        callback = CustomJS(
+            args=kwargs,
+            code=self._info_div_callback
+        )
         return callback
 
     def _create_histogram(self, histogram_data, feature):
@@ -262,10 +293,21 @@ class InfoGrid(MainGrid):
         p.yaxis.visible = False
         return p
 
-    def _create_info_div(self, feature):
+    def _create_info_div(self, summary_statistics, feature):
+
+        feature_dict = summary_statistics[feature]
+
         text = self._info_div_html.format(
-            feature_name_id=self._feature_name_id,
-            feature=feature
+            feature_description_class=self.feature_description_class,
+            info_div_content=self._info_div_content,
+            type=feature_dict["type"],
+            description=feature_dict["description"],
+            mean=feature_dict["mean"],
+            median=feature_dict["50%"],
+            min=feature_dict["min"],
+            max=feature_dict["max"],
+            std=feature_dict["std"],
+            missing=feature_dict["missing"]
         )
         d = Div(name=self._info_div, css_classes=[self._info_div], text=text)
 
@@ -312,18 +354,23 @@ class ScatterPlotGrid(MainGrid):
                 // new x 
                 var new_x = new_val;
                 
+                // TODO: class here
+                document.querySelector("." + "chosen-feature-scatter").innerText = new_val;
+                
                 // scatter source updated
                 for (i=0; i<scatter_sources.length; i++) {
                     scatter_sources[i].data["x"] = scatter_sources[i].data[new_x];
                     scatter_sources[i].change.emit();
                 };
                 
+                // TODO: classes here
                 // removing previous greying out
                 var all_scatter_rows = document.getElementsByClassName("scatter_plot_row");
                 for (j=0; j<all_scatter_rows.length; j++) {
                     all_scatter_rows[j].classList.remove("active_feature_hue");
                 };
                 
+                // TODO: class here
                 // greying out
                 var scatter_row = document.getElementsByClassName("scatter_plot_row_" + new_val);
                 scatter_row[0].classList.add("active_feature_hue");
@@ -335,7 +382,7 @@ class ScatterPlotGrid(MainGrid):
 
     # Color Scheme
     _categorical_palette = Category10
-    _linear_palette = Reds4[::-1]
+    _linear_palette = ["#FFF7F3", "#FFB695", "#EB6F54", "#9C2B19"]  # Reds4[::-1]
 
     # changing palette for 1 and 2 elements to be of similar color to the palette for 3 elements
     _categorical_palette[2] = Category10[3][:2]
@@ -348,6 +395,7 @@ class ScatterPlotGrid(MainGrid):
     # CSS element
     _legend = "legend"
     _legend_categorical = "legend-categorical"
+    _chosen_feature_scatter_title = "chosen-feature-scatter"
 
     def __init__(self, features, plot_design, categorical_features, feature_descriptions, feature_mapping, feature_description_class, categorical_suffix="_categorical"):
         self.categorical_columns = categorical_features
@@ -372,6 +420,7 @@ class ScatterPlotGrid(MainGrid):
 
         grid = column(
             dropdown,
+            Div(text=initial_feature, css_classes=[self._chosen_feature_scatter_title]),
             *scatter_rows,
         )
 

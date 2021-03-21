@@ -102,8 +102,8 @@ class Output:
             base_css=base_css,
             creation_date=created_on,
             hyperlinks=hyperlinks,
-            histogram=self.analyzer.histogram(first_feature, self._feature_name_with_description_class),
-            scatterplot=self.analyzer.scatterplot(first_feature, self._feature_name_with_description_class),
+            histogram=self.analyzer.infogrid(first_feature, self._feature_name_with_description_class),
+            scatterplot=self.analyzer.scattergrid(first_feature, self._feature_name_with_description_class),
             feature_list=feature_list,
             first_feature=first_feature
         )
