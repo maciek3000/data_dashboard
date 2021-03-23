@@ -40,6 +40,7 @@ class Analyzer:
         happen here and Analyzer should expose methods or properties with the final output.
     """
 
+    # TODO: make adjustments for scenarios when there are only categorical/numerical features
     _categorical_suffix = "_categorical"
     _feature_description = "description"
     _feature_type = "type"
@@ -73,12 +74,14 @@ class Analyzer:
         infogrid = InfoGrid(
             features=feature_list,
             plot_design=self.default_plot_design,
-            feature_description_class=feature_description_class
+            feature_description_class=feature_description_class,
+            target_name=self.features.target
         )
         plot = infogrid.infogrid(
             summary_statistics=self._summary_statistics(),
             histogram_data=self._histogram_data(),
-            correlation_data=self._correlation_data(),
+            correlation_data_normalized=self._correlation_data_normalized(),
+            correlation_data_raw=self._correlation_data_raw(),
             initial_feature=chosen_feature
         )
         return plot
@@ -132,13 +135,18 @@ class Analyzer:
 
         return all_histograms
 
-    def _correlation_data(self, random_state=None):
-        # using Pearson coefficient - data should follow Normal Distribution
+    def _correlation_data_normalized(self, random_state=None):
+        # when using Pearson coefficient data should follow Normal Distribution
         df = self.features.data()
         qt = QuantileTransformer(output_distribution="normal", random_state=random_state)
         new_df = qt.fit_transform(df)
-        corr = pd.DataFrame(new_df, columns=df.columns).corr(method="pearson").to_dict()
-        return corr
+        normalized_corr = pd.DataFrame(new_df, columns=df.columns).corr(method="pearson")
+        return normalized_corr
+
+    def _correlation_data_raw(self):
+        df = self.features.data()
+        raw_corr = df.corr(method="pearson")
+        return raw_corr
 
     def _scatter_data(self):
         # Every column will be treated as a hue (color) at some point, including categorical Columns

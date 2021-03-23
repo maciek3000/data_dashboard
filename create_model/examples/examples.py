@@ -152,6 +152,8 @@ def breast_cancer():
 
     X = _["data"]
     y = _["target"]
+    X.columns = [col.replace(" ", "_") for col in X.columns]
+
     descriptions = None
 
     return X, y, descriptions

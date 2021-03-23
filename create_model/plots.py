@@ -3,12 +3,16 @@ from bokeh.plotting import figure
 from bokeh.layouts import column, row
 from bokeh.models import ColumnDataSource
 from bokeh.models.widgets import Select, Div
-from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter
+from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, LinearColorMapper, Panel, Tabs, HoverTool
 from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.palettes import Reds4, Category10
 import functools
 import seaborn as sns
 from bs4 import BeautifulSoup
+import pandas as pd
+
+
+contrary_color_palette = ["#FFF7F3", "#FFB695", "#EB6F54", "#9C2B19"]
 
 
 def stylize(force=False):
@@ -142,9 +146,16 @@ class InfoGrid(MainGrid):
     <div># of Missing: <span id="info_div_missing">{missing:.4f}</span></div>
     </div>"""
 
+    _correlation_tooltip_text = """<div>
+    <div>Normalized data correlation: @{normalized}</div>
+    <div>Raw data correlation: @{raw}</div>
+    </div>
+    """
+
     # CSS elements
     _infogrid_dropdown = "info_grid_dropdown"
     _feature_name = "feature_name"
+    _infogrid_left_pane = "info-div-left-pane"
     _info_div = "info-div"
     _info_div_content = "info-div-content"
     _infogrid_row = "infogrid-row"
@@ -195,63 +206,62 @@ class InfoGrid(MainGrid):
                 hist_source.change.emit();
             """
 
-    _correlation_callback = """
-    var new_val = cb_obj.value;
-    
-    // new values
-    var new_dict = corr_data[new_val];
-    var new_x = Object.keys(new_dict);
-    var new_y = Object.values(new_dict);
-    
-    // updating plot
-    corr_source.data["x"] = new_x;
-    corr_source.data["y"] = new_y;
-    
-    // updating ColumnDataSources
-    corr_source.change.emit();
-    """
-
     # plot elements
     _histogram_title = "Feature Distribution"
+    _correlation_x = "x"
+    _correlation_y = "correlation_y"
+    _correlation_values_normalized = "correlation_values_normalized"
+    _correlation_values_normalized_abs = "correlation_values_normalized_abs"
+    _correlation_values_normalized_title = "Normalized Data Correlation"
+    _correlation_values_raw = "correlation_values_raw"
+    _correlation_values_raw_abs = "correlation_values_raw_abs"
+    _correlation_values_raw_title = "Raw Data Correlation"
 
-    def __init__(self, features, plot_design, feature_description_class):
+    def __init__(self, features, plot_design, feature_description_class, target_name):
         super().__init__(features, plot_design, feature_description_class)
+        self.target_name = target_name
 
-    def infogrid(self, summary_statistics, histogram_data, correlation_data, initial_feature):
+    def infogrid(self, summary_statistics, histogram_data, correlation_data_normalized, correlation_data_raw, initial_feature):
+
+        dropdown = self._create_features_dropdown(self._infogrid_dropdown)
 
         histogram_source, histogram_plot = self._create_histogram(histogram_data, initial_feature)
         info_div = self._create_info_div(summary_statistics, initial_feature)
-        dropdown = self._create_features_dropdown(self._infogrid_dropdown)
-        correlation_source, correlation_plot = self._create_correlation(correlation_data, initial_feature)
+
+        # correlation source is left in case it is decided later on that the callback is needed
+        correlation_source, correlation_plot = self._create_correlation(correlation_data_normalized, correlation_data_raw)
 
         callbacks = self._create_features_dropdown_callbacks(
             summary_statistics=summary_statistics,
             histogram_data=histogram_data,
             histogram_source=histogram_source,
-            correlation_data=correlation_data,
-            correlation_source=correlation_source
         )
         for callback in callbacks:
             dropdown.js_on_change("value", callback)
 
+        infogrid_row = row(
+            column(
+                info_div, histogram_plot, css_classes=[self._infogrid_left_pane]
+            ),
+            correlation_plot,
+            css_classes=[self._infogrid_row],
+            height_policy="max",
+            height=500
+        )
+
         output = column(
             dropdown,  # this dropdown will be invisible (display: none)
-            row(
-                info_div, histogram_plot, correlation_plot,
-                css_classes=[self._infogrid_row]
-            ), css_classes=[self._infogrid_all]
+            infogrid_row,
+            css_classes=[self._infogrid_all]
         )
         return output
 
-    def _create_features_dropdown_callbacks(
-            self, summary_statistics, histogram_data, histogram_source, correlation_data, correlation_source
-    ):
+    def _create_features_dropdown_callbacks(self, summary_statistics, histogram_data, histogram_source):
         callbacks = []
 
         for call in [
             self._create_histogram_callback(histogram_data, histogram_source),
             self._create_info_div_callback(summary_statistics),
-            self._create_correlation_callback(correlation_data, correlation_source)
         ]:
             callbacks.append(call)
 
@@ -274,18 +284,6 @@ class InfoGrid(MainGrid):
             args=kwargs,
             code=self._info_div_callback
         )
-        return callback
-
-    def _create_correlation_callback(self, correlation_data, correlation_source):
-        kwargs = {
-            "corr_data": correlation_data,
-            "corr_source": correlation_source
-        }
-        callback = CustomJS(
-            args=kwargs,
-            code=self._correlation_callback
-        )
-
         return callback
 
     def _create_info_div(self, summary_statistics, feature):
@@ -322,6 +320,7 @@ class InfoGrid(MainGrid):
         source = ColumnDataSource()
         first_values = histogram_data[feature]
 
+        # TODO: move names to properties
         source.data = {
             "hist": first_values[0],
             "left_edges": first_values[1],
@@ -349,39 +348,102 @@ class InfoGrid(MainGrid):
         p.yaxis.visible = False
         return p
 
-    def _create_correlation(self, correlation_data, feature):
-        corr_source = self._create_correlation_source(correlation_data, feature)
-        corr_plot = self._create_correlation_plot(corr_source)
-        return corr_source, corr_plot
+    def _create_correlation(self, data_normalized, data_raw):
+        # Creating identical plots but with different coloring depending on the values
 
-    def _create_correlation_source(self, data, feature):
+        source, cols_in_order = self._create_correlation_source(data_normalized, data_raw)
+        mapper = self._create_correlation_color_mapper()
+        plots = []
+        for name, value in [
+            # TODO: move names to properties
+            (self._correlation_values_normalized_title, self._correlation_values_normalized_abs),
+            (self._correlation_values_raw_title, self._correlation_values_raw_abs)
+        ]:
+            plot = self._create_correlation_plot(source, cols_in_order, mapper, value)
+            plots.append(Panel(child=plot, title=name))
+
+        main_plot = Tabs(tabs=plots)
+
+        return source, main_plot
+
+    def _create_correlation_source(self, data_normalized, data_raw):
+        # absolute value is needed for coloring - -1.0 and 1.0 is a strong correlation regardless of direction
         source = ColumnDataSource()
-        first_values = data[feature]
+        cols = sorted(data_normalized.columns.to_list())
+        cols.remove(self.target_name)
+        cols.insert(0, self.target_name)  # cols are needed for x_range and y_range in the plot
 
-        x = list(first_values.keys())
-        y = list(first_values.values())
+        # stacking to get 1d array
+        stacked_normalized = data_normalized.stack()
+        stacked_raw = data_raw.stack()
+
+        features_x = stacked_normalized.index.droplevel(0).to_list()  # one of the indexes
+        features_y = stacked_normalized.index.droplevel(1).to_list()  # second of the indexes
+
+        values_normalized = stacked_normalized.to_list()
+        values_normalized_abs = stacked_normalized.apply(lambda x: abs(x)).to_list()
+        values_raw = stacked_raw.to_list()
+        values_raw_abs = stacked_raw.apply(lambda x: abs(x)).to_list()
 
         source.data = {
-            "x": x,
-            "y": y
+            self._correlation_x: features_x,
+            self._correlation_y: features_y,
+            self._correlation_values_normalized: values_normalized,
+            self._correlation_values_normalized_abs: values_normalized_abs,
+            self._correlation_values_raw: values_raw,
+            self._correlation_values_raw_abs: values_raw_abs
         }
 
-        return source
+        return source, cols
 
     @stylize()
-    def _create_correlation_plot(self, source):
+    def _create_correlation_plot(self, source, cols_for_range, color_mapper, value_to_color):
+
+        tooltip_text = [
+            (self._correlation_values_normalized_title, "@"+self._correlation_values_normalized),
+            (self._correlation_values_raw_title, "@"+self._correlation_values_raw)
+        ]
+
         kwargs = {
             "css_classes": [self._correlation],
-            "x_range": source.data["x"],
-            "plot_height": 300,
-            "height_policy": "fit",
-            "plot_width": 300,
+            "x_range": cols_for_range,
+            "y_range": cols_for_range[::-1],
+            "tooltips": tooltip_text
+
         }
 
         p = default_figure(kwargs)
-        p.vbar(x="x", top="y", width=0.9, source=source)
+
+        p.rect(
+            x=self._correlation_x,
+            y=self._correlation_y,
+            source=source,
+            fill_color={"field": value_to_color, "transform": color_mapper},
+            width=1,
+            height=1,
+            line_color=None,
+        )
+
+        p.xaxis.major_label_orientation = -1  # in radians
+        p.add_layout(ColorBar(color_mapper=color_mapper, width=40), "right")
 
         return p
+
+    def _create_correlation_color_mapper(self):
+
+        # palette
+        tints = self.plot_design.contrary_color_tints
+        linear_correlation = tints[0]
+        no_correlation = [tints[9]]
+        small_correlation = [tints[7]] * 2
+        medium_correlation = [tints[6]] * 2
+        high_correlation = [tints[4]] * 4
+        very_high_correlation = [tints[2]] * 1
+        palette = no_correlation + small_correlation + medium_correlation + high_correlation + very_high_correlation
+
+        cmap = LinearColorMapper(palette=palette, low=0, high=0.9999, high_color=linear_correlation)  # contrary_color_palette
+
+        return cmap
 
 
 class ScatterPlotGrid(MainGrid):
@@ -452,7 +514,7 @@ class ScatterPlotGrid(MainGrid):
 
     # Color Scheme
     _categorical_palette = Category10
-    _linear_palette = ["#FFF7F3", "#FFB695", "#EB6F54", "#9C2B19"]  # Reds4[::-1]
+    _linear_palette = contrary_color_palette  # Reds4[::-1]
 
     # changing palette for 1 and 2 elements to be of similar color to the palette for 3 elements
     _categorical_palette[2] = Category10[3][:2]
@@ -473,6 +535,8 @@ class ScatterPlotGrid(MainGrid):
         self.feature_mapping = feature_mapping
         self.categorical_suffix = categorical_suffix
         super().__init__(features, plot_design, feature_description_class)
+
+        # self._linear_palette = self.plot_design.contrary_color_tints[::-2][:4]
 
     def scattergrid(self, scatter_data, initial_feature):
 
