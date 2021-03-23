@@ -223,8 +223,8 @@ def expected_raw_mapping():
             58: 9
         },
         "bool": {
-            0: 1,
-            1: 2
+            False: 1,
+            True: 2
         },
         "Target": {
             0: 1,

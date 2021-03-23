@@ -163,32 +163,50 @@ def test_analyzer_histogram_data(fixture_features, feature_name, expected_number
 
 
 @pytest.mark.parametrize(
-    ("feature",),
+    ("feature", "expected_result"),
     (
-            ("Sex",),
-            ("AgeGroup",),
-            ("Height",),
-            ("Product",),
-            ("Price",),
-            ("bool",),
-            ("Target",),
+            ("Sex", [1.0000, -0.1583, -0.1258, -0.1597, 0.2015, 0.0298, 0.1529]),
+            ("AgeGroup", [-0.1583, 1.0000, -0.1457, 0.0788, 0.0757, -0.1147, 0.0399]),
+            ("Height", [-0.1258, -0.1457, 1.0000, 0.0945, -0.2027, 0.1233, 0.0780]),
+            ("Product", [-0.1597, 0.0788, 0.0945, 1.0000, 0.0516, 0.0843, -0.1203]),
+            ("Price", [0.2015, 0.0757, -0.2027, 0.0516, 1.0000, -0.0293, 0.0575]),
+            ("bool", [0.0298, -0.1147, 0.1233, 0.0843, -0.0293, 1.0000,  0.2127]),
+            ("Target", [0.1529, 0.0399, 0.0780, -0.1203, 0.0575, 0.2127, 1.0000]),
     )
 )
-def test_analyzer_correlation_data(fixture_features, feature):
-    """Testing if correlations between features are calculated correctly. Even though the method exposes random_state
-    parameter, we're not checking if the calculated correlations are as expected. Instead, correlation of the same
-    feature is checked (expected as 1.0) and the rest of correlations should be between -1.0 and 1.0."""
+def test_analyzer_correlation_data(fixture_features, feature, expected_result):
+    """Testing if correlations between features are calculated correctly."""
+    cols_in_order = ["Sex", "AgeGroup", "Height", "Product", "Price", "bool", "Target"]
     rs = 1
     analyzer = Analyzer(fixture_features)
-    corr = analyzer._correlation_data(random_state=rs)
+    corr = analyzer._correlation_data_normalized(random_state=rs).loc[cols_in_order, cols_in_order]
 
-    actual_result = corr[feature]
+    actual_result = corr[feature].round(4)
 
-    assert math.isclose(actual_result[feature], 1.0)
+    assert actual_result.to_list() == expected_result
 
-    for f in corr.keys():
-        if f != feature:
-            assert -1.0 <= actual_result[f] <= 1.0
+
+@pytest.mark.parametrize(
+    ("feature", "expected_result"),
+    (
+            ("Sex", [1.0000, -0.2095, -0.1478, -0.1946, 0.2545, 0.0298, 0.1529]),
+            ("AgeGroup", [-0.2095, 1.0000, -0.1624, 0.1263, 0.0275, -0.0765, 0.0499]),
+            ("Height", [-0.1478, -0.1624, 1.0000, 0.0535, -0.1939, 0.0935, 0.0861]),
+            ("Product", [-0.1946, 0.1263, 0.0535, 1.0000, -0.0555, 0.0870, -0.1697]),
+            ("Price", [0.2545, 0.0275, -0.1939, -0.0555, 1.0000, -0.0917, -0.0124]),
+            ("bool", [0.0298, -0.0765, 0.0935, 0.0870, -0.0917, 1.0000, 0.2127]),
+            ("Target", [0.1529, 0.0499, 0.0861, -0.1697, -0.0124, 0.2127, 1.0000]),
+    )
+)
+def test_analyzer_correlation_data_raw(fixture_features, feature, expected_result):
+    """Testing if correlations between features are calculated correctly."""
+    cols_in_order = ["Sex", "AgeGroup", "Height", "Product", "Price", "bool", "Target"]
+    analyzer = Analyzer(fixture_features)
+    corr = analyzer._correlation_data_raw().loc[cols_in_order, cols_in_order]
+
+    actual_result = corr[feature].round(4)
+
+    assert actual_result.to_list() == expected_result
 
 
 def test_analyzer_scatter_data(
