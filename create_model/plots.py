@@ -11,6 +11,8 @@ import seaborn as sns
 from bs4 import BeautifulSoup
 import pandas as pd
 
+from bokeh.core.validation.check import silence
+
 
 contrary_color_palette = ["#FFF7F3", "#FFB695", "#EB6F54", "#9C2B19"]
 
@@ -135,7 +137,7 @@ class InfoGrid(MainGrid):
     """
 
     # HTML elements
-    _info_div_html = """<div class="{info_div_content}">
+    _info_div_html = """
     <div id="info-div-description"><p class="{feature_description_class}">Description<span id="info_div_description">{description}</span></p></div>
     <div>Type: <span id="info_div_type">{type}</span></div>
     <div>Mean: <span id="info_div_mean">{mean:.4f}</span></div>
@@ -144,7 +146,7 @@ class InfoGrid(MainGrid):
     <div>Max: <span id="info_div_max">{max:.4f}</span></div>
     <div>Standard deviation: <span id="info_div_std">{std:.4f}</span></div>
     <div># of Missing: <span id="info_div_missing">{missing:.4f}</span></div>
-    </div>"""
+    """
 
     _correlation_tooltip_text = """<div>
     <div>Normalized data correlation: @{normalized}</div>
@@ -302,7 +304,7 @@ class InfoGrid(MainGrid):
             std=feature_dict["std"],
             missing=feature_dict["missing"]
         )
-        d = Div(name=self._info_div, css_classes=[self._info_div], text=text)
+        d = Div(name=self._info_div_content, css_classes=[self._info_div_content], text=text)
 
         return d
 
@@ -355,7 +357,6 @@ class InfoGrid(MainGrid):
         mapper = self._create_correlation_color_mapper()
         plots = []
         for name, value in [
-            # TODO: move names to properties
             (self._correlation_values_normalized_title, self._correlation_values_normalized_abs),
             (self._correlation_values_raw_title, self._correlation_values_raw_abs)
         ]:
@@ -407,9 +408,9 @@ class InfoGrid(MainGrid):
         kwargs = {
             "css_classes": [self._correlation],
             "x_range": cols_for_range,
-            "y_range": cols_for_range[::-1],
-            "tooltips": tooltip_text
-
+            "y_range": cols_for_range[::-1],  # first value to be at the top of the axis
+            "tooltips": tooltip_text,
+            "title": "Features Correlation"
         }
 
         p = default_figure(kwargs)
@@ -718,11 +719,14 @@ class ScatterPlotGrid(MainGrid):
 
             else:
                 colorbar = ColorBar(color_mapper=cmap["transform"], ticker=BasicTicker(desired_num_ticks=4),
-                                    formatter=PrintfTickFormatter(), label_standoff=10, border_line_color=None,
-                                    location=(0, 0), major_label_text_font_size="12px",
-                                    major_label_text_color=self.plot_design.text_color)
-                legend = default_figure({"height": 100, "width": 100, "css_classes": [self._legend]})
-                legend.add_layout(colorbar)
+                                    formatter=PrintfTickFormatter(), label_standoff=7, border_line_color=None,
+                                    bar_line_color=self.plot_design.text_color,
+                                    major_label_text_font_size="14px", location=(-100, 0),
+                                    major_label_text_color=self.plot_design.text_color, width=30,
+                                    major_tick_line_color=self.plot_design.text_color, major_tick_in=0)
+                legend = default_figure({"height": 120, "width": 120, "css_classes": [self._legend]})
+                # TODO: supress warning
+                legend.add_layout(colorbar, "right")
         else:
             legend = Div(text=self._legend_no_hue_html, css_classes=[self._legend])
 

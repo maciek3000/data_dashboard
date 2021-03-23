@@ -7,7 +7,7 @@
 }
 
 .chosen-feature {
-    font-size: 1.2em;
+    font-size: 40px;
 }
 
 .burger-menu {
@@ -40,7 +40,7 @@
 }
 
 .features-menu-title div:first-child {
-    font-size: 1.5em;
+    font-size: 40px;
     font-weight: bold;
 }
 
@@ -126,33 +126,15 @@
 
 .infogrid-row {
     width: 100% !important;
-    display: flex !important;
-    align-items: flex-end;
 }
 
 .bk.info-div-left-pane {
     width: 23% !important;
 }
-/*
-.info-div {
-    width: 23% !important;
-}
-
-*/
-.info-div > div {
-    width: 100% !important;
-}
-
 
 .infogrid-row > div:nth-child(2) {
-    left: 30% !important;
+    left: 35% !important;
 }
-/*
-.infogrid-row > div:last-child {
-    left: 60% !important;
-}
-
-*/
 
 .info-div-content div {
     width: 100%;
@@ -174,6 +156,10 @@
     cursor: context-menu;
 }
 
+.bk.histogram-plot {
+    margin-top: 32px !important;
+}
+
 /* ScatterGrid */
 
 .active_feature_hue > div {
@@ -185,11 +171,11 @@
     border-color: var(--gray-title);
     border-width: 0 0 1px 0;
     font-family: "Lato";
+    height: 100% !important;
 }
 
 .bk .legend {
     border: 0px solid var(--light-gray);
-    width: 100%;
     padding-left: 12px;
 }
 

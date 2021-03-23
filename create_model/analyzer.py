@@ -11,16 +11,18 @@ from .plot_design import PlotDesign
 
 
 def calculate_numerical_bins(series):
+
     # https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
     n = series.size
     iqr = series.quantile(0.75) - series.quantile(0.25)
     bins = (series.max() - series.min()) / ((2*iqr)*pow(n, (-1/3)))
-    bins = int(round(bins, 0))
+    # TODO: OverflowError: cannot convert float infinity to integer
 
     # if the number of bins is greater than n, n is returned
     # this can be the case for small, skewed series
     if bins > n:
         bins = n
+    bins = int(round(bins, 0))  # converted here for cases when calculated bins == infinity
     return bins
 
 
