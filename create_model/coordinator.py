@@ -5,7 +5,7 @@ from .transformer import Transformer
 from .model_finder import ModelFinder
 from .descriptor import FeatureDescriptor
 import os
-
+import pandas as pd
 
 class Coordinator:
     """Main object of the package.
@@ -46,30 +46,44 @@ class Coordinator:
         self.features = Features(self.X, self.y, self.features_descriptions)
         self.analyzer = Analyzer(self.features)
 
-        self.transformer = Transformer(self.X, self.y,
-                                       self.features.numerical_features(drop_target=True),
-                                       self.features.categorical_features(drop_target=True))
+        self.transformer = Transformer(self.features)
+        self.model_finder = ModelFinder(self.features[self.features.target].type)
 
         self.output = Output(self.root_path, output_directory, analyzer=self.analyzer, package_name=self._name)
 
-    def find_model(self):
+        self.model = None
+
+    def search_and_fit(self, models=None, scoring="roc", mode="quick", random_state=None):
+        transformed_X = self.transformer.transform(self.X)
+        self.model_finder.search_and_fit(transformed_X, self.y, models, scoring, mode, random_state)
+        return
+
+    def predict(self, X):
+        transformed = self.transformer.transform(X)
+        output = self.model_finder.predict(transformed)
+        return output
+
+    def create_dashboard(self):
+        self.output.create_html()
+        print(self._output_created_text.format(directory=self.output.output_directory))
+
+    # exposed method in case only transformation is needed
+    def transform(self, X):
+        return self.transformer.transform(X)
+
+
+
+    # to be deleted
+
+    def full_analysis(self):
+        raise NotImplementedError
+
+    def quick_find(self):
         if not self.transformed_X:
             self.transformer = self.transformer.fit()
             self.transformed_X = self.transformer.transform()
 
         model_finder = ModelFinder(self.transformed_X, self.y, scoring=self.scoring, random_state=2862)
+        output = model_finder.quick_search()
 
-        model, score, params = model_finder.find_best_model()
-        print(self._model_found_text.format(name=model.__name__, score=score, params=params))
-
-        return model(**params).fit(self.transformed_X, self.y)
-
-    def transform(self, X):
-        return self.transformer.transform(X)
-
-    def create_html(self):
-        self.output.create_html()
-        print(self._output_created_text.format(directory=self.output.output_directory))
-
-    def full_analysis(self):
-        raise NotImplementedError
+        return output

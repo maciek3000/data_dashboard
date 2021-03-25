@@ -8,48 +8,40 @@ class Transformer:
     """Wrapper for pipeline for transformations of input and output data."""
 
     # https://scikit-learn.org/stable/auto_examples/compose/plot_column_transformer_mixed_types.html
+    # https://scikit-learn.org/stable/modules/compose.html
 
-    def __init__(self, X, y, numerical_columns, categorical_columns):
-        self.X = X
-        self.y = y
+    def __init__(self, features):
 
-        self.preprocessor = None
-        self.transformed_X = None
-        self.transformed_y = None
-
-        self.numerical_columns = numerical_columns
-        self.categorical_columns = categorical_columns
-
-        # self.numerical_columns = columns["numerical"]
-        # self.categorical_columns = columns["categorical"]
-        # self.date_columns = columns["date"]
+        self.features = features
+        self.feature_names = features.features(drop_target=True)
+        self.target = features.target
 
         self.preprocessor = self._create_preprocessor()
 
-        # placeholder
-        self.data_objects = None
-
-    def fit(self):
-        self.preprocessor = self.preprocessor.fit(self.X)
-        self.update_data_objects()
+    # methods exposed to be compatible with general API
+    def fit(self, X):
+        self.preprocessor = self.preprocessor.fit(X)
         return self
 
-    def transform(self, X=None):
-        if X is None:
-            X = self.X
-
-        # TODO: transformer should transform y as well when applicable
-        # however, API shouldn't be broken here otherwise pipeline will stop working
+    def transform(self, X):
         return self.preprocessor.transform(X)
 
+    def fit_transform(self, X):
+        self.fit(X)
+        return self.transform(X)
+
     def _create_preprocessor(self):
+
+        numerical_features = self.features.numerical_features(drop_target=True)
+        categorical_features = self.features.categorical_features(drop_target=True)
+
         numeric_transformer = self._create_numeric_transformer()
         categorical_transformer = self._create_categorical_transformer()
 
         col_transformer = ColumnTransformer(
             transformers=[
-                ("numerical", numeric_transformer, self.numerical_columns),
-                ("categorical", categorical_transformer, self.categorical_columns)
+                ("numerical", numeric_transformer, numerical_features),
+                ("categorical", categorical_transformer, categorical_features)
             ]
         )
         return col_transformer
@@ -68,7 +60,3 @@ class Transformer:
             OneHotEncoder(handle_unknown="ignore")
         )
         return transformer
-
-    def update_data_objects(self):
-        # placeholder
-        self.data_objects = {"transformations": None}
