@@ -5,18 +5,20 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import SVC
+from sklearn.dummy import DummyClassifier, DummyRegressor
 
 from sklearn.metrics import make_scorer
 from sklearn.experimental import enable_halving_search_cv
 from sklearn.model_selection import GridSearchCV, train_test_split, HalvingGridSearchCV
-from sklearn.metrics import roc_auc_score, accuracy_score
+from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, balanced_accuracy_score
 from sklearn.exceptions import NotFittedError
 
 import time
 import datetime
 import warnings
+import copy
 
-from .models import classifiers
+from .models import classifiers, regressors
 
 
 class ModelFinder:
@@ -24,32 +26,60 @@ class ModelFinder:
     _classification = "classification"
     _regression = "regression"
     _quick_search_limit = 3
-    _available_scoring_classification = [accuracy_score, roc_auc_score]
+    _scoring_classification = [accuracy_score, balanced_accuracy_score, f1_score, roc_auc_score]
+    _scoring_regression = []
 
     __modes = ["quick", "detailed"]
     __target_categories = ["categorical", "numerical"]
 
-    def __init__(self, target_category):
+    def __init__(self, X, y, target_type):
 
-        if target_category.lower() in self.__target_categories:
-            if target_category.lower() == "categorical":
+        self.X = X
+        self.y = y
+
+        if target_type in self.__target_categories:
+            if target_type == "categorical":
                 self.problem = self._classification
-            elif target_category.lower() == "numerical":
+                self.scoring_functions = self._scoring_classification
+                self.default_models = classifiers
+            elif target_type == "numerical":
                 self.problem = self._regression
+                self.scoring_functions = self._scoring_regression
+                self.default_models = regressors
         else:
             raise ValueError("Expected one of the categories: {categories}; got {category}".format(
-                categories=", ".join(self.__target_categories), category=target_category
+                categories=", ".join(self.__target_categories), category=target_type
             ))
+
+        # TODO: implement Stratified split in case of imbalance
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25)
+        self.X_train = X_train
+        self.X_test = X_test
+        self.y_train = y_train
+        self.y_test = y_test
 
         self.chosen_model = None
         self.chosen_model_params = None
 
-        self.all_models = None
-
         self._quicksearch_results = None
         self._gridsearch_results = None
+        self._compare_results = None
 
-    def search_and_fit(self, X, y, models=None, scoring=None, mode="quick", random_state=None):
+        self.dummy_model = self._create_dummy_model()
+
+
+    def find_and_fit(self, models=None, scoring=roc_auc_score, mode="quick", random_state=None):
+        # TODO: decide where random state is needed
+        model = self.find(scoring, models, mode, random_state)
+        self.set_model(model)
+        self.fit()
+        return self.chosen_model
+
+    def set_and_fit(self, model):
+        self.set_model(model)
+        self.fit()
+
+    def find(self, scoring, models=None, mode="quick", random_state=None):
         """models can be either:
             - list of initialized models, to which we fit the data
             - dict of Model (class): param_grid of a given model to do the GridSearch
@@ -60,46 +90,58 @@ class ModelFinder:
                 ._quick_search_limit number is chosen from the best models and GridSearched
             - "detailed": GridSearch on all default models and default params
         """
-        # TODO: separate classification and regression
+        # TODO: add separate fit_model function
         # TODO: add TargetRegressor in case of regression
-        # TODO: decide where random state is needed
 
         if mode not in self.__modes:
             raise ValueError("expected one of the modes: {modes}; got {mode}".format(
                 modes=", ".join(self.__modes), mode=mode
             ))
 
-        if self.problem == self._classification:
-            default_models = classifiers
-
-        # TODO: implement Stratified split in case of imbalance
-        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25)
-
         if isinstance(models, dict):
-            clfs = self._gridsearch(X_train, y_train, models, scoring)
-        elif models is None:
-            if mode == "quick":
-                # TODO: make distinction between classification and regression
-                chosen_models = self._quicksearch(X_train, y_train, default_models.keys(), scoring)
-                param_grid = {clf: default_models[clf] for clf in chosen_models}
-                clfs = self._gridsearch(X_train, y_train, param_grid, scoring)
-                pass
-            elif mode == "detailed":
-                clfs = self._gridsearch(X_train, y_train, default_models, scoring)
-                pass
-        else:
-            # clfs = fit models X_train, y_train
-            pass
+            initiated_models = self._gridsearch(self.X_train, self.y_train, models, scoring)
 
-        # Predict and score all clfs
-        # Choose the best model
+        elif models is None:
+
+            if mode == "quick":
+                chosen_models = self._quicksearch(self.X_train, self.y_train, self.default_models.keys(), scoring)
+                param_grid = {clf: self.default_models[clf] for clf in chosen_models}
+                initiated_models = self._gridsearch(self.X_train, self.y_train, param_grid, scoring)
+            elif mode == "detailed":
+                initiated_models = self._gridsearch(self.X_train, self.y_train, self.default_models, scoring)
+            else:
+                # this branch shouldn't be possible without object properties manipulation
+                raise Exception("?")
+
+        else:
+            try:
+                iter(models)
+                initiated_models = models
+            except TypeError:
+                raise ValueError("models should be Dict, List-like or None, got {models}".format(models=models))
+
+
+        # TODO: I dont like this part
+        search_results = self._compare_classifiers(self.X_train, self.X_test, self.y_train, self.y_test, initiated_models, scoring)
+        chosen_model, chosen_model_params = self._choose_best_model(search_results, scoring)
+
+        return chosen_model(**chosen_model_params)
+
+    def set_model(self, model):
+        self.chosen_model = model
+        self.chosen_model_params = model.get_params()
+
+    def fit(self):
+        self.chosen_model.fit(self.X, self.y)
+
+    def predict(self, X):
+        return self.chosen_model.predict(X)
 
     def _gridsearch(self, X, y, models_param_grid, scoring):
         # TODO: decide whether random state is needed
 
         result_df = None
         best_of_their_class = []
-        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25)
 
         for model, params in models_param_grid.items():
             # TODO: make it work
@@ -115,13 +157,12 @@ class ModelFinder:
                 )
 
                 start_time = datetime.datetime.now()
-                clf.fit(X_train, y_train)
+                clf.fit(X, y)
                 stop_time = datetime.datetime.now()
 
                 results = pd.DataFrame(clf.cv_results_)
                 results["model"] = model.__name__
-                results["start"] = start_time
-                results["stop_time"] = stop_time
+                results["fit_time"] = stop_time - start_time
                 result_df = pd.concat([result_df, results], axis=0)
 
                 best_params = clf.best_params_
@@ -134,15 +175,72 @@ class ModelFinder:
     def _quicksearch(self, X, y, models, scoring):
         X_train, X_test, y_train, y_test = train_test_split(X, y)
         results = []
+        best_of_their_class = []
         for model in models:
+            start_time = datetime.datetime.now()
             clf = model().fit(X_train, y_train)
+            stop_time = datetime.datetime.now()
             score = scoring(y_test, clf.predict(X_test))
-            results.append((model, score))
+            params = clf.get_params()
+            # TODO: PassiveAgressiveClassifier has no name
+            try:
+                name = model.__name__
+            except AttributeError:
+                name = "noname"
+            results.append({"model": name, "fit_time": stop_time-start_time, "score": score, "params": params})
+            # TODO: quicksearch shouldnt return initialized models
+            best_of_their_class.append((model, score))
 
-        results.sort(key=lambda x: x[1], reverse=True)
+        results = pd.DataFrame(results)
         self._quicksearch_results = results
-        return results
+        # assuming that scoring is: higher == better
+        best_of_their_class.sort(key=lambda x: x[1], reverse=True)
 
+        return [model[0] for model in best_of_their_class][:self._quick_search_limit]
+
+    def _compare_classifiers(self, X_train, X_test, y_train, y_test, models, chosen_scoring):
+        results = []
+
+        if chosen_scoring in self.scoring_functions:
+            scorings = self.scoring_functions
+        else:
+            scorings = [chosen_scoring] + self.scoring_functions
+
+        for model in models:
+            start_time = datetime.datetime.now()
+            model.fit(X_train, y_train)
+            stop_time = datetime.datetime.now()
+            # TODO: PassiveAgressiveClassifier has no name
+            try:
+                name = model.__name__
+            except AttributeError:
+                name = "noname"
+            model_results = {"model": name, "fit_time": stop_time-start_time, "params": model.get_params()}
+            for scoring in scorings:
+                score = scoring(y_test, model.predict(X_test))
+                model_results[scoring.__name__] = score
+
+            results.append(model_results)
+
+        self._compare_results = pd.DataFrame(results)
+        return self._compare_results
+
+    def _choose_best_model(self, results, chosen_scoring):
+        scoring_name = chosen_scoring.__name__
+
+        results_df = results.sort_values(by=[scoring_name], axis=1, ascending=False)
+        model = results_df["model"].loc[0]
+        params = results_df["params"].loc[0]
+        return model, params
+
+    def _create_dummy_model(self):
+        if self.problem == self._classification:
+            model = DummyClassifier(strategy="stratified")
+        elif self.problem == self._regression:
+            model = DummyRegressor(strategy="median")
+        else:
+            raise Exception("?")
+        return model
 
     # def _choose_model(self):
     #     # checking score on X_test and y_test

@@ -102,8 +102,8 @@ classifiers = {
     },
 
     XGBClassifier: {
-        "eta": np.logspace(-7, 1, 9),
-        "gamma": [0, 10, 100],
+        #"eta": np.logspace(-7, -3, 5),
+        #"gamma": [0, 10, 100],
         "max_depth": [1, 6, 10, 20],
         # "lambda": [1, 5, 10, 50],
         "alpha": alpha,
@@ -138,3 +138,7 @@ classifiers = {
 }
 
 # BernoulliNB, MultinomialNB
+
+regressors = {
+
+}

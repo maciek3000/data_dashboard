@@ -47,16 +47,22 @@ class Coordinator:
         self.analyzer = Analyzer(self.features)
 
         self.transformer = Transformer(self.features)
-        self.model_finder = ModelFinder(self.features[self.features.target].type)
+        self.transformer.fit(self.X)
+        self.transformer.fit_y(self.y)
+        self.model_finder = ModelFinder(
+            X=self.transformer.transform(self.X),
+            y=self.transformer.transform_y(self.y),
+            target_type=self.features[self.features.target].type.lower()
+        )
 
         self.output = Output(self.root_path, output_directory, analyzer=self.analyzer, package_name=self._name)
 
-        self.model = None
+    def find_and_fit(self, models=None, scoring=None, mode="quick", random_state=None):
+        clf = self.model_finder.find_and_fit(models, scoring, mode, random_state)
+        return clf
 
-    def search_and_fit(self, models=None, scoring="roc", mode="quick", random_state=None):
-        transformed_X = self.transformer.transform(self.X)
-        self.model_finder.search_and_fit(transformed_X, self.y, models, scoring, mode, random_state)
-        return
+    def set_and_fit(self, model):
+        self.model_finder.set_and_fit(model)
 
     def predict(self, X):
         transformed = self.transformer.transform(X)
@@ -71,19 +77,3 @@ class Coordinator:
     def transform(self, X):
         return self.transformer.transform(X)
 
-
-
-    # to be deleted
-
-    def full_analysis(self):
-        raise NotImplementedError
-
-    def quick_find(self):
-        if not self.transformed_X:
-            self.transformer = self.transformer.fit()
-            self.transformed_X = self.transformer.transform()
-
-        model_finder = ModelFinder(self.transformed_X, self.y, scoring=self.scoring, random_state=2862)
-        output = model_finder.quick_search()
-
-        return output

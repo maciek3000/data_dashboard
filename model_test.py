@@ -39,20 +39,15 @@ if __name__ == "__main__":
 
     coord = Coordinator(X, y, output_directory, accuracy_score, descriptions, os.getcwd())
     #coord.create_html()
-
-    #model = coord.find_model()
-
     # output = coord.quick_find()
     # print("\n".join(map(lambda x: x[0] + ": " + str(x[1]), output)))
 
-    #print(model)
-
-    transformed_X = coord.transform(X)
-
     model = SVC(C=1000.0, gamma='auto', tol=0.1, kernel="rbf")
-    model.fit(transformed_X, y)
+    coord.find_and_fit(mode="quick", scoring=accuracy_score)
 
-    predictions = model.predict(coord.transform(test_df[features]))
-    output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
+    predictions = coord.predict(test_df[features])
+    print(coord.model_finder._quicksearch_results)
 
-    output.to_csv(os.path.join(output_directory, "submission.csv"), index=False)
+    #output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
+
+    #output.to_csv(os.path.join(output_directory, "submission.csv"), index=False)
