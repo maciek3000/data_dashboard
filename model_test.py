@@ -46,7 +46,12 @@ if __name__ == "__main__":
     coord.find_and_fit(mode="quick", scoring=accuracy_score)
 
     predictions = coord.predict(test_df[features])
-    print(coord.model_finder._quicksearch_results)
+    results = coord.model_finder._quicksearch_results
+
+    print(results.to_markdown())
+
+
+
 
     #output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
 

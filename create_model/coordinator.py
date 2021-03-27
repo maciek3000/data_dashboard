@@ -26,7 +26,7 @@ class Coordinator:
     _output_created_text = "Created output at {directory}"
     _model_found_text = "Model: {name}\nScore: {score}\nParams: {params}"
 
-    def __init__(self, X, y, output_directory, scoring=None, feature_descriptions_dict=None, root_path=None):
+    def __init__(self, X, y, output_directory, scoring=None, feature_descriptions_dict=None, root_path=None, random_state=None):
 
         # copy original dataframes to avoid changing the originals
         self.X = X.copy()
@@ -52,13 +52,14 @@ class Coordinator:
         self.model_finder = ModelFinder(
             X=self.transformer.transform(self.X),
             y=self.transformer.transform_y(self.y),
-            target_type=self.features[self.features.target].type.lower()
+            target_type=self.features[self.features.target].type.lower(),
+            random_state=random_state
         )
 
         self.output = Output(self.root_path, output_directory, analyzer=self.analyzer, package_name=self._name)
 
     def find_and_fit(self, models=None, scoring=None, mode="quick", random_state=None):
-        clf = self.model_finder.find_and_fit(models, scoring, mode, random_state)
+        clf = self.model_finder.find_and_fit(models, scoring, mode)
         return clf
 
     def set_and_fit(self, model):

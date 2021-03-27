@@ -12,14 +12,16 @@ alpha = np.logspace(-7, 2, 10)
 tol = np.logspace(-5, -1, 5)
 C = np.logspace(-2, 3, 6)
 
+# TODO: uncomment params
+
 classifiers = {
 
     # SVM with Stochastic Gradient Descent Learning
     SGDClassifier: {
         "loss": ["hinge", "log", "modified_huber", "squared_hinge", "perceptron"],
-        "penalty": ["l1", "l2", "elasticnet"],  # l1 and elastic net bring sparsity to the model
+        # "penalty": ["l1", "l2", "elasticnet"],  # l1 and elastic net bring sparsity to the model
         "alpha": alpha,
-        "tol": tol
+        #"tol": tol
     },
 
     # large scale learning, similar to Perceptron
@@ -31,29 +33,29 @@ classifiers = {
     SVC: {
         "C": C,
         "tol": tol,
-        "kernel": ["linear", "poly", "rbf", "sigmoid"],
-        "gamma": ["scale", "auto"]
+        #"kernel": ["linear", "poly", "rbf", "sigmoid"],
+        #"gamma": ["scale", "auto"]
     },
 
     RidgeClassifier: {
         "alpha": alpha,
         "tol": tol,
-        "solver": ["svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]
+        # "solver": ["svd", "cholesky", "lsqr", "sparse_cg", "sag", "saga"]
     },
 
 
     Perceptron: {
         "alpha": alpha,
         "penalty": ["l1", "l2", "elasticnet"],
-        "tol": tol
+        # "tol": tol
     },
 
 
     LogisticRegression: {
         "C": C,
         "tol": tol,
-        "penalty": ["l1", "l2", "elasticnet"],
-        "solver": ["newton-cg", "lbfgs", "liblinear", "sag", "saga"]
+        # "penalty": ["l1", "l2", "elasticnet"],
+        # "solver": ["newton-cg", "lbfgs", "liblinear", "sag", "saga"]
     },
 
     # fitting additional classifiers on the dataset with adjusted weights of incorrectly classified instances
@@ -66,9 +68,9 @@ classifiers = {
     RandomForestClassifier: {
         "n_estimators": [100, 250, 500],
         "criterion": ["gini", "entropy"],
-        "max_depth": [None, 10, 100],
-        "min_samples_split": [2, 10, 0.01],
-        "min_samples_leaf": [1, 2, 10, 0.01],
+        # "max_depth": [None, 10, 100],
+        #"min_samples_split": [2, 10, 0.01],
+        #"min_samples_leaf": [1, 2, 10, 0.01],
         # "max_features": ["sqrt", "log2"],
         # "min_impurity_decrease": [0, 1e-7, 1e-3]
     },
@@ -78,8 +80,8 @@ classifiers = {
     BaggingClassifier: {
         "n_estimators": [10, 50, 100],
         "max_samples": [0.5, 0.7, 1.0],
-        "max_features": [0.5, 0.7, 1.0],
-        "bootstrap": [True, False]
+        #"max_features": [0.5, 0.7, 1.0],
+        #"bootstrap": [True, False]
     },
 
     # Random subset of features is used, but the thresholds for splitting on those features are random
@@ -88,17 +90,17 @@ classifiers = {
     ExtraTreesClassifier: {
         "n_estimators": [10, 50, 100],
         "criterion": ["gini", "entropy"],
-        "max_depth": [None, 10, 100],
-        "min_samples_split": [2, 10, 0.01],
-        "min_samples_leaf": [1, 2, 10, 0.01],
-        "max_features": ["sqrt", "log2"]
+        # "max_depth": [None, 10, 100],
+        # "min_samples_split": [2, 10, 0.01],
+        # "min_samples_leaf": [1, 2, 10, 0.01],
+        # "max_features": ["sqrt", "log2"]
     },
 
 
     KNeighborsClassifier: {
         "n_neighbors": [1, 2, 5, 10],
         "weights": ["uniform", "distance"],
-        "p": [1, 2]
+        # "p": [1, 2]
     },
 
     XGBClassifier: {
@@ -112,8 +114,8 @@ classifiers = {
 
     LGBMClassifier: {
         "num_leaves": [1, 5, 10, 50, 100],
-        "max_depth": [3, 5, 7],
-        "min_data_in_leaf": [10, 100, 1000]
+        #"max_depth": [3, 5, 7],
+        #"min_data_in_leaf": [10, 100, 1000]
     },
 
 
