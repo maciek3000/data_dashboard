@@ -58,8 +58,8 @@ class Coordinator:
 
         self.output = Output(self.root_path, output_directory, analyzer=self.analyzer, package_name=self._name)
 
-    def find_and_fit(self, models=None, scoring=None, mode="quick", random_state=None):
-        clf = self.model_finder.find_and_fit(models, scoring, mode)
+    def search_and_fit(self, models=None, scoring=None, mode="quick", random_state=None):
+        clf = self.model_finder.search_and_fit(models, scoring, mode)
         return clf
 
     def set_and_fit(self, model):

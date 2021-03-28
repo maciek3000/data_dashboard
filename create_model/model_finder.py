@@ -1,22 +1,16 @@
 import random
-import numpy as np
 import pandas as pd
+import time
+import warnings
+import copy
 
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.svm import SVC
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
 from sklearn.metrics import make_scorer
 from sklearn.experimental import enable_halving_search_cv
 from sklearn.model_selection import GridSearchCV, train_test_split, HalvingGridSearchCV
-from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, balanced_accuracy_score
+from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, balanced_accuracy_score, mean_squared_error
 from sklearn.exceptions import NotFittedError
-
-import time
-import datetime
-import warnings
-import copy
 
 from .models import classifiers, regressors
 
@@ -71,26 +65,27 @@ class ModelFinder:
         self.y_train = y_train
         self.y_test = y_test
 
-        self.chosen_model = None
-        self.chosen_model_params = None
+        self._chosen_model = None
+        self._chosen_model_params = None
+        self._chosen_model_scores = None
         self._quicksearch_results = None
         self._gridsearch_results = None
-        self._compare_results = None
+        self._search_results = None
 
-        self.dummy_model = self._create_dummy_model()
+        self._dummy_model, self._dummy_model_scores = self._create_dummy_model()
 
-    def find_and_fit(self, models=None, scoring=None, mode=__mode_quick):
+    def search_and_fit(self, models=None, scoring=None, mode=__mode_quick):
         # TODO: decide where random state is needed
-        model = self.find(models, scoring, mode)
+        model = self.search(models, scoring, mode)
         self.set_model(model)
         self.fit()
-        return self.chosen_model
+        return self._chosen_model
 
     def set_and_fit(self, model):
         self.set_model(model)
         self.fit()
 
-    def find(self, models=None, scoring=roc_auc_score, mode=__mode_quick):
+    def search(self, models=None, scoring=None, mode=__mode_quick):
         """models can be either:
             - list of initialized models, to which we fit the data
             - dict of Model (class): param_grid of a given model to do the GridSearch
@@ -101,8 +96,9 @@ class ModelFinder:
                 ._quick_search_limit number is chosen from the best models and GridSearched
             - "detailed": GridSearch on all default models and default params
         """
-        # TODO: add separate fit_model function
-        # TODO: add TargetRegressor in case of regression
+
+        if scoring is None:
+            scoring = self.default_scoring
 
         if mode not in self.__modes:
             raise ValueError("expected one of the modes: {modes}; got {mode}".format(
@@ -118,32 +114,41 @@ class ModelFinder:
             except TypeError:
                 raise ValueError("models should be Dict, List-like or None, got {models}".format(models=models))
 
+        scored_models, search_results = self._assess_models(initiated_models, scoring)
+        self._update_search_results(search_results)
 
-        # TODO: I dont like this part
-        search_results = self._compare_classifiers(self.X_train, self.X_test, self.y_train, self.y_test, initiated_models, scoring)
-        chosen_model, chosen_model_params = self._choose_best_model(search_results, scoring)
-
-        return chosen_model
+        # assuming that scoring is: higher == better
+        scored_models.sort(key=lambda x: x[1], reverse=True)
+        return scored_models[0][0]
 
     def set_model(self, model):
-        self.chosen_model = model
-        self.chosen_model_params = model.get_params()
+        self._chosen_model = model
+        self._chosen_model_params = model.get_params()
+        copy_for_scoring = copy.deepcopy(model).fit(self.X_train, self.y_train)
+        self._chosen_model_scores = self._score_model(copy_for_scoring, self.default_scoring)
 
     def fit(self):
-        self.chosen_model.fit(self.X, self.y)
+        if self._chosen_model is None:
+            raise Exception("Model needs to be set before fitting")
+        self._chosen_model.fit(self.X, self.y)
 
     def predict(self, X):
-        return self.chosen_model.predict(X)
+        return self._chosen_model.predict(X)
 
     def _set_problem(self, problem_type):
+
         if problem_type == self.__target_categorical:
             self.problem = self._classification
             self.scoring_functions = self._scoring_classification
             self.default_models = classifiers
+            self.default_scoring = roc_auc_score
+
         elif problem_type == self.__target_numerical:
             self.problem = self._regression
             self.scoring_functions = self._scoring_regression
             self.default_models = regressors
+            self.default_scoring = mean_squared_error
+
         return None
 
     def _search_for_models(self, models, mode, scoring):
@@ -236,40 +241,42 @@ class ModelFinder:
         df = pd.DataFrame(results).T
         self._quicksearch_results = df
 
-    def _compare_classifiers(self, X_train, X_test, y_train, y_test, models, chosen_scoring):
-        results = []
+    def _assess_models(self, models, chosen_scoring):
+        all_results = {}
+        scored_models = []
+
+        for model in models:
+            model_copy = copy.deepcopy(model)
+            start_time = time.time()
+            model_copy.fit(self.X_train, self.y_train)
+            stop_time = time.time()
+
+            model_results = {"fit_time": stop_time-start_time, "params": model.get_params()}
+            score_results = self._score_model(model_copy, chosen_scoring)
+            model_results.update(score_results)
+
+            all_results[name(model)] = model_results
+            scored_models.append((model, score_results[chosen_scoring]))
+
+        return scored_models, all_results
+
+    def _update_search_results(self, results):
+        df = pd.DataFrame(results).T
+        self._search_results = df
+
+    def _score_model(self, model, chosen_scoring):
 
         if chosen_scoring in self.scoring_functions:
             scorings = self.scoring_functions
         else:
             scorings = [chosen_scoring] + self.scoring_functions
 
-        for model in models:
-            start_time = time.time()
-            model.fit(X_train, y_train)
-            stop_time = time.time()
-            # TODO: PassiveAgressiveClassifier has no name
-            try:
-                name = model.__name__
-            except AttributeError:
-                name = str(model)
-            model_results = {"model": model, "fit_time": stop_time-start_time, "params": model.get_params()}
-            for scoring in scorings:
-                score = scoring(y_test, model.predict(X_test))
-                model_results[scoring.__name__] = score
+        scoring_results = {}
+        for scoring in scorings:
+            score = scoring(self.y_test, model.predict(self.X_test))
+            scoring_results[scoring] = score
 
-            results.append(model_results)
-
-        self._compare_results = pd.DataFrame(results)
-        return self._compare_results
-
-    def _choose_best_model(self, results, chosen_scoring):
-        scoring_name = chosen_scoring.__name__
-
-        results_df = results.sort_values(by=[scoring_name], axis=0, ascending=False)
-        model = results_df["model"].loc[0]
-        params = results_df["params"].loc[0]
-        return model, params
+        return scoring_results
 
     def _create_dummy_model(self):
         if self.problem == self._classification:
@@ -278,5 +285,8 @@ class ModelFinder:
             model = DummyRegressor(strategy="median")
         else:
             raise Exception("?")
-        return model
 
+        model.fit(self.X_train, self.y_train)
+        results = self._score_model(model, self.default_scoring)
+        model.fit(self.X, self.y)
+        return model, results

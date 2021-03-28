@@ -43,16 +43,19 @@ if __name__ == "__main__":
     # print("\n".join(map(lambda x: x[0] + ": " + str(x[1]), output)))
 
     model = SVC(C=1000.0, gamma='auto', tol=0.1, kernel="rbf")
-    coord.find_and_fit(mode="quick", scoring=accuracy_score)
+    ml = coord.search_and_fit(mode="quick", scoring=accuracy_score)
 
     predictions = coord.predict(test_df[features])
-    results = coord.model_finder._quicksearch_results
+    # results = coord.model_finder._quicksearch_results
 
-    print(results.to_markdown())
+    output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
+    print(ml)
+    print(coord.model_finder._chosen_model_scores)
+    print(output)
 
 
 
 
-    #output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
+
 
     #output.to_csv(os.path.join(output_directory, "submission.csv"), index=False)
