@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.linear_model import SGDClassifier, PassiveAggressiveClassifier, RidgeClassifier, Perceptron, LogisticRegression
+from sklearn.linear_model import Ridge
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier, BaggingClassifier, ExtraTreesClassifier #, HistGradientBoostingClassifier
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
@@ -142,5 +143,8 @@ classifiers = {
 # BernoulliNB, MultinomialNB
 
 regressors = {
-
+    Ridge: {
+        "alpha": alpha,
+        "tol": tol,
+    }
 }

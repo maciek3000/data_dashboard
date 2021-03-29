@@ -9,7 +9,8 @@ from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.metrics import make_scorer
 from sklearn.experimental import enable_halving_search_cv
 from sklearn.model_selection import GridSearchCV, train_test_split, HalvingGridSearchCV
-from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, balanced_accuracy_score, mean_squared_error
+from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, balanced_accuracy_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score, r2_score
 from sklearn.exceptions import NotFittedError
 
 from .models import classifiers, regressors
@@ -29,7 +30,7 @@ class ModelFinder:
     _regression = "regression"
     _quick_search_limit = 3
     _scoring_classification = [accuracy_score, balanced_accuracy_score, f1_score, roc_auc_score]
-    _scoring_regression = []
+    _scoring_regression = [mean_squared_error, mean_absolute_error, explained_variance_score, r2_score]
 
     _model_name = "model"
 
@@ -49,10 +50,7 @@ class ModelFinder:
                 categories=", ".join(self.__target_categories), category=target_type
             ))
 
-        if random_state is None:
-            self.random_state = random.random()
-        else:
-            self.random_state = random_state
+        self.random_state = random_state
 
         self.X = X
         self.y = y
@@ -276,7 +274,7 @@ class ModelFinder:
 
     def _create_dummy_model(self):
         if self.problem == self._classification:
-            model = DummyClassifier(strategy="stratified")
+            model = DummyClassifier(strategy="stratified", random_state=self.random_state)
         elif self.problem == self._regression:
             model = DummyRegressor(strategy="median")
         else:

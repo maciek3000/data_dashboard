@@ -8,11 +8,13 @@ import copy
 import pandas as pd
 import numpy as np
 from scipy.stats import truncnorm, skewnorm
+from sklearn.model_selection import train_test_split
 
 # this package
 from create_model.descriptor import FeatureDescriptor
 from create_model.features import Features
 from create_model.analyzer import Analyzer
+from create_model.model_finder import ModelFinder
 
 
 @pytest.fixture
@@ -307,3 +309,70 @@ def root_path_to_package():
 
     return root_path, package_name
 
+
+@pytest.fixture
+def seed():
+    return 1010
+
+
+@pytest.fixture
+def data_regression(data_classification_balanced):
+    df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]])
+    target = "Price"
+    feats = df.columns.to_list()
+    feats.remove(target)
+    X = df[feats]
+    median = df[target].describe()["50%"]
+    y = df[target].fillna(median)
+    return X, y
+
+@pytest.fixture
+def split_dataset_categorical(data_classification_balanced, seed):
+    X = data_classification_balanced[0]
+    y = data_classification_balanced[1]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=seed)
+    return X_train, X_test, y_train, y_test
+
+
+@pytest.fixture
+def split_dataset_numerical(data_regression, seed):
+    X = data_regression[0]
+    y = data_regression[1]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=seed)
+    return X_train, X_test, y_train, y_test
+
+
+@pytest.fixture
+def model_finder_classification(data_classification_balanced, split_dataset_categorical, seed):
+    X = data_classification_balanced[0]
+    y = data_classification_balanced[1]
+    X_train, X_test, y_train, y_test = split_dataset_categorical
+    mf = ModelFinder(
+        X=X,
+        y=y,
+        X_train=X_train,
+        X_test=X_test,
+        y_train=y_train,
+        y_test=y_test,
+        target_type="categorical",
+        random_state=seed
+    )
+    return mf
+
+
+@pytest.fixture
+def model_finder_regression(data_regression, split_dataset_numerical, seed):
+    X = data_regression[0]
+    y = data_regression[1]
+    X_train, X_test, y_train, y_test = split_dataset_numerical
+    mf = ModelFinder(
+        X=X,
+        y=y,
+        X_train=X_train,
+        X_test=X_test,
+        y_train=y_train,
+        y_test=y_test,
+        target_type="numerical",
+        random_state=seed
+    )
+    return mf
