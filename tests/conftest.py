@@ -306,3 +306,4 @@ def root_path_to_package():
     root_path = os.path.split(os.getcwd())[0]
 
     return root_path, package_name
+
