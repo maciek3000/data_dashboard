@@ -3,7 +3,6 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, QuantileTransformer, LabelEncoder, FunctionTransformer
 from sklearn.impute import SimpleImputer
 
-from .features import CategoricalFeature
 
 class Transformer:
     """Wrapper for pipeline for transformations of input and output data."""
@@ -11,14 +10,16 @@ class Transformer:
     # https://scikit-learn.org/stable/auto_examples/compose/plot_column_transformer_mixed_types.html
     # https://scikit-learn.org/stable/modules/compose.html
 
-    def __init__(self, features):
+    def __init__(self, categorical_features, numerical_features, target_type, random_state=None):
 
-        self.transformed_X = None
-        self.transformed_y = None
+        self.categorical_features = categorical_features
+        self.numerical_features = numerical_features
+        self.target_type = target_type
+        self.random_state = None
 
-        self.features = features
-        self.feature_names = features.features(drop_target=True)
-        self.target = features.target
+        # self.features = features
+        # self.feature_names = features.features(drop_target=True)
+        # self.target = features.target
 
         self.preprocessor_X = self._create_preprocessor_X()
         self.preprocessor_y = self._create_preprocessor_y()
@@ -30,7 +31,6 @@ class Transformer:
 
     def transform(self, X):
         transformed = self.preprocessor_X.transform(X)
-        self.transformed_X = transformed
         return transformed
 
     def fit_transform(self, X):
@@ -43,7 +43,6 @@ class Transformer:
 
     def transform_y(self, y):
         transformed = self.preprocessor_y.transform(y)
-        self.transformed_y = transformed
         return transformed
 
     def fit_transform_y(self, y):
@@ -52,8 +51,8 @@ class Transformer:
 
     def _create_preprocessor_X(self):
 
-        numerical_features = self.features.numerical_features(drop_target=True)
-        categorical_features = self.features.categorical_features(drop_target=True)
+        numerical_features = self.numerical_features  # self.features.numerical_features(drop_target=True)
+        categorical_features = self.categorical_features  # self.features.categorical_features(drop_target=True)
 
         numeric_transformer = self._create_numeric_transformer()
         categorical_transformer = self._create_categorical_transformer()
@@ -69,7 +68,7 @@ class Transformer:
     def _create_numeric_transformer(self):
         transformer = make_pipeline(
             SimpleImputer(strategy="median"),
-            QuantileTransformer(output_distribution="normal"),
+            QuantileTransformer(output_distribution="normal", random_state=self.random_state),
             StandardScaler()
         )
         return transformer
@@ -82,10 +81,14 @@ class Transformer:
         return transformer
 
     def _create_preprocessor_y(self):
-        if isinstance(self.features[self.target], CategoricalFeature):
+        if self.target_type == "Categorical":
             transformer = LabelEncoder()
-        else:
+        elif self.target_type == "Numerical":
             # in regression model finder wraps its object in TargetRegressor
             transformer = FunctionTransformer(lambda x: x)
+        else:
+            raise ValueError(
+                "Target type set as {target_type}, should be Categorical or Numerical".format(target_type=self.target_type)
+            )
 
         return transformer

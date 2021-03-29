@@ -19,8 +19,7 @@ def name(obj):
     try:
         obj_name = obj.__name__
     except AttributeError:
-        obj_name = str(obj)
-
+        obj_name = type(obj).__name__
     return obj_name
 
 
@@ -41,7 +40,7 @@ class ModelFinder:
     __target_numerical = "numerical"
     __target_categories = [__target_categorical, __target_numerical]
 
-    def __init__(self, X, y, target_type, random_state=None):
+    def __init__(self, X, y, X_train, X_test, y_train, y_test, target_type, random_state=None):
 
         if target_type in self.__target_categories:
             self._set_problem(target_type)
@@ -57,9 +56,6 @@ class ModelFinder:
 
         self.X = X
         self.y = y
-
-        # TODO: implement Stratified split in case of imbalance
-        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25)
         self.X_train = X_train
         self.X_test = X_test
         self.y_train = y_train
@@ -274,7 +270,7 @@ class ModelFinder:
         scoring_results = {}
         for scoring in scorings:
             score = scoring(self.y_test, model.predict(self.X_test))
-            scoring_results[scoring] = score
+            scoring_results[name(scoring)] = score
 
         return scoring_results
 
