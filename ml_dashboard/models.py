@@ -2,10 +2,11 @@ import numpy as np
 from sklearn.linear_model import SGDClassifier, PassiveAggressiveClassifier, RidgeClassifier, Perceptron, LogisticRegression
 from sklearn.linear_model import Ridge
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier, BaggingClassifier, ExtraTreesClassifier #, HistGradientBoostingClassifier
-from sklearn.svm import SVC
+from sklearn.svm import SVC, SVR
 from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.naive_bayes import GaussianNB
 from sklearn.experimental import enable_hist_gradient_boosting
 
@@ -146,5 +147,6 @@ regressors = {
     Ridge: {
         "alpha": alpha,
         "tol": tol,
-    }
+    },
 }
+

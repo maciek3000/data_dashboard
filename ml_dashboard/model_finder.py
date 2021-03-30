@@ -86,7 +86,8 @@ class ModelFinder:
     def search(self, models=None, scoring=None, mode=_mode_quick):
         """models can be either:
             - list of initialized models, to which we fit the data
-            - dict of Model (class): param_grid of a given model to do the GridSearch
+            - dict of Model (class): param_grid of a given model to do the GridSearch - no need to include random_state
+                here as it will get overwritten by random_state property
             - None, which will lead to the usage of default list of models, based on a provided "mode"
 
         mode can be either:
@@ -162,15 +163,15 @@ class ModelFinder:
 
     def _search_for_models(self, models, mode, scoring):
         if isinstance(models, dict):
-            initiated_models = self._gridsearch(models, scoring)
+            gridsearch_models = self._gridsearch(models, scoring)
 
         elif models is None:
             if mode == self._mode_quick:
                 chosen_models = self._quicksearch(self.default_models.keys(), scoring)
                 param_grid = {clf: self.default_models[clf] for clf in chosen_models}
-                initiated_models = self._gridsearch(param_grid, scoring)
+                gridsearch_models = self._gridsearch(param_grid, scoring)
             elif mode == self._mode_detailed:
-                initiated_models = self._gridsearch(self.default_models, scoring)
+                gridsearch_models = self._gridsearch(self.default_models, scoring)
             else:
                 # this branch shouldn't be possible without explicit class/object properties manipulation
                 raise ValueError("models should be Dict or None, got {models}".format(models=models))
@@ -179,6 +180,8 @@ class ModelFinder:
                 modes=", ".join(self._modes), mode=mode
             ))
 
+        initiated_models = [model(**params) for model, params in gridsearch_models]
+
         return initiated_models
 
     def _gridsearch(self, models_param_grid, scoring):
@@ -186,29 +189,45 @@ class ModelFinder:
         self._update_gridsearch_results(all_results)
         return chosen_models
 
-    def _perform_gridsearch(self, models_param_grid, scoring):
+    def _perform_gridsearch(self, models_param_grid, scoring, cv=5):
 
         all_results = {}
         best_of_their_class = []
 
         for model, params in models_param_grid.items():
-            # TODO: make it work
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
 
-                clf = HalvingGridSearchCV(
-                    model(),
-                    params,
-                    scoring=make_scorer(scoring),
-                    cv=5,
-                    error_score=0  # to ignore errors that might happen
-                )
+            # not every model requires random_state, e.g. KNeighborsClassifier
+            if "random_state" in model().get_params().keys():
+                params["random_state"] = [self.random_state]
 
+            # # TODO: make it work
+            # with warnings.catch_warnings():
+            #     warnings.simplefilter("ignore")
+
+            if self.problem == self._regression:
+                # TODO: introduce function to properly make scorer (e.g. r2_score should have greater_is_better=True)
+                scorer = make_scorer(scoring, greater_is_better=False)
+            else:
+                scorer = make_scorer(scoring)
+
+            # GridSearch will fail with NotFittedError("All estimators failed to fit") when argument provided
+            # in the param grid is incorrect for a given model (even one combination will trigger it).
+            clf = HalvingGridSearchCV(
+                model(),
+                params,
+                scoring=scorer,
+                cv=cv,
+                error_score=0,  # to ignore errors that might happen,
+                random_state=self.random_state
+            )
+            try:
                 clf.fit(self.X_train, self.y_train)
+            except NotFittedError:
+                # TODO: issue warning or print message that there might be incorrect arguments in param grid
+                raise
 
-                all_results[model] = clf.cv_results_
-                best_model = model(**clf.best_params_)
-                best_of_their_class.append(best_model)
+            all_results[model] = clf.cv_results_
+            best_of_their_class.append((model, clf.best_params_))
 
         return best_of_their_class, all_results,
 
@@ -242,7 +261,6 @@ class ModelFinder:
             score = scoring(y_test, clf.predict(X_test))
             params = clf.get_params()
 
-            # quicksearch doesnt initialize models cause they are being gridsearched later on
             all_results[name(model)] = {"fit_time": stop_time-start_time, name(scoring): score, "params": params}
             scored_models.append((model, score))
 
@@ -285,7 +303,7 @@ class ModelFinder:
         scoring_results = {}
         for scoring in scorings:
             score = scoring(self.y_test, model.predict(self.X_test))
-            scoring_results[name(scoring)] = score
+            scoring_results[scoring] = score
 
         return scoring_results
 

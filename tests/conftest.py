@@ -9,11 +9,15 @@ import pandas as pd
 import numpy as np
 from scipy.stats import truncnorm, skewnorm
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.svm import SVC, SVR
 
 # this package
 from ml_dashboard.descriptor import FeatureDescriptor
 from ml_dashboard.features import Features
 from ml_dashboard.analyzer import Analyzer
+from ml_dashboard.transformer import Transformer
 from ml_dashboard.model_finder import ModelFinder
 
 
@@ -317,7 +321,7 @@ def seed():
 
 @pytest.fixture
 def data_regression(data_classification_balanced):
-    df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]])
+    df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1)
     target = "Price"
     feats = df.columns.to_list()
     feats.remove(target)
@@ -328,23 +332,94 @@ def data_regression(data_classification_balanced):
 
 
 @pytest.fixture
-def split_dataset_categorical(data_classification_balanced, seed):
+def transformer_classification(categorical_features, numerical_features, seed):
+    categorical_features.remove("Target")
+    tr = Transformer(
+        categorical_features=categorical_features,
+        numerical_features=numerical_features,
+        target_type="Categorical",
+        random_state=seed
+    )
+    return tr
+
+
+@pytest.fixture
+def transformer_regression(categorical_features, numerical_features, seed):
+    numerical_features.remove("Price")
+    tr = Transformer(
+        categorical_features=categorical_features,
+        numerical_features=numerical_features,
+        target_type="Numerical",
+        random_state=seed
+    )
+    return tr
+
+
+@pytest.fixture
+def split_dataset_categorical(data_classification_balanced, transformer_classification, seed):
     X = data_classification_balanced[0]
     y = data_classification_balanced[1]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=seed)
-    return X_train, X_test, y_train, y_test
+    X = X.drop(["Date"], axis=1)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, random_state=seed)
+    t = transformer_classification
+    t.fit(X_train)
+    t.fit_y(y_train)
+    return t.transform(X_train), t.transform(X_test), t.transform_y(y_train), t.transform_y(y_test)
 
 
 @pytest.fixture
-def split_dataset_numerical(data_regression, seed):
+def split_dataset_numerical(data_regression, transformer_regression, seed):
     X = data_regression[0]
     y = data_regression[1]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.25, random_state=seed)
-    return X_train, X_test, y_train, y_test
+    X = X.drop(["Date"], axis=1)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, random_state=seed)
+    t = transformer_regression
+    t.fit(X_train)
+    t.fit_y(y_train)
+    return t.transform(X_train), t.transform(X_test), t.transform_y(y_train), t.transform_y(y_test)
 
 
 @pytest.fixture
-def model_finder_classification(data_classification_balanced, split_dataset_categorical, seed):
+def chosen_classifiers_grid():
+    _ = {
+        LogisticRegression: {
+            "tol": np.logspace(-1, 0, 2),
+            "C": np.logspace(-1, 0, 2)
+        },
+        DecisionTreeClassifier: {
+            "max_depth": [10, None],
+            "criterion": ["gini", "entropy"],
+        },
+        SVC: {
+            "tol": np.logspace(-1, 0, 2),
+            "C": np.logspace(-1, 0, 2)
+        }
+    }
+
+    return _
+
+
+@pytest.fixture
+def chosen_regressors_grid():
+    _ = {
+        Ridge: {
+            "alpha": np.logspace(-7, -4, 4),
+        },
+        DecisionTreeRegressor: {
+            "max_depth": [10, None],
+            "criterion": ["mae", "mse"]
+        },
+        SVR: {
+            "tol": np.logspace(-1, 0, 2),
+            "C": np.logspace(-2, -1, 2)
+        }
+    }
+
+    return _
+
+
+@pytest.fixture
+def model_finder_classification(data_classification_balanced, split_dataset_categorical, chosen_classifiers_grid, seed):
     X = data_classification_balanced[0]
     y = data_classification_balanced[1]
     X_train, X_test, y_train, y_test = split_dataset_categorical
@@ -358,11 +433,13 @@ def model_finder_classification(data_classification_balanced, split_dataset_cate
         target_type="categorical",
         random_state=seed
     )
+
+    mf.default_models = chosen_classifiers_grid
     return mf
 
 
 @pytest.fixture
-def model_finder_regression(data_regression, split_dataset_numerical, seed):
+def model_finder_regression(data_regression, split_dataset_numerical, chosen_regressors_grid, seed):
     X = data_regression[0]
     y = data_regression[1]
     X_train, X_test, y_train, y_test = split_dataset_numerical
@@ -376,4 +453,6 @@ def model_finder_regression(data_regression, split_dataset_numerical, seed):
         target_type="numerical",
         random_state=seed
     )
+
+    mf.default_models = chosen_regressors_grid
     return mf

@@ -1,4 +1,4 @@
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, mean_squared_error
 from sklearn.model_selection import train_test_split
 from lazypredict.Supervised import LazyClassifier
 from sklearn.svm import SVC
@@ -37,21 +37,21 @@ if __name__ == "__main__":
     # X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
 
-    coord = Coordinator(X, y, output_directory, accuracy_score, descriptions, os.getcwd())
+    coord = Coordinator(X, y, output_directory, accuracy_score, descriptions, os.getcwd(), random_state=42)
     #coord.create_html()
     # output = coord.quick_find()
     # print("\n".join(map(lambda x: x[0] + ": " + str(x[1]), output)))
 
     model = SVC(C=1000.0, gamma='auto', tol=0.1, kernel="rbf")
-    ml = coord.search_and_fit(mode="quick", scoring=accuracy_score)
+    ml = coord.search_and_fit(mode="quick", scoring=mean_squared_error)
 
     predictions = coord.predict(test_df[features])
     # results = coord.model_finder._quicksearch_results
 
-    output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
+    #output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
     print(ml)
-    print(coord.model_finder._chosen_model_scores)
-    print(output)
+    print(coord.model_finder._gridsearch_results.to_markdown())
+    #print(output)
 
 
 
