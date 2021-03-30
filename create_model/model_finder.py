@@ -24,6 +24,10 @@ def name(obj):
     return obj_name
 
 
+class ModelNotSetError(ValueError):
+    pass
+
+
 class ModelFinder:
 
     _classification = "classification"
@@ -34,20 +38,20 @@ class ModelFinder:
 
     _model_name = "model"
 
-    __mode_quick = "quick"
-    __mode_detailed = "detailed"
-    __modes = [__mode_quick, __mode_detailed]
-    __target_categorical = "categorical"
-    __target_numerical = "numerical"
-    __target_categories = [__target_categorical, __target_numerical]
+    _mode_quick = "quick"
+    _mode_detailed = "detailed"
+    _modes = [_mode_quick, _mode_detailed]
+    _target_categorical = "categorical"
+    _target_numerical = "numerical"
+    _target_categories = [_target_categorical, _target_numerical]
 
     def __init__(self, X, y, X_train, X_test, y_train, y_test, target_type, random_state=None):
 
-        if target_type in self.__target_categories:
+        if target_type in self._target_categories:
             self._set_problem(target_type)
         else:
             raise ValueError("Expected one of the categories: {categories}; got {category}".format(
-                categories=", ".join(self.__target_categories), category=target_type
+                categories=", ".join(self._target_categories), category=target_type
             ))
 
         self.random_state = random_state
@@ -68,7 +72,7 @@ class ModelFinder:
 
         self._dummy_model, self._dummy_model_scores = self._create_dummy_model()
 
-    def search_and_fit(self, models=None, scoring=None, mode=__mode_quick):
+    def search_and_fit(self, models=None, scoring=None, mode=_mode_quick):
         # TODO: decide where random state is needed
         model = self.search(models, scoring, mode)
         self.set_model(model)
@@ -79,7 +83,7 @@ class ModelFinder:
         self.set_model(model)
         self.fit()
 
-    def search(self, models=None, scoring=None, mode=__mode_quick):
+    def search(self, models=None, scoring=None, mode=_mode_quick):
         """models can be either:
             - list of initialized models, to which we fit the data
             - dict of Model (class): param_grid of a given model to do the GridSearch
@@ -94,9 +98,9 @@ class ModelFinder:
         if scoring is None:
             scoring = self.default_scoring
 
-        if mode not in self.__modes:
-            raise ValueError("expected one of the modes: {modes}; got {mode}".format(
-                modes=", ".join(self.__modes), mode=mode
+        if mode not in self._modes:
+            raise ValueError("Expected one of the modes: {modes}; got {mode}".format(
+                modes=", ".join(self._modes), mode=mode
             ))
 
         if isinstance(models, dict) or models is None:
@@ -104,6 +108,11 @@ class ModelFinder:
         else:
             try:
                 iter(models)
+
+                # in case of Str
+                if isinstance(models, str):
+                    raise TypeError
+
                 initiated_models = models
             except TypeError:
                 raise ValueError("models should be Dict, List-like or None, got {models}".format(models=models))
@@ -123,21 +132,27 @@ class ModelFinder:
 
     def fit(self):
         if self._chosen_model is None:
-            raise Exception("Model needs to be set before fitting")
+            raise ModelNotSetError(
+                "Model needs to be set before fitting. Call 'set_model' or 'search' for a model before trying to fit."
+            )
         self._chosen_model.fit(self.X, self.y)
 
     def predict(self, X):
+        if self._chosen_model is None:
+            raise ModelNotSetError(
+                "Model needs to be set and fitted before prediction. Call 'set_model' or 'search' for a model before."
+            )
         return self._chosen_model.predict(X)
 
     def _set_problem(self, problem_type):
 
-        if problem_type == self.__target_categorical:
+        if problem_type == self._target_categorical:
             self.problem = self._classification
             self.scoring_functions = self._scoring_classification
             self.default_models = classifiers
             self.default_scoring = roc_auc_score
 
-        elif problem_type == self.__target_numerical:
+        elif problem_type == self._target_numerical:
             self.problem = self._regression
             self.scoring_functions = self._scoring_regression
             self.default_models = regressors
@@ -150,17 +165,19 @@ class ModelFinder:
             initiated_models = self._gridsearch(models, scoring)
 
         elif models is None:
-            if mode == self.__mode_quick:
+            if mode == self._mode_quick:
                 chosen_models = self._quicksearch(self.default_models.keys(), scoring)
                 param_grid = {clf: self.default_models[clf] for clf in chosen_models}
                 initiated_models = self._gridsearch(param_grid, scoring)
-            elif mode == self.__mode_detailed:
+            elif mode == self._mode_detailed:
                 initiated_models = self._gridsearch(self.default_models, scoring)
             else:
                 # this branch shouldn't be possible without explicit class/object properties manipulation
-                raise Exception("?")
+                raise ValueError("models should be Dict or None, got {models}".format(models=models))
         else:
-            raise Exception("?")
+            raise ValueError("Expected one of the modes: {modes}; got {mode}".format(
+                modes=", ".join(self._modes), mode=mode
+            ))
 
         return initiated_models
 

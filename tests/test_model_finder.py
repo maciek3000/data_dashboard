@@ -4,7 +4,7 @@ from sklearn.linear_model import Ridge, PassiveAggressiveClassifier
 from sklearn.metrics import roc_auc_score, mean_squared_error
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
-from create_model.model_finder import name, ModelFinder
+from create_model.model_finder import name, ModelFinder, ModelNotSetError
 from create_model.models import classifiers, regressors
 
 
@@ -130,3 +130,58 @@ def test_model_finder_dummy_regression(model_finder_regression, test_input):
 
     assert str(actual_model) == str(expected_model)
     assert np.array_equal(actual_model.predict(test_input), np.array([median]*6))
+
+
+def test_model_finder_search():
+    assert False
+
+
+@pytest.mark.parametrize(
+    ("mode",),
+    (
+            ("QUICK",),
+            (10,),
+            (None,),
+            (False,),
+            (lambda x: "quick",),
+    )
+)
+def test_model_finder_search_incorrect_mode(model_finder_classification, mode):
+    categories = ", ".join(model_finder_classification._modes)
+    with pytest.raises(ValueError) as excinfo:
+        model_finder_classification.search(mode=mode)
+    assert categories in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("incorrect_model",),
+    (
+            (Ridge(),),
+            ("LinearRegression",),
+            (10,),
+            (lambda x: x,),
+    )
+)
+def test_model_finder_search_incorrect_model(model_finder_classification, incorrect_model):
+    mode = model_finder_classification._mode_quick
+    with pytest.raises(ValueError) as excinfo:
+        model_finder_classification.search(models=incorrect_model, mode=mode)
+    assert "models should be Dict, List-like or None" in str(excinfo.value)
+
+
+def test_model_finder_fit(model_finder_classification):
+    assert False
+
+
+def test_model_finder_fit_no_model(model_finder_classification):
+    with pytest.raises(ModelNotSetError):
+        model_finder_classification.fit()
+
+
+def test_model_finder_predict(model_finder_classification):
+    assert False
+
+
+def test_model_finder_predict_no_model(model_finder_classification):
+    with pytest.raises(ModelNotSetError):
+        model_finder_classification.predict(["test_input"])

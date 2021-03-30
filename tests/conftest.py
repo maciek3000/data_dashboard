@@ -326,6 +326,7 @@ def data_regression(data_classification_balanced):
     y = df[target].fillna(median)
     return X, y
 
+
 @pytest.fixture
 def split_dataset_categorical(data_classification_balanced, seed):
     X = data_classification_balanced[0]
