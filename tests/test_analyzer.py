@@ -1,5 +1,5 @@
-from create_model.analyzer import Analyzer, calculate_numerical_bins, modify_histogram_edges
-from create_model.features import CategoricalFeature, NumericalFeature
+from ml_dashboard.analyzer import Analyzer, calculate_numerical_bins, modify_histogram_edges
+from ml_dashboard.features import CategoricalFeature, NumericalFeature
 import pandas as pd
 import pytest
 import math

@@ -1,4 +1,4 @@
-from create_model.transformer import Transformer
+from ml_dashboard.transformer import Transformer
 from sklearn.preprocessing import LabelEncoder, FunctionTransformer, OneHotEncoder, QuantileTransformer, StandardScaler
 import pytest
 import numpy as np

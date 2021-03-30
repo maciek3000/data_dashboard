@@ -25,7 +25,7 @@ class Coordinator:
         .full_analysis() function which tries to build the whole analysis from the ground up.
     """
 
-    _name = "create_model"
+    _name = "ml_dashboard"
     _output_created_text = "Created output at {directory}"
     _model_found_text = "Model: {name}\nScore: {score}\nParams: {params}"
 

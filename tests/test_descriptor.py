@@ -1,4 +1,4 @@
-from create_model.descriptor import FeatureDescriptor
+from ml_dashboard.descriptor import FeatureDescriptor
 import pytest
 
 

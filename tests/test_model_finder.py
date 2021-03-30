@@ -4,8 +4,8 @@ from sklearn.linear_model import Ridge, PassiveAggressiveClassifier
 from sklearn.metrics import roc_auc_score, mean_squared_error
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
-from create_model.model_finder import name, ModelFinder, ModelNotSetError
-from create_model.models import classifiers, regressors
+from ml_dashboard.model_finder import name, ModelFinder, ModelNotSetError
+from ml_dashboard.models import classifiers, regressors
 
 
 @pytest.mark.parametrize(

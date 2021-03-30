@@ -1,4 +1,4 @@
-from create_model.output import Output
+from ml_dashboard.output import Output
 import os
 import pytest
 

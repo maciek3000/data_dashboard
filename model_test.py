@@ -7,8 +7,8 @@ import os
 import pandas as pd
 import json
 
-from create_model.coordinator import Coordinator
-from create_model.examples.examples import iris, boston, diabetes, digits, wine, breast_cancer
+from ml_dashboard.coordinator import Coordinator
+from ml_dashboard.examples.examples import iris, boston, diabetes, digits, wine, breast_cancer
 
 if __name__ == "__main__":
 

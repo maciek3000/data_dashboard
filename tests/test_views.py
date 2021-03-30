@@ -1,5 +1,5 @@
 import pytest
-from create_model.views import Overview, FeatureView, append_description
+from ml_dashboard.views import Overview, FeatureView, append_description
 from bs4 import BeautifulSoup
 
 

@@ -1,5 +1,5 @@
-from create_model.features import NumericalFeature, CategoricalFeature, Features, sort_strings
-from create_model.descriptor import FeatureDescriptor
+from ml_dashboard.features import NumericalFeature, CategoricalFeature, Features, sort_strings
+from ml_dashboard.descriptor import FeatureDescriptor
 import pandas as pd
 import pytest
 

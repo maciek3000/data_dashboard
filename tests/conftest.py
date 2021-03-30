@@ -11,10 +11,10 @@ from scipy.stats import truncnorm, skewnorm
 from sklearn.model_selection import train_test_split
 
 # this package
-from create_model.descriptor import FeatureDescriptor
-from create_model.features import Features
-from create_model.analyzer import Analyzer
-from create_model.model_finder import ModelFinder
+from ml_dashboard.descriptor import FeatureDescriptor
+from ml_dashboard.features import Features
+from ml_dashboard.analyzer import Analyzer
+from ml_dashboard.model_finder import ModelFinder
 
 
 @pytest.fixture
@@ -304,7 +304,7 @@ def analyzer_fixture(fixture_features):
 
 @pytest.fixture
 def root_path_to_package():
-    package_name = "create_model"
+    package_name = "ml_dashboard"
     root_path = os.path.split(os.getcwd())[0]
 
     return root_path, package_name
