@@ -16,6 +16,13 @@ from .models import classifiers, regressors
 
 
 def reverse_sorting_order(str_name):
+    """If str_name ends with err_strings defined in functions, returns False. Otherwise, returns True.
+
+        Negation was introduced as the function is used to determine the order of the sorting depending on scoring
+        function name: if scoring ends with "_error" or "_loss", it means that lower score is better. If it doesn't,
+        then it means that higher score is better. As default sorting is ascending, reverse=True needs to be explicitly
+        provided for the object (e.g. list) to be sorted in a descending fashion.
+    """
     # functions ending with _error or _loss return a value to minimize, the lower the better.
     err_strings = ("_error", "_loss")
     # boolean output will get fed to "reversed" argument of sorted function: True -> descending; False -> ascending
@@ -24,6 +31,7 @@ def reverse_sorting_order(str_name):
 
 
 def name(obj):
+    """Checks if obj defines __name__ property and if not, gets it from it's Parent Class."""
     try:
         obj_name = obj.__name__
     except AttributeError:
@@ -36,6 +44,27 @@ class ModelNotSetError(ValueError):
 
 
 class ModelFinder:
+    """Used to search for the best Models possible with a brute force approach of GridSearching.
+
+        ModelFinder takes as initial arguments the data (X, y) and the split of the aforementioned data (train/test).
+        Then it uses train/test split to assess any model, but fits chosen models on all X, y.
+
+        If no model is set or search() function is called explicitly, then ModelFinder does a search within all
+        predefined Models (for a given problem type: classification/regression) and based on a provided scoring assesses
+        which of those Models is the best. Based on a provided mode (quick or detailed), search will be performed:
+            - quick: initial search is done on default variables of different classes of Models (similar to LazyPredict)
+            and a certain number of Models is then GridSearched
+            - detailed: GridSearch is done on ALL predefined Models.
+
+        Model that was the best (based on the scoring) is chosen internally, fitted and can be then used to predict
+        any data (e.g. for Kaggle competition).
+
+        Additionally, results from the search are also available in object properties (as DataFrames) and can be
+        accessed for additional insight.
+
+        Please note that all X, y, train/test data needs to be already transformed.
+    """
+
 
     _classification = "classification"
     _regression = "regression"
