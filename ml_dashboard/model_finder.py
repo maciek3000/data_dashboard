@@ -1,19 +1,26 @@
-import random
 import pandas as pd
 import time
-import warnings
 import copy
+from collections import defaultdict
 
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
 from sklearn.metrics import make_scorer
 from sklearn.experimental import enable_halving_search_cv
-from sklearn.model_selection import GridSearchCV, train_test_split, HalvingGridSearchCV
+from sklearn.model_selection import train_test_split, HalvingGridSearchCV  # GridSearchCV
 from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, balanced_accuracy_score
 from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score, r2_score
 from sklearn.exceptions import NotFittedError
 
 from .models import classifiers, regressors
+
+
+def reverse_sorting_order(str_name):
+    # functions ending with _error or _loss return a value to minimize, the lower the better.
+    err_strings = ("_error", "_loss")
+    # boolean output will get fed to "reversed" argument of sorted function: True -> descending; False -> ascending
+    # if str ends with one of those, then it means that lower is better -> ascending sort.
+    return not str_name.endswith(err_strings)
 
 
 def name(obj):
@@ -32,11 +39,13 @@ class ModelFinder:
 
     _classification = "classification"
     _regression = "regression"
-    _quick_search_limit = 3
+    _quicksearch_limit = 3
     _scoring_classification = [accuracy_score, balanced_accuracy_score, f1_score, roc_auc_score]
     _scoring_regression = [mean_squared_error, mean_absolute_error, explained_variance_score, r2_score]
 
     _model_name = "model"
+    _fit_time_name = "fit_time"
+    _params_name = "params"
 
     _mode_quick = "quick"
     _mode_detailed = "detailed"
@@ -73,13 +82,12 @@ class ModelFinder:
         self._dummy_model, self._dummy_model_scores = self._create_dummy_model()
 
     def search_and_fit(self, models=None, scoring=None, mode=_mode_quick):
-        # TODO: decide where random state is needed
         model = self.search(models, scoring, mode)
         self.set_model(model)
         self.fit()
         return self._chosen_model
 
-    def set_and_fit(self, model):
+    def set_model_and_fit(self, model):
         self.set_model(model)
         self.fit()
 
@@ -108,27 +116,27 @@ class ModelFinder:
             initiated_models = self._search_for_models(models, mode, scoring)
         else:
             try:
-                iter(models)
-
                 # in case of Str
                 if isinstance(models, str):
                     raise TypeError
-
+                iter(models)
                 initiated_models = models
             except TypeError:
                 raise ValueError("models should be Dict, List-like or None, got {models}".format(models=models))
 
         scored_models, search_results = self._assess_models(initiated_models, scoring)
-        self._update_search_results(search_results)
+        self._search_results = self._create_search_results_dataframe(search_results)
 
-        # assuming that scoring is: higher == better
-        scored_models.sort(key=lambda x: x[1], reverse=True)
+        sorting_order = reverse_sorting_order(scoring.__name__)
+        scored_models.sort(key=lambda x: x[1], reverse=sorting_order)
         return scored_models[0][0]
 
     def set_model(self, model):
+        # TODO: Assess if the copy for train/test needs to be stored as a property
+        params = model.get_params()
+        copy_for_scoring = model.__class__(**params).fit(self.X_train, self.y_train)
         self._chosen_model = model
-        self._chosen_model_params = model.get_params()
-        copy_for_scoring = copy.deepcopy(model).fit(self.X_train, self.y_train)
+        self._chosen_model_params = params
         self._chosen_model_scores = self._score_model(copy_for_scoring, self.default_scoring)
 
     def fit(self):
@@ -186,7 +194,7 @@ class ModelFinder:
 
     def _gridsearch(self, models_param_grid, scoring):
         chosen_models, all_results = self._perform_gridsearch(models_param_grid, scoring)
-        self._update_gridsearch_results(all_results)
+        self._gridsearch_results = self._create_gridsearch_results_dataframe(all_results)
         return chosen_models
 
     def _perform_gridsearch(self, models_param_grid, scoring, cv=5):
@@ -204,18 +212,15 @@ class ModelFinder:
             # with warnings.catch_warnings():
             #     warnings.simplefilter("ignore")
 
-            if self.problem == self._regression:
-                # TODO: introduce function to properly make scorer (e.g. r2_score should have greater_is_better=True)
-                scorer = make_scorer(scoring, greater_is_better=False)
-            else:
-                scorer = make_scorer(scoring)
+            # https://scikit-learn.org/stable/modules/model_evaluation.html#defining-your-scoring-strategy-from-metric-functions
+            sorting_order = reverse_sorting_order(scoring.__name__)
 
             # GridSearch will fail with NotFittedError("All estimators failed to fit") when argument provided
             # in the param grid is incorrect for a given model (even one combination will trigger it).
             clf = HalvingGridSearchCV(
                 model(),
                 params,
-                scoring=scorer,
+                scoring=make_scorer(scoring, greater_is_better=sorting_order),
                 cv=cv,
                 error_score=0,  # to ignore errors that might happen,
                 random_state=self.random_state
@@ -231,7 +236,7 @@ class ModelFinder:
 
         return best_of_their_class, all_results,
 
-    def _update_gridsearch_results(self, cv_results):
+    def _create_gridsearch_results_dataframe(self, cv_results):
         df = None
         for model in cv_results.keys():
             single_results = pd.DataFrame(cv_results[model])
@@ -239,15 +244,15 @@ class ModelFinder:
             df = pd.concat([df, single_results], axis=0)
 
         df = df.reset_index().drop(["index"], axis=1)
-        self._gridsearch_results = df
+        return df
 
     def _quicksearch(self, models, scoring):
         scored_models, all_results = self._perform_quicksearch(models, scoring)
-        self._update_quicksearch_results(all_results)
+        self._quicksearch_results = self._create_search_results_dataframe(all_results)
 
-        # assuming that scoring is: higher == better
-        scored_models.sort(key=lambda x: x[1], reverse=True)
-        return [model[0] for model in scored_models][:self._quick_search_limit]
+        sorting_order = reverse_sorting_order(scoring.__name__)
+        scored_models.sort(key=lambda x: x[1], reverse=sorting_order)
+        return [model[0] for model in scored_models][:self._quicksearch_limit]
 
     def _perform_quicksearch(self, models, scoring):
         X_train, X_test, y_train, y_test = train_test_split(self.X_train, self.y_train)
@@ -261,49 +266,49 @@ class ModelFinder:
             score = scoring(y_test, clf.predict(X_test))
             params = clf.get_params()
 
-            all_results[name(model)] = {"fit_time": stop_time-start_time, name(scoring): score, "params": params}
+            all_results[model] = {
+                self._fit_time_name: stop_time-start_time, name(scoring): score, self._params_name: params
+            }
             scored_models.append((model, score))
 
         return scored_models, all_results
 
-    def _update_quicksearch_results(self, results):
-        df = pd.DataFrame(results).T
-        self._quicksearch_results = df
+    def _create_search_results_dataframe(self, results):
+        data = defaultdict(list)
+        for model, values in results.items():
+            data[self._model_name].append(name(model))
+            for key, val in values.items():
+                data[key].append(val)
 
-    def _assess_models(self, models, chosen_scoring):
+        return pd.DataFrame(data)
+
+    def _assess_models(self, initiated_models, chosen_scoring):
         all_results = {}
         scored_models = []
 
-        for model in models:
+        for model in initiated_models:
             model_copy = copy.deepcopy(model)
             start_time = time.time()
             model_copy.fit(self.X_train, self.y_train)
             stop_time = time.time()
 
-            model_results = {"fit_time": stop_time-start_time, "params": model.get_params()}
+            model_results = {self._fit_time_name: stop_time-start_time, self._params_name: model.get_params()}
             score_results = self._score_model(model_copy, chosen_scoring)
             model_results.update(score_results)
 
-            all_results[name(model)] = model_results
-            scored_models.append((model, score_results[chosen_scoring]))
+            all_results[model] = model_results
+            scored_models.append((model, score_results[name(chosen_scoring)]))
 
         return scored_models, all_results
 
-    def _update_search_results(self, results):
-        df = pd.DataFrame(results).T
-        self._search_results = df
+    def _score_model(self, fitted_model, chosen_scoring):
 
-    def _score_model(self, model, chosen_scoring):
-
-        if chosen_scoring in self.scoring_functions:
-            scorings = self.scoring_functions
-        else:
-            scorings = [chosen_scoring] + self.scoring_functions
+        scorings = self._get_scorings(chosen_scoring)
 
         scoring_results = {}
         for scoring in scorings:
-            score = scoring(self.y_test, model.predict(self.X_test))
-            scoring_results[scoring] = score
+            score = scoring(self.y_test, fitted_model.predict(self.X_test))
+            scoring_results[name(scoring)] = score
 
         return scoring_results
 
@@ -319,3 +324,11 @@ class ModelFinder:
         results = self._score_model(model, self.default_scoring)
         model.fit(self.X, self.y)
         return model, results
+
+    def _get_scorings(self, chosen_scoring):
+        if chosen_scoring in self.scoring_functions:
+            scorings = self.scoring_functions
+        else:
+            scorings = [chosen_scoring] + self.scoring_functions
+
+        return scorings

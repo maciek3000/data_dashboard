@@ -356,6 +356,26 @@ def transformer_regression(categorical_features, numerical_features, seed):
 
 
 @pytest.fixture
+def transformed_classification_data(data_classification_balanced, transformer_classification):
+    X = data_classification_balanced[0]
+    y = data_classification_balanced[1]
+    X = X.drop(["Date"], axis=1)
+    transformer_classification.fit(X)
+    transformer_classification.fit_y(y)
+    return transformer_classification.transform(X), transformer_classification.transform_y(y)
+
+
+@pytest.fixture
+def transformed_regression_data(data_regression, transformer_regression):
+    X = data_regression[0]
+    y = data_regression[1]
+    X = X.drop(["Date"], axis=1)
+    transformer_regression.fit(X)
+    transformer_regression.fit_y(y)
+    return transformer_regression.transform(X), transformer_regression.transform_y(y)
+
+
+@pytest.fixture
 def split_dataset_categorical(data_classification_balanced, transformer_classification, seed):
     X = data_classification_balanced[0]
     y = data_classification_balanced[1]
@@ -419,9 +439,9 @@ def chosen_regressors_grid():
 
 
 @pytest.fixture
-def model_finder_classification(data_classification_balanced, split_dataset_categorical, chosen_classifiers_grid, seed):
-    X = data_classification_balanced[0]
-    y = data_classification_balanced[1]
+def model_finder_classification(transformed_classification_data, split_dataset_categorical, chosen_classifiers_grid, seed):
+    X = transformed_classification_data[0]
+    y = transformed_classification_data[1]
     X_train, X_test, y_train, y_test = split_dataset_categorical
     mf = ModelFinder(
         X=X,
@@ -439,9 +459,9 @@ def model_finder_classification(data_classification_balanced, split_dataset_cate
 
 
 @pytest.fixture
-def model_finder_regression(data_regression, split_dataset_numerical, chosen_regressors_grid, seed):
-    X = data_regression[0]
-    y = data_regression[1]
+def model_finder_regression(transformed_regression_data, split_dataset_numerical, chosen_regressors_grid, seed):
+    X = transformed_regression_data[0]
+    y = transformed_regression_data[1]
     X_train, X_test, y_train, y_test = split_dataset_numerical
     mf = ModelFinder(
         X=X,
