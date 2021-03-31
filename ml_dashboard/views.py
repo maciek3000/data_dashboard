@@ -261,3 +261,20 @@ class FeatureView(BaseView):
             i += 1
 
         return html
+
+
+class ModelsView(BaseView):
+
+    def __init__(self, template, css_path):
+        super().__init__()
+        self.template = template
+        self.css = css_path
+
+    def render(self, base_css, creation_date, hyperlinks):
+        output = {}
+
+        # Standard variables
+        standard = super().standard_params(base_css, creation_date, hyperlinks)
+        output.update(standard)
+
+        return self.template.render(**output)

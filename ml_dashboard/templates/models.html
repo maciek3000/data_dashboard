@@ -1,0 +1,22 @@
+<link rel="stylesheet" href="{{ models_css }}">
+{% extends 'base.html' %}
+
+{% block header %}
+{% block title %}Models{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="submenu">Models Comparison</div>
+<div class="submenu-content">{{ models_comparison_grid }}</div>
+
+<div class="submenu">Chosen Model Info</div>
+<div class="submenu-content">{{ chosen_model_grid }}</div>
+
+<div class="submenu">Incorrectly Predicted Rows</div>
+<div class="submenu-content">{{ incorrect_predictions_grid }}</div>
+
+<div>{{ bokeh_script_info_grid }}</div>
+<div>{{ bokeh_script_scatter_plot_grid }}</div>
+<!-- <script src="{{ models_js }}"></script> -->
+{% endblock %}
+

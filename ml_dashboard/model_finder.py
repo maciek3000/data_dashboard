@@ -108,7 +108,7 @@ class ModelFinder:
         self._gridsearch_results = None
         self._search_results = None
 
-        self._dummy_model, self._dummy_model_scores = self._create_dummy_model()
+        # self._dummy_model, self._dummy_model_scores = self._create_dummy_model()
 
     def search_and_fit(self, models=None, scoring=None, mode=_mode_quick):
         model = self.search(models, scoring, mode)

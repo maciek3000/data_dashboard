@@ -84,32 +84,6 @@
     color: var(--normal-link-color);
 }
 
-/* Subcategories */
-
-.submenu {
-    width: 100%;
-    cursor: pointer;
-    font-size: 1.9em;
-    margin: 8px 0px;
-    color: var(--gray-title);
-    border-top: 0px solid var(--light-gray);
-}
-
-.submenu::before {
-    content: '\25BF';
-}
-
-.active-submenu::before {
-    content: "\25B8";
-}
-
-.submenu-content {
-    width: 100%;
-    overflow: auto;
-    max-height: 0;
-    transition: max-height 0.2s ease-out;
-}
-
 /* Descriptions */
 
 .feature-name-w-desc span {

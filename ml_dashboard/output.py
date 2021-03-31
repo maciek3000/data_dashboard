@@ -1,7 +1,6 @@
 import os, datetime
 from jinja2 import Environment, FileSystemLoader
-from .views import Overview
-from .views import FeatureView
+from .views import Overview, FeatureView, ModelsView
 
 
 class Output:
@@ -33,6 +32,9 @@ class Output:
     _view_features_html = "features.html"
     _view_features_css = "features.css"
     _view_features_js = "features.js"
+    _view_models = "models"
+    _view_models_html = "models.html"
+    _view_models_css = "models.css"
 
     # directories
     _static_directory_name = "static"
@@ -70,6 +72,11 @@ class Output:
                     js_path=os.path.join(self.static_path, self._view_features_js),
                 )
 
+        self.view_models = ModelsView(
+            template=self.env.get_template(self._view_models_html),
+            css_path=os.path.join(self.static_path, self._view_models_css)
+        )
+
     def create_html(self):
 
         base_css = os.path.join(self.static_path, self._base_css)
@@ -79,7 +86,8 @@ class Output:
 
         hyperlinks = {
             self._view_overview: self._path_to_file(self._view_overview_html),
-            self._view_features: self._path_to_file(self._view_features_html)
+            self._view_features: self._path_to_file(self._view_features_html),
+            self._view_models: self._path_to_file(self._view_models_html)
         }
 
         feature_list = self.analyzer.feature_list()
@@ -108,9 +116,16 @@ class Output:
             first_feature=first_feature
         )
 
+        models_rendered = self.view_models.render(
+            base_css=base_css,
+            creation_date=created_on,
+            hyperlinks=hyperlinks
+        )
+
         rendered_templates = {
             self._view_overview_html: overview_rendered,
-            self._view_features_html: features_rendered
+            self._view_features_html: features_rendered,
+            self._view_models_html: models_rendered
         }
 
         for template_filepath, template in rendered_templates.items():
