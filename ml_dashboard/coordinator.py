@@ -31,7 +31,6 @@ class Coordinator:
 
     def __init__(self, X, y, output_directory, scoring=None, feature_descriptions_dict=None, root_path=None, random_state=None):
 
-
         self.random_state = random_state
 
         # copy original dataframes to avoid changing the originals
@@ -78,14 +77,21 @@ class Coordinator:
             random_state=random_state
         )
 
-        self.output = Output(self.root_path, output_directory, analyzer=self.analyzer, package_name=self._name)
+        self.output = Output(
+            root_path=self.root_path,
+            output_directory=output_directory,
+            package_name=self._name,
+            analyzer=self.analyzer,
+            transformer=self.transformer,
+            model_finder=self.model_finder
+        )
 
     def search_and_fit(self, models=None, scoring=None, mode="quick"):
         clf = self.model_finder.search_and_fit(models, scoring, mode)
         return clf
 
     def set_and_fit(self, model):
-        self.model_finder.set_and_fit(model)
+        self.model_finder.set_model_and_fit(model)
 
     def predict(self, X):
         transformed = self.transformer.transform(X)

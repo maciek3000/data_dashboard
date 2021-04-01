@@ -11,12 +11,10 @@ import pytest
             ("D:/home/root/project", "init.html",)
     )
 )
-def test_output_path_to_file(analyzer_fixture, root_path_to_package, output_directory, filename):
+def test_output_path_to_file(output, output_directory, filename):
     """Testing if creating filepaths with provided output_directory works correctly."""
-    package_path = root_path_to_package[0]
-    package_name = root_path_to_package[1]
-    o = Output(package_path, output_directory, analyzer_fixture, package_name)
-    actual = o._path_to_file(filename)
+    output.output_directory = output_directory
+    actual = output._path_to_file(filename)
     expected = os.path.join(output_directory, filename)
 
     assert actual == expected
@@ -30,12 +28,9 @@ def test_output_path_to_file(analyzer_fixture, root_path_to_package, output_dire
             ("file.txt", "This is another test"),
     )
 )
-def test_output_write_html(analyzer_fixture, root_path_to_package, tmpdir, filename, template):
+def test_output_write_html(output, filename, template, tmpdir):
     """Testing if writing content to the file works correctly."""
-    package_path = root_path_to_package[0]
-    package_name = root_path_to_package[1]
-    o = Output(package_path, tmpdir, analyzer_fixture, package_name)
-    o._write_html(filename, template)
+    output._write_html(filename, template)
 
     created_file = os.path.join(tmpdir, filename)
 

@@ -19,6 +19,7 @@ from ml_dashboard.features import Features
 from ml_dashboard.analyzer import Analyzer
 from ml_dashboard.transformer import Transformer
 from ml_dashboard.model_finder import ModelFinder
+from ml_dashboard.output import Output
 
 
 @pytest.fixture
@@ -476,3 +477,28 @@ def model_finder_regression(transformed_regression_data, split_dataset_numerical
 
     mf.default_models = chosen_regressors_grid
     return mf
+
+
+@pytest.fixture
+def model_finder_classification_fitted(model_finder_classification):
+    model_finder_classification.search_and_fit(mode="quick")
+    return model_finder_classification
+
+
+@pytest.fixture
+def model_finder_regression_fitted(model_finder_regression):
+    model_finder_regression.search_and_fit(mode="quick")
+    return model_finder_regression
+
+
+@pytest.fixture
+def output(analyzer_fixture, transformer_classification, model_finder_classification, tmpdir, root_path_to_package):
+    o = Output(
+        root_path=root_path_to_package[0],
+        output_directory=tmpdir,
+        package_name=root_path_to_package[1],
+        analyzer=analyzer_fixture,
+        transformer=transformer_classification,
+        model_finder=model_finder_classification
+    )
+    return o

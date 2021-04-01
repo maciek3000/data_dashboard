@@ -35,6 +35,7 @@ class Output:
     _view_models = "models"
     _view_models_html = "models.html"
     _view_models_css = "models.css"
+    _view_models_js = "models.js"
 
     # directories
     _static_directory_name = "static"
@@ -43,9 +44,11 @@ class Output:
     # CSS elements
     _feature_name_with_description_class = "feature-name-w-desc"
 
-    def __init__(self, root_path, output_directory, analyzer, package_name):
+    def __init__(self, root_path, output_directory, package_name, analyzer, transformer, model_finder):
 
         self.analyzer = analyzer
+        self.transformer = transformer
+        self.model_finder = model_finder
 
         # TODO:
         # this solution is sufficient right now but nowhere near satisfying
@@ -74,7 +77,8 @@ class Output:
 
         self.view_models = ModelsView(
             template=self.env.get_template(self._view_models_html),
-            css_path=os.path.join(self.static_path, self._view_models_css)
+            css_path=os.path.join(self.static_path, self._view_models_css),
+            js_path=os.path.join(self.static_path, self._view_models_js)
         )
 
     def create_html(self):
@@ -119,7 +123,8 @@ class Output:
         models_rendered = self.view_models.render(
             base_css=base_css,
             creation_date=created_on,
-            hyperlinks=hyperlinks
+            hyperlinks=hyperlinks,
+            model_results=self.model_finder.search_results(self.view_models.model_limit)
         )
 
         rendered_templates = {
