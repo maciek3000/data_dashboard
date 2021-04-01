@@ -30,13 +30,13 @@ def reverse_sorting_order(str_name):
     return not str_name.endswith(err_strings)
 
 
-def name(obj):
+def obj_name(obj):
     """Checks if obj defines __name__ property and if not, gets it from it's Parent Class."""
     try:
-        obj_name = obj.__name__
+        obj_str = obj.__name__
     except AttributeError:
-        obj_name = type(obj).__name__
-    return obj_name
+        obj_str = type(obj).__name__
+    return obj_str
 
 
 class ModelNotSetError(ValueError):
@@ -158,7 +158,7 @@ class ModelFinder:
         scored_models, search_results = self._assess_models(initiated_models, scoring)
         self._search_results = self._create_search_results_dataframe(search_results, scoring)
 
-        sorting_order = reverse_sorting_order(name(scoring))
+        sorting_order = reverse_sorting_order(obj_name(scoring))
         scored_models.sort(key=lambda x: x[1], reverse=sorting_order)
 
         return scored_models[0][0]
@@ -187,11 +187,15 @@ class ModelFinder:
 
     # ===== # Visualization Data for View functions
 
-    def search_results(self):
+    def search_results(self, model_limit):
         if self._search_results is None:
             self.search_and_fit()
 
-        return self._search_results
+        models = self._search_results.iloc[:model_limit]
+        dummy = self._dummy_model_results()
+
+        df = pd.concat([models, dummy], axis=0).set_index(self._model_name)
+        return df
 
     # ===== # Internal functions
 
@@ -255,7 +259,7 @@ class ModelFinder:
             #     warnings.simplefilter("ignore")
 
             # https://scikit-learn.org/stable/modules/model_evaluation.html#defining-your-scoring-strategy-from-metric-functions
-            sorting_order = reverse_sorting_order(name(scoring))
+            sorting_order = reverse_sorting_order(obj_name(scoring))
 
             # GridSearch will fail with NotFittedError("All estimators failed to fit") when argument provided
             # in the param grid is incorrect for a given model (even one combination will trigger it).
@@ -282,7 +286,7 @@ class ModelFinder:
         df = None
         for model in cv_results.keys():
             single_results = pd.DataFrame(cv_results[model])
-            single_results[self._model_name] = name(model)
+            single_results[self._model_name] = obj_name(model)
             df = pd.concat([df, single_results], axis=0)
 
         df = df.reset_index().drop(["index"], axis=1)
@@ -292,7 +296,7 @@ class ModelFinder:
         scored_models, all_results = self._perform_quicksearch(models, scoring)
         self._quicksearch_results = self._create_search_results_dataframe(all_results, scoring)
 
-        sorting_order = reverse_sorting_order(name(scoring))
+        sorting_order = reverse_sorting_order(obj_name(scoring))
         scored_models.sort(key=lambda x: x[1], reverse=sorting_order)
         return [model[0] for model in scored_models][:self._quicksearch_limit]
 
@@ -309,7 +313,7 @@ class ModelFinder:
             params = clf.get_params()
 
             all_results[model] = {
-                self._fit_time_name: stop_time-start_time, name(scoring): score, self._params_name: params
+                self._fit_time_name: stop_time-start_time, obj_name(scoring): score, self._params_name: params
             }
             scored_models.append((model, score))
 
@@ -318,12 +322,12 @@ class ModelFinder:
     def _create_search_results_dataframe(self, results, chosen_scoring):
         data = defaultdict(list)
         for model, values in results.items():
-            data[self._model_name].append(name(model))
+            data[self._model_name].append(obj_name(model))
             for key, val in values.items():
                 data[key].append(val)
 
-        sorting = not reverse_sorting_order(name(chosen_scoring))
-        return pd.DataFrame(data).sort_values(by=[name(chosen_scoring)], ascending=sorting)
+        sorting = not reverse_sorting_order(obj_name(chosen_scoring))
+        return pd.DataFrame(data).sort_values(by=[obj_name(chosen_scoring)], ascending=sorting)
 
     def _assess_models(self, initiated_models, chosen_scoring):
         all_results = {}
@@ -340,7 +344,7 @@ class ModelFinder:
             model_results.update(score_results)
 
             all_results[model] = model_results
-            scored_models.append((model, score_results[name(chosen_scoring)]))
+            scored_models.append((model, score_results[obj_name(chosen_scoring)]))
 
         return scored_models, all_results
 
@@ -351,7 +355,7 @@ class ModelFinder:
         scoring_results = {}
         for scoring in scorings:
             score = scoring(self.y_test, fitted_model.predict(self.X_test))
-            scoring_results[name(scoring)] = score
+            scoring_results[obj_name(scoring)] = score
 
         return scoring_results
 
@@ -367,6 +371,15 @@ class ModelFinder:
         results = self._score_model(model, self.default_scoring)
         model.fit(self.X, self.y)
         return model, results
+
+    def _dummy_model_results(self):
+        _ = {
+            self._model_name: obj_name(self._dummy_model),
+            self._fit_time_name: "N/A",
+            self._params_name: str(self._dummy_model.get_params()),
+            **self._dummy_model_scores
+        }
+        return pd.DataFrame(_, index=[9999])
 
     def _get_scorings(self, chosen_scoring):
         if chosen_scoring in self.scoring_functions:

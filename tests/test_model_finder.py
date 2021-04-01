@@ -8,7 +8,7 @@ from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accurac
 from sklearn.exceptions import NotFittedError
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
-from ml_dashboard.model_finder import name, reverse_sorting_order, ModelFinder, ModelNotSetError
+from ml_dashboard.model_finder import obj_name, reverse_sorting_order, ModelFinder, ModelNotSetError
 from ml_dashboard.models import classifiers, regressors
 
 
@@ -28,7 +28,7 @@ from ml_dashboard.models import classifiers, regressors
 )
 def test_name(obj, expected_result):
     """Testing if returned string representation of object from name() function is correct."""
-    actual_result = name(obj)
+    actual_result = obj_name(obj)
     assert actual_result == expected_result
 
 
@@ -163,6 +163,39 @@ def test_model_finder_dummy_regression(model_finder_regression, test_input):
     assert np.array_equal(actual_model.predict(test_input), np.array([median] * len(test_input)))
     assert actual_model_scores == expected_model_scores
 
+
+def test_model_finder_classification_dummy_model_results(model_finder_classification, seed):
+    """Testing if dummy_model_results() function returns correct DataFrame (classification)."""
+    _ = {
+        "model": "DummyClassifier",
+        "fit_time": "N/A",
+        "params": "{{'constant': None, 'random_state': {seed}, 'strategy': 'stratified'}}".format(seed=seed),
+        "roc_auc_score": 0.41666666666666663,
+        "f1_score": 0.6285714285714286,
+        "accuracy_score": 0.48,
+        "balanced_accuracy_score": 0.41666666666666663
+    }
+    expected_df = pd.DataFrame(_, index=[9999])
+    actual_df = model_finder_classification._dummy_model_results()
+
+    assert actual_df.equals(expected_df[actual_df.columns])
+
+
+def test_model_finder_regression_dummy_model_results(model_finder_regression):
+    """Testing if dummy_model_results() function returns correct DataFrame (regression)."""
+    _ = {
+        "model": "DummyRegressor",
+        "fit_time": "N/A",
+        "params": "{'constant': None, 'quantile': None, 'strategy': 'median'}",
+        "mean_squared_error": 487.0142795860736,
+        "mean_absolute_error": 14.28810797425516,
+        "explained_variance_score": 0.0,
+        "r2_score": -0.003656622727187031
+    }
+    expected_df = pd.DataFrame(_, index=[9999])
+    actual_df = model_finder_regression._dummy_model_results()
+
+    assert actual_df.equals(expected_df[actual_df.columns])
 
 @pytest.mark.parametrize(
     ("mode", "expected_model"),
@@ -593,3 +626,42 @@ def test_model_finder_set_model(model_finder_classification, seed):
 
     with pytest.raises(NotFittedError):
         mf.predict([1])
+
+@pytest.mark.parametrize(
+    ("limit",),
+    (
+            (1,),
+            (2,),
+    )
+)
+def test_model_finder_classification_search_results_dataframe(model_finder_classification_fitted, limit, seed):
+    models = ["DecisionTreeClassifier", "SVC", "LogisticRegression"]
+    dummy = ["DummyClassifier"]
+    expected_index = models[:limit] + dummy
+    expected_keys = {"fit_time", "params", "roc_auc_score", "accuracy_score", "balanced_accuracy_score", "f1_score"}
+
+    actual_results = model_finder_classification_fitted.search_results(limit)
+
+    assert actual_results.index.tolist() == expected_index
+    assert set(actual_results.columns) == expected_keys
+
+
+@pytest.mark.parametrize(
+    ("limit",),
+    (
+            (1,),
+            (2,),
+    )
+)
+def test_model_finder_regression_search_results_dataframe(model_finder_regression_fitted, limit, seed):
+    models = ["SVR", "Ridge", "DecisionTreeRegressor"]
+    dummy = ["DummyRegressor"]
+    expected_index = models[:limit] + dummy
+    expected_keys = {
+        "fit_time", "params", "mean_squared_error", "r2_score", "mean_absolute_error", "explained_variance_score"
+    }
+
+    actual_results = model_finder_regression_fitted.search_results(limit)
+
+    assert actual_results.index.tolist() == expected_index
+    assert set(actual_results.columns) == expected_keys
