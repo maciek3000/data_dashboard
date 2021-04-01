@@ -413,40 +413,45 @@ def test_model_finder_perform_quicksearch_regression(model_finder_regression, ch
 
 
 @pytest.mark.parametrize(
-    ("input_dict", "expected_result"),
+    ("input_dict", "scoring", "expected_result"),
     (
             ({
-                 Ridge: {"test": 1, "score": 10, "params": "abcd"},
-                 LogisticRegression: {"test": 1, "score": 10, "params": "abcd"},
-                 DecisionTreeClassifier: {"test": 2, "score": 15, "params": "xyz"}
+                 Ridge: {"test": 1, "roc_auc_score": 12, "params": "abcd"},
+                 LogisticRegression: {"test": 1, "roc_auc_score": 10, "params": "abcd"},
+                 DecisionTreeClassifier: {"test": 2, "roc_auc_score": 15, "params": "xyz"}
              },
+             roc_auc_score,
              pd.DataFrame(
                  data={
-                     "model": ["Ridge", "LogisticRegression", "DecisionTreeClassifier"],
-                     "test": [1, 1, 2],
-                     "score": [10, 10, 15],
-                     "params": ["abcd", "abcd", "xyz"]
-                 }
+                     "model": ["DecisionTreeClassifier", "Ridge", "LogisticRegression"],
+                     "test": [2, 1, 1],
+                     "roc_auc_score": [15, 12, 10],
+                     "params": ["xyz", "abcd", "abcd"]
+                 },
+                 index=[2, 0, 1]
              )
             ),
+
             ({
-                 Exception: {"score": 8, "fit_time": 10},
-                 Ridge: {"score": 10, "fit_time": 15},
-                 LogisticRegression: {"score": "test", "fit_time": 5}
+                 Exception: {"mean_squared_error": 8, "fit_time": 10},
+                 Ridge: {"mean_squared_error": 10, "fit_time": 15},
+                 LogisticRegression: {"mean_squared_error": 4, "fit_time": "test"}
              },
+             mean_squared_error,
              pd.DataFrame(
                  data={
-                     "model": ["Exception", "Ridge", "LogisticRegression"],
-                     "score": [8, 10, "test"],
-                     "fit_time": [10, 15, 5]
-                 }
+                     "model": ["LogisticRegression", "Exception", "Ridge"],
+                     "mean_squared_error": [4, 8, 10],
+                     "fit_time": ["test", 10, 15]
+                 },
+                 index=[2, 0, 1]
              )
             )
     )
 )
-def test_model_finder_create_search_results_dataframe(model_finder_classification, input_dict, expected_result):
+def test_model_finder_create_search_results_dataframe(model_finder_classification, input_dict, scoring, expected_result):
     """Testing if creating search results dataframe works correctly."""
-    actual_result = model_finder_classification._create_search_results_dataframe(input_dict)
+    actual_result = model_finder_classification._create_search_results_dataframe(input_dict, scoring)
     assert actual_result.equals(expected_result[actual_result.columns])
 
 

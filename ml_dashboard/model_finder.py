@@ -108,7 +108,9 @@ class ModelFinder:
         self._gridsearch_results = None
         self._search_results = None
 
-        # self._dummy_model, self._dummy_model_scores = self._create_dummy_model()
+        self._dummy_model, self._dummy_model_scores = self._create_dummy_model()
+
+    # ===== # Machine Learning Models functions
 
     def search_and_fit(self, models=None, scoring=None, mode=_mode_quick):
         model = self.search(models, scoring, mode)
@@ -154,10 +156,11 @@ class ModelFinder:
                 raise ValueError("models should be Dict, List-like or None, got {models}".format(models=models))
 
         scored_models, search_results = self._assess_models(initiated_models, scoring)
-        self._search_results = self._create_search_results_dataframe(search_results)
+        self._search_results = self._create_search_results_dataframe(search_results, scoring)
 
-        sorting_order = reverse_sorting_order(scoring.__name__)
+        sorting_order = reverse_sorting_order(name(scoring))
         scored_models.sort(key=lambda x: x[1], reverse=sorting_order)
+
         return scored_models[0][0]
 
     def set_model(self, model):
@@ -181,6 +184,16 @@ class ModelFinder:
                 "Model needs to be set and fitted before prediction. Call 'set_model' or 'search' for a model before."
             )
         return self._chosen_model.predict(X)
+
+    # ===== # Visualization Data for View functions
+
+    def search_results(self):
+        if self._search_results is None:
+            self.search_and_fit()
+
+        return self._search_results
+
+    # ===== # Internal functions
 
     def _set_problem(self, problem_type):
 
@@ -242,7 +255,7 @@ class ModelFinder:
             #     warnings.simplefilter("ignore")
 
             # https://scikit-learn.org/stable/modules/model_evaluation.html#defining-your-scoring-strategy-from-metric-functions
-            sorting_order = reverse_sorting_order(scoring.__name__)
+            sorting_order = reverse_sorting_order(name(scoring))
 
             # GridSearch will fail with NotFittedError("All estimators failed to fit") when argument provided
             # in the param grid is incorrect for a given model (even one combination will trigger it).
@@ -277,9 +290,9 @@ class ModelFinder:
 
     def _quicksearch(self, models, scoring):
         scored_models, all_results = self._perform_quicksearch(models, scoring)
-        self._quicksearch_results = self._create_search_results_dataframe(all_results)
+        self._quicksearch_results = self._create_search_results_dataframe(all_results, scoring)
 
-        sorting_order = reverse_sorting_order(scoring.__name__)
+        sorting_order = reverse_sorting_order(name(scoring))
         scored_models.sort(key=lambda x: x[1], reverse=sorting_order)
         return [model[0] for model in scored_models][:self._quicksearch_limit]
 
@@ -302,14 +315,15 @@ class ModelFinder:
 
         return scored_models, all_results
 
-    def _create_search_results_dataframe(self, results):
+    def _create_search_results_dataframe(self, results, chosen_scoring):
         data = defaultdict(list)
         for model, values in results.items():
             data[self._model_name].append(name(model))
             for key, val in values.items():
                 data[key].append(val)
 
-        return pd.DataFrame(data)
+        sorting = not reverse_sorting_order(name(chosen_scoring))
+        return pd.DataFrame(data).sort_values(by=[name(chosen_scoring)], ascending=sorting)
 
     def _assess_models(self, initiated_models, chosen_scoring):
         all_results = {}
