@@ -265,16 +265,29 @@ class FeatureView(BaseView):
 
 class ModelsView(BaseView):
 
-    def __init__(self, template, css_path):
+    _models_css = "models_css"
+    _models_js = "models_js"
+    _models_table = "models_table"
+
+    def __init__(self, template, css_path, js_path):
         super().__init__()
         self.template = template
         self.css = css_path
+        self.js = js_path
+        self.model_limit = 3
 
-    def render(self, base_css, creation_date, hyperlinks):
+    def render(self, base_css, creation_date, hyperlinks, model_results):
         output = {}
 
         # Standard variables
         standard = super().standard_params(base_css, creation_date, hyperlinks)
         output.update(standard)
 
+        output[self._models_css] = self.css
+        output[self._models_js] = self.js
+        output[self._models_table] = self._models_result_table(model_results)
+
         return self.template.render(**output)
+
+    def _models_result_table(self, results_dataframe):
+        return results_dataframe.to_html(float_format="{:.6f}".format)
