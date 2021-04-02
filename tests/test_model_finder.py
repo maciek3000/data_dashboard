@@ -213,6 +213,28 @@ def test_model_finder_classification_search(model_finder_classification, mode, e
 
 
 @pytest.mark.parametrize(
+    ("models", "expected_model"),
+    (
+            ([
+                LogisticRegression(C=1.0, random_state=1),
+                LogisticRegression(C=100.0, random_state=1)
+            ],
+            LogisticRegression(C=100.0, random_state=1)),
+
+            ([
+                SVC(C=1.0, random_state=10),
+                SVC(C=10.0, random_state=14),
+                SVC(C=100.0, random_state=35)
+            ],
+             SVC(C=1.0, random_state=10))
+    )
+)
+def test_model_finder_classification_search_defined_models(model_finder_classification, models, expected_model):
+    actual_model = model_finder_classification.search(models=models, scoring=roc_auc_score)
+    assert str(actual_model) == str(expected_model)
+
+
+@pytest.mark.parametrize(
     ("mode", "expected_model"),
     (
             ("quick", Ridge(alpha=0.0001)),
@@ -224,6 +246,28 @@ def test_model_finder_regression_search(model_finder_regression, mode, expected_
     model_finder_regression._quicksearch_limit = 1
     actual_model = model_finder_regression.search(models=None, scoring=mean_squared_error, mode=mode)
     expected_model.random_state = seed
+    assert str(actual_model) == str(expected_model)
+
+
+@pytest.mark.parametrize(
+    ("models", "expected_model"),
+    (
+            ([
+                 DecisionTreeRegressor(max_depth=10, criterion="mae", random_state=1),
+                 DecisionTreeRegressor(max_depth=100, criterion="mse", random_state=1)
+             ],
+             DecisionTreeRegressor(max_depth=100, criterion="mse", random_state=1)),
+
+            ([
+                 SVR(C=1.0),
+                 SVR(C=10.0),
+                 SVR(C=100.0)
+             ],
+             SVR(C=1.0))
+    )
+)
+def test_model_finder_regression_search_defined_models(model_finder_regression, models, expected_model):
+    actual_model = model_finder_regression.search(models=models, scoring=mean_squared_error)
     assert str(actual_model) == str(expected_model)
 
 

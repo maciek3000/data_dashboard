@@ -1,4 +1,3 @@
-from ml_dashboard.output import Output
 import os
 import pytest
 
