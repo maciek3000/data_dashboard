@@ -1,9 +1,9 @@
 import pytest
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import Ridge, PassiveAggressiveClassifier, LogisticRegression
+from sklearn.linear_model import Ridge, PassiveAggressiveClassifier, LogisticRegression, RidgeClassifier
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.svm import SVC, SVR
+from sklearn.svm import SVC, SVR, LinearSVR
 from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accuracy_score
 from sklearn.exceptions import NotFittedError
 from sklearn.dummy import DummyClassifier, DummyRegressor
@@ -168,7 +168,7 @@ def test_model_finder_classification_dummy_model_results(model_finder_classifica
     """Testing if dummy_model_results() function returns correct DataFrame (classification)."""
     _ = {
         "model": "DummyClassifier",
-        "fit_time": "N/A",
+        "fit_time": np.nan,
         "params": "{{'constant': None, 'random_state': {seed}, 'strategy': 'stratified'}}".format(seed=seed),
         "roc_auc_score": 0.41666666666666663,
         "f1_score": 0.6285714285714286,
@@ -185,7 +185,7 @@ def test_model_finder_regression_dummy_model_results(model_finder_regression):
     """Testing if dummy_model_results() function returns correct DataFrame (regression)."""
     _ = {
         "model": "DummyRegressor",
-        "fit_time": "N/A",
+        "fit_time": np.nan,
         "params": "{'constant': None, 'quantile': None, 'strategy': 'median'}",
         "mean_squared_error": 487.0142795860736,
         "mean_absolute_error": 14.28810797425516,
@@ -196,6 +196,7 @@ def test_model_finder_regression_dummy_model_results(model_finder_regression):
     actual_df = model_finder_regression._dummy_model_results()
 
     assert actual_df.equals(expected_df[actual_df.columns])
+
 
 @pytest.mark.parametrize(
     ("mode", "expected_model"),
@@ -216,20 +217,22 @@ def test_model_finder_classification_search(model_finder_classification, mode, e
     ("models", "expected_model"),
     (
             ([
-                LogisticRegression(C=1.0, random_state=1),
-                LogisticRegression(C=100.0, random_state=1)
-            ],
-            LogisticRegression(C=100.0, random_state=1)),
+                 RidgeClassifier(alpha=1.0, random_state=1),
+                 RidgeClassifier(alpha=100.0, random_state=1)
+             ],
+             RidgeClassifier(alpha=100.0, random_state=1)),
 
             ([
-                SVC(C=1.0, random_state=10),
-                SVC(C=10.0, random_state=14),
-                SVC(C=100.0, random_state=35)
-            ],
+                 SVC(C=1.0, random_state=10),
+                 SVC(C=10.0, random_state=14),
+                 SVC(C=100.0, random_state=35)
+             ],
              SVC(C=1.0, random_state=10))
     )
 )
 def test_model_finder_classification_search_defined_models(model_finder_classification, models, expected_model):
+    """Testing if models provided explicitly are being scored and chosen properly in classification
+    (including models not present in default models collection."""
     actual_model = model_finder_classification.search(models=models, scoring=roc_auc_score)
     assert str(actual_model) == str(expected_model)
 
@@ -259,14 +262,16 @@ def test_model_finder_regression_search(model_finder_regression, mode, expected_
              DecisionTreeRegressor(max_depth=100, criterion="mse", random_state=1)),
 
             ([
-                 SVR(C=1.0),
-                 SVR(C=10.0),
-                 SVR(C=100.0)
+                 LinearSVR(C=1.0),
+                 LinearSVR(C=10.0),
+                 LinearSVR(C=100.0)
              ],
-             SVR(C=1.0))
+             LinearSVR(C=1.0))
     )
 )
 def test_model_finder_regression_search_defined_models(model_finder_regression, models, expected_model):
+    """Testing if models provided explicitly are being scored and chosen properly in regression
+    (including models not present in default models collection."""
     actual_model = model_finder_regression.search(models=models, scoring=mean_squared_error)
     assert str(actual_model) == str(expected_model)
 
@@ -470,7 +475,7 @@ def test_model_finder_perform_quicksearch_classification(model_finder_classifica
 def test_model_finder_perform_quicksearch_regression(model_finder_regression, chosen_regressors_grid, seed):
     """Testing if quicksearch works and returns correct Models and result dict (in regression)."""
     expected_models = [
-        (DecisionTreeRegressor, 2698.729567845899),
+        (DecisionTreeRegressor, 2193.975037560088), #2698.729567845899),
         (Ridge, 1203.3774696374364),
         (SVR, 1312.2035599389972),
     ]
@@ -526,7 +531,8 @@ def test_model_finder_perform_quicksearch_regression(model_finder_regression, ch
             )
     )
 )
-def test_model_finder_create_search_results_dataframe(model_finder_classification, input_dict, scoring, expected_result):
+def test_model_finder_create_search_results_dataframe(model_finder_classification, input_dict, scoring,
+                                                      expected_result):
     """Testing if creating search results dataframe works correctly."""
     actual_result = model_finder_classification._create_search_results_dataframe(input_dict, scoring)
     assert actual_result.equals(expected_result[actual_result.columns])
@@ -569,8 +575,7 @@ def test_model_finder_quicksearch_regression(
 
 
 def test_model_finder_assess_models_classification(model_finder_classification, seed):
-    """Testing if assess_model function returns correct Models and result dict (in classification).
-    Additionally tests if the returned Models weren't fitted in the process."""
+    """Testing if assess_model function returns correct Models and result dict (in classification)."""
     models = [
         DecisionTreeClassifier(**{"max_depth": 10, "criterion": "entropy", "random_state": seed}),
         LogisticRegression(**{"C": 1.0, "tol": 0.1, "random_state": seed}),
@@ -588,13 +593,10 @@ def test_model_finder_assess_models_classification(model_finder_classification, 
 
     for model in actual_results:
         assert set(actual_results[model].keys()) == set(expected_keys)  # testing keys from act and exp dicts
-        with pytest.raises(NotFittedError):  # testing if the models weren't fitted in the process
-            model.predict([1])
 
 
 def test_model_finder_assess_models_regression(model_finder_regression, seed):
-    """Testing if assess_model function returns correct Models and result dict (in regression).
-    Additionally tests if the returned Models weren't fitted in the process."""
+    """Testing if assess_model function returns correct Models and result dict (in regression)."""
     models = [
         DecisionTreeRegressor(**{"max_depth": 10, "criterion": "mae", "random_state": seed}),
         Ridge(**{"alpha": 0.0001, "random_state": seed}),
@@ -614,8 +616,6 @@ def test_model_finder_assess_models_regression(model_finder_regression, seed):
 
     for model in actual_results:
         assert set(actual_results[model].keys()) == set(expected_keys)  # testing keys from act and exp dicts
-        with pytest.raises(NotFittedError):  # testing if the models weren't fitted in the process
-            model.predict([1])
 
 
 @pytest.mark.parametrize(
@@ -671,6 +671,7 @@ def test_model_finder_set_model(model_finder_classification, seed):
     with pytest.raises(NotFittedError):
         mf.predict([1])
 
+
 @pytest.mark.parametrize(
     ("limit",),
     (
@@ -709,3 +710,9 @@ def test_model_finder_regression_search_results_dataframe(model_finder_regressio
 
     assert actual_results.index.tolist() == expected_index
     assert set(actual_results.columns) == expected_keys
+
+
+def test_model_finder_roc_curves(model_finder_classification_fitted):
+    curves = model_finder_classification_fitted.roc_curves(3)
+    for model, curve in curves.items():
+        print(curve)

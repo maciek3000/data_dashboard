@@ -492,11 +492,15 @@ def model_finder_regression_fitted(model_finder_regression):
 
 
 @pytest.fixture
-def output(analyzer_fixture, transformer_classification, model_finder_classification, tmpdir, root_path_to_package):
+def output(
+        analyzer_fixture, transformer_classification, fixture_features, model_finder_classification,
+        tmpdir, root_path_to_package
+):
     o = Output(
         root_path=root_path_to_package[0],
         output_directory=tmpdir,
         package_name=root_path_to_package[1],
+        features=fixture_features,
         analyzer=analyzer_fixture,
         transformer=transformer_classification,
         model_finder=model_finder_classification

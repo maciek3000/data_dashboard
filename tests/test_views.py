@@ -1,6 +1,8 @@
 import pytest
-from ml_dashboard.views import Overview, FeatureView, append_description
 from bs4 import BeautifulSoup
+import pandas as pd
+
+from ml_dashboard.views import Overview, FeatureView, ModelsView, append_description, df_to_html_table
 
 
 @pytest.mark.parametrize(
@@ -114,6 +116,44 @@ def test_stylize_html_table(html_test_table, expected_mapping, fixture_features)
 
 
 @pytest.mark.parametrize(
+    ("input_df", "expected_result"),
+    (
+            (
+                    pd.DataFrame(data={"test1": [1, 2, 3, 4], "test2": ["a", "b", "c", "d"]},
+                                 index=["ind1", "ind2", "ind3", "ind4"]),
+                    '<table><thead><tr><th></th><th>test1</th><th>test2</th></tr></thead>'
+                    '<tbody>'
+                    '<tr><th>ind1</th><td>1</td><td>a</td></tr>'
+                    '<tr><th>ind2</th><td>2</td><td>b</td></tr>'
+                    '<tr><th>ind3</th><td>3</td><td>c</td></tr>'
+                    '<tr><th>ind4</th><td>4</td><td>d</td></tr>'
+                    '</tbody></table>'
+            ),
+            (
+                pd.DataFrame(data={
+                    "model1": [1, "test"],
+                    "model2": [2, True],
+                    "model3": [3, "None"],
+                    "model4": [4, "aaa"]
+                    },
+                    index=["index1", "index2"]
+                ),
+                '<table><thead><tr><th></th>'
+                '<th>model1</th><th>model2</th><th>model3</th><th>model4</th>'
+                '</tr></thead>'
+                '<tbody>'
+                '<tr><th>index1</th><td>1</td><td>2</td><td>3</td><td>4</td></tr>'
+                '<tr><th>index2</th><td>test</td><td>True</td><td>None</td><td>aaa</td></tr>'
+                '</tbody></table>'
+            )
+    )
+)
+def test_df_to_html_table(input_df, expected_result):
+    actual_result = df_to_html_table(input_df)
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
     ("input_list", "expected_string"),
     (
             (["test1", "Test2"], "<ul><li>test1</li><li>Test2</li></ul>"),
@@ -151,5 +191,29 @@ def test_feature_view_create_features_menu(input_features):
     for feat in input_features:
         expected_result += single_feature.format(i, feat)
         i += 1
+
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
+    ("param_series", "expected_result"),
+    (
+            (pd.Series({"1": {'C': 1.0, 'alpha': 0.001}, "2": {'max_depth': 10.0, 'criterion': 'gini'}}),
+             {"1": "'C': 1.0\n'alpha': 0.001", "2": "'max_depth': 10.0\n'criterion': 'gini'"}),
+            (pd.Series({
+                "test1": {"C": 1.0, "alpha": 0.001, "depth": "10"},
+                "test2": {"aa": 1.0, "bb": "cc", "test": "test"},
+                "test3": {"test1": 10.0, "C": 0.001, "alpha": 1000.0}
+            }),
+             {
+                 "test1": "'C': 1.0\n'alpha': 0.001\n'depth': '10'",
+                 "test2": "'aa': 1.0\n'bb': 'cc'\n'test': 'test'",
+                 "test3": "'test1': 10.0\n'C': 0.001\n'alpha': 1000.0"
+             })
+    )
+)
+def test_models_view_create_parameters_descriptions_str(param_series, expected_result):
+    mv = ModelsView("test_template", "test_css", "test_js", "params", "test-class")
+    actual_result = mv._parameters_descriptions(param_series)
 
     assert actual_result == expected_result
