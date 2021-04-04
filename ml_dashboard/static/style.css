@@ -99,51 +99,14 @@ html {
     width: 100%;
 }
 
-/* Tables */
-
-table {
-    border-collapse: collapse;
-    border: 0px solid black;
-    color: var(--table-text);
-    font-size: 13px;
-    width: 100%;
-}
-
-th {
-    border: 0px solid black;
-    text-align: right;
-    font-weight: bold;
-}
-
-thead th {
-    border-width: 0px 0px 1px 0px;
-    border-color: black;
-    text-align: center;
-}
-
-td {
-    border: 0px solid black;
-    text-align: right;
-    padding: 4px;
-}
-
-tbody tr:nth-child(odd) {
-    background-color: #f2f2f2;
-}
-
-tbody tr:hover {
-    background-color: #ebd5d1;
-}
-
 /* Description box */
 
-
-.feature-name-w-desc {
+.elem-w-desc {
     position: relative;
     display: inline;
 }
 
-.feature-name-w-desc span {
+.elem-w-desc span {
     position: absolute;
     display:none;
     background: #FAFAFA;
@@ -160,7 +123,7 @@ tbody tr:hover {
 
 }
 
-.feature-name-w-desc:hover span {
+.elem-w-desc:hover span {
     display: block;
 }
 

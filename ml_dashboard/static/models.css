@@ -2,4 +2,64 @@
     display: flex;
     flex-direction: row;
     width: 100%;
+    padding-top: 36px;
+}
+
+.models-table {
+    width: 40%;
+}
+
+.models-plots {
+    margin-left: 154px;
+}
+
+table {
+    border-collapse: collapse;
+    border: 0px solid black;
+    font-size: 1em;
+    width: 100%;
+}
+
+th {
+    border: 0px solid black;
+    text-align: right;
+    font-weight: bold;
+}
+
+thead th {
+    border-width: 0px 0px 1px 0px;
+    border-color: black;
+    text-align: right;
+    alpha: 50%;
+    color: #636363;
+}
+
+td {
+    border: 0px solid black;
+    text-align: right;
+    padding: 12px 4px;
+}
+
+tr {
+    border-bottom: 1px solid var(--light-gray);
+}
+
+tbody tr:last-child {
+    color: var(--gray-title);
+}
+
+.first-row {
+    color: #9c2b19;
+}
+
+.other-row {
+    color: #7597c4;
+}
+
+tbody tr:hover {
+    background-color: #e8eef5;
+}
+
+tbody tr th {
+    padding-right: 12px;
 }

@@ -21,6 +21,23 @@ def append_description(description, parsed_html):
     return new_tag
 
 
+def df_to_html_table(df):
+    d = df.T.to_dict()
+
+    output_template = '<table><thead><tr><th></th>{columns}</tr></thead><tbody>{rows}</tbody></table>'
+    columns = ["<th>{col}</th>".format(col=col) for col in df.columns]
+    rows = ""
+    for row, content in d.items():
+        html = "<tr><th>{row}</th>".format(row=row)
+        for value in content.values():
+            html += "<td>{value}</td>".format(value=value)
+        html += "</tr>"
+        rows += html
+
+    output = output_template.format(columns="".join(columns), rows=rows)
+    return output
+
+
 class BaseView:
     """Parent Class for Views (Subpages) in the created HTML.
 
@@ -268,15 +285,25 @@ class ModelsView(BaseView):
     _models_css = "models_css"
     _models_js = "models_js"
     _models_table = "models_table"
+    _models_plot_script = "models_plot_script"
+    _models_plot = "models_plot"
 
-    def __init__(self, template, css_path, js_path):
+    # CSS
+    _table_first_row = "first-row"
+    _table_other_row = "other-row"
+
+    _model_limit = 3
+
+    def __init__(self, template, css_path, js_path, params_name, model_with_description_class, model_limit=3):
         super().__init__()
         self.template = template
         self.css = css_path
         self.js = js_path
-        self.model_limit = 3
+        self.params_name = params_name
+        self.model_with_description_class = model_with_description_class
+        self.model_limit = model_limit
 
-    def render(self, base_css, creation_date, hyperlinks, model_results):
+    def render(self, base_css, creation_date, hyperlinks, model_results, models_plot):
         output = {}
 
         # Standard variables
@@ -287,7 +314,40 @@ class ModelsView(BaseView):
         output[self._models_js] = self.js
         output[self._models_table] = self._models_result_table(model_results)
 
+        models_plot_script, models_plot_div = components(models_plot)
+        output[self._models_plot_script] = models_plot_script
+        output[self._models_plot] = models_plot_div
+
         return self.template.render(**output)
 
     def _models_result_table(self, results_dataframe):
-        return results_dataframe.to_html(float_format="{:.6f}".format)
+        new_params = self._parameters_descriptions(results_dataframe[self.params_name])
+
+        df = results_dataframe.drop([self.params_name], axis=1)
+        df.index.name = None
+        html_table = df.to_html(float_format="{:.5f}".format)
+
+        table = BeautifulSoup(html_table, "html.parser")
+        headers = table.select("table tbody tr th")
+
+        for header in headers:
+            single_model_params = new_params[header.string]
+            params_html = append_description(single_model_params, table)
+
+            header.string.wrap(table.new_tag("p"))
+            header.p.append(params_html)
+            header.p["class"] = self.model_with_description_class
+
+        rows = table.select("table tbody tr")
+        rows[0]["class"] = self._table_first_row
+        for row in rows[1:-1]:
+            row["class"] = self._table_other_row
+
+        output = str(table)
+
+        return output
+
+    def _parameters_descriptions(self, params_series):
+        params = params_series.to_dict()
+        new_params = {model: str(params_str)[1:-1].replace(", ", "\n") for model, params_str in params.items()}
+        return new_params

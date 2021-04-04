@@ -10,18 +10,17 @@
 <div class="submenu-content">
     <div class="models-comparison">
         <div class="models-table">
-            <div class="table-title">Model Parameters and Results</div>
             <div class="models-table-content">{{ models_table }}</div>
         </div>
-        <div class="models-plots">models_comparison_grid</div>
+        <div class="models-plots">{{ models_plot }}</div>
     </div>
 </div>
 
-<div class="submenu">Chosen Model Info</div>
-<div class="submenu-content">chosen_model_grid </div>
-
 <div class="submenu">Incorrectly Predicted Rows</div>
 <div class="submenu-content">incorrect_predictions_grid</div>
+
+<div>{{ models_plot_script }}</div>
+
 <script src="{{ models_js }}"></script>
 {% endblock %}
 
