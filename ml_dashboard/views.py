@@ -292,16 +292,14 @@ class ModelsView(BaseView):
     _table_first_row = "first-row"
     _table_other_row = "other-row"
 
-    _model_limit = 3
-
-    def __init__(self, template, css_path, js_path, params_name, model_with_description_class, model_limit=3):
+    def __init__(self, template, css_path, js_path, params_name, model_with_description_class, model_limit):
         super().__init__()
         self.template = template
         self.css = css_path
         self.js = js_path
         self.params_name = params_name
         self.model_with_description_class = model_with_description_class
-        self.model_limit = model_limit
+        # self.model_limit = model_limit
 
     def render(self, base_css, creation_date, hyperlinks, model_results, models_plot):
         output = {}

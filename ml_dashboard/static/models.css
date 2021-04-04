@@ -44,16 +44,16 @@ tr {
     border-bottom: 1px solid var(--light-gray);
 }
 
-tbody tr:last-child {
-    color: var(--gray-title);
-}
-
 .first-row {
     color: #9c2b19;
 }
 
 .other-row {
     color: #7597c4;
+}
+
+tbody tr:last-child {
+    color: var(--gray-title);
 }
 
 tbody tr:hover {

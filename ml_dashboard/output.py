@@ -46,6 +46,9 @@ class Output:
     # CSS elements
     _element_with_description_class = "elem-w-desc"
 
+    # view specific properties
+    _view_models_model_limit = 4
+
     def __init__(self, root_path, output_directory, package_name, features, analyzer, transformer, model_finder):
 
         self.features = features
@@ -83,7 +86,8 @@ class Output:
             css_path=os.path.join(self.static_path, self._view_models_css),
             js_path=os.path.join(self.static_path, self._view_models_js),
             params_name=self.model_finder.dataframe_params_name(),
-            model_with_description_class=self._element_with_description_class
+            model_with_description_class=self._element_with_description_class,
+            model_limit=self._view_models_model_limit
         )
 
         self.plot_design = PlotDesign()
@@ -103,6 +107,10 @@ class Output:
             feature_descriptions=self.features.descriptions(),
             feature_mapping=self.features.mapping(),
             feature_description_class=self._element_with_description_class
+        )
+
+        self.models_plots = ModelsComparisonPlot(
+            plot_design=self.plot_design
         )
 
     def create_html(self):
@@ -130,6 +138,11 @@ class Output:
             initial_feature=first_feature
         )
         generated_scattergrid = self.scattergrid.scattergrid(self.analyzer._scatter_data(), first_feature)
+        generated_models_plot = self.models_plots.models_comparison_plot(
+            roc_curves=self.model_finder.roc_curves(self._view_models_model_limit),
+            precision_recall_curves=self.model_finder.precision_recall_curves(self._view_models_model_limit),
+            det_curves=self.model_finder.det_curves(self._view_models_model_limit)
+        )
 
         overview_rendered = self.view_overview.render(
             base_css=base_css,
@@ -158,8 +171,8 @@ class Output:
             base_css=base_css,
             creation_date=created_on,
             hyperlinks=hyperlinks,
-            model_results=self.model_finder.search_results(self.view_models.model_limit),
-            models_plot=self.model_finder.models_plot(self.view_models.model_limit)
+            model_results=self.model_finder.search_results(self._view_models_model_limit),
+            models_plot=generated_models_plot
         )
 
         rendered_templates = {

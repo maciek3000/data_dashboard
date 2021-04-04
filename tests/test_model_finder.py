@@ -713,6 +713,9 @@ def test_model_finder_regression_search_results_dataframe(model_finder_regressio
 
 
 def test_model_finder_roc_curves(model_finder_classification_fitted):
-    curves = model_finder_classification_fitted.roc_curves(3)
-    for model, curve in curves.items():
+    curves = model_finder_classification_fitted.roc_curves(4)
+    for model, curve in curves:
+        print(model)
         print(curve)
+
+    assert False

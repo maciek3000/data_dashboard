@@ -8,10 +8,13 @@ from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.palettes import Reds4, Category10
 import functools
 import seaborn as sns
+import scipy.stats
 from bs4 import BeautifulSoup
 import pandas as pd
 
 from bokeh.core.validation.check import silence
+
+from .model_finder import obj_name
 
 
 contrary_color_palette = ["#FFF7F3", "#FFB695", "#EB6F54", "#9C2B19"]
@@ -735,14 +738,85 @@ class ScatterPlotGrid(MainGrid):
 
 class ModelsComparisonPlot:
 
+    _roc_plot_name = "ROC Curve"
+    _precision_recall_plot_name = "Precision Recall Plot"
+    _det_plot_name = "Detection Error Tradeoff"
+
     def __init__(self, plot_design):
         self.plot_design = plot_design
 
+    def models_comparison_plot(self, roc_curves, precision_recall_curves, det_curves):
+
+        roc_plot = Panel(child=self._roc_plot(roc_curves), title=self._roc_plot_name)
+        precision_recall_plot = Panel(child=self._roc_plot(precision_recall_curves), title=self._precision_recall_plot_name)
+        det_curves = Panel(child=self._det_plot(det_curves), title=self._det_plot_name)
+        main_plot = Tabs(tabs=[roc_plot, precision_recall_plot, det_curves])
+
+        return main_plot
+
     @stylize()
-    def models_comparison_plot(self, roc_curves):
+    def _roc_plot(self, roc_curves):
         p = default_figure()
 
-        for model, values in roc_curves.items():
-            p.step(values[0], values[1], line_width=2)
+        lw = 4
+
+        # dummy model is first plotted
+        dummy_model, dummy_values = roc_curves[-1]
+        p.step(dummy_values[0], dummy_values[1], line_width=lw-1, legend_label=obj_name(dummy_model),
+                line_color=self.plot_design.models_dummy_color, muted_alpha=0.2)
+
+        # models in between are plotted in reverse order
+        for model, values in roc_curves[-2:0:-1]:
+            p.step(values[0], values[1], line_width=lw-1, legend_label=obj_name(model),
+                   line_color=self.plot_design.models_color_tuple[1], muted_alpha=0.2)
+
+        # at last, the best model is plotted so that it's line is on the top
+        first_model, first_values = roc_curves[0]
+        p.step(first_values[0], first_values[1], line_width=lw, legend_label=obj_name(first_model),
+               line_color=self.plot_design.models_color_tuple[0], muted_alpha=0.2)
+
+        # p.legend.location = "bottom_right"
+        p.legend.click_policy = "mute"
+
+        return p
+
+    def _det_plot(self, det_curves):
+
+        p = default_figure()
+
+        lw = 4
+
+        new_curves = det_curves
+        # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/det_curve.py#L100
+        new_curves = []
+        for model, curve in det_curves:
+            f = scipy.stats.norm.ppf
+            new_tuple = (f(curve[0]), f(curve[1]))
+            new_curves.append((model, new_tuple))
+
+        # dummy model is first plotted
+        dummy_model, dummy_values = new_curves[-1]
+        p.step(dummy_values[0], dummy_values[1], line_width=lw-1, legend_label=obj_name(dummy_model),
+               line_color=self.plot_design.models_dummy_color, muted_alpha=0.2)
+
+        # models in between are plotted in reverse order
+        for model, values in new_curves[-2:0:-1]:
+            p.step(values[0], values[1], line_width=lw-1, legend_label=obj_name(model),
+                   line_color=self.plot_design.models_color_tuple[1], muted_alpha=0.2)
+
+        # at last, the best model is plotted so that it's line is on the top
+        first_model, first_values = new_curves[0]
+        p.step(first_values[0], first_values[1], line_width=lw, legend_label=obj_name(first_model),
+               line_color=self.plot_design.models_color_tuple[0], muted_alpha=0.2)
+
+        # p.legend.location = "bottom_right"
+        p.legend.click_policy = "mute"
+
+        ticks = [0.001, 0.01, 0.05, 0.20, 0.5, 0.80, 0.95, 0.99, 0.999]
+        tick_locations = ticks
+        #tick_locations = scipy.stats.norm.ppf(ticks)
+
+        # p.xaxis.ticker = tick_locations
+        # p.yaxis.ticker = tick_locations
 
         return p
