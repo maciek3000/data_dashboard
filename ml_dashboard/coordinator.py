@@ -4,6 +4,7 @@ from .output import Output
 from .transformer import Transformer
 from .model_finder import ModelFinder
 from .descriptor import FeatureDescriptor
+from .plot_design import PlotDesign
 import os
 from sklearn.model_selection import train_test_split
 import pandas as pd
@@ -47,6 +48,7 @@ class Coordinator:
         else:
             self.root_path = root_path
 
+        self.plot_design = PlotDesign()
         self.features_descriptions = FeatureDescriptor(feature_descriptions_dict)
         self.features = Features(self.X, self.y, self.features_descriptions)
         self.analyzer = Analyzer(self.features)
@@ -54,7 +56,8 @@ class Coordinator:
         self.transformer = Transformer(
             categorical_features=self.features.categorical_features(drop_target=True),
             numerical_features=self.features.numerical_features(drop_target=True),
-            target_type=self.features[self.features.target].type
+            target_type=self.features[self.features.target].type,
+            random_state=self.random_state
         )
 
         # https://scikit-learn.org/stable/modules/cross_validation.html#computing-cross-validated-metrics
@@ -74,16 +77,17 @@ class Coordinator:
             y_train=transformed_y_train,
             y_test=transformed_y_test,
             target_type=self.features[self.features.target].type.lower(),
-            random_state=random_state
+            random_state=self.random_state
         )
 
         self.output = Output(
             root_path=self.root_path,
             output_directory=output_directory,
             package_name=self._name,
+            features=self.features,
             analyzer=self.analyzer,
             transformer=self.transformer,
-            model_finder=self.model_finder
+            model_finder=self.model_finder,
         )
 
     def search_and_fit(self, models=None, scoring=None, mode="quick"):

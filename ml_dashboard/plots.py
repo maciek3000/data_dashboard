@@ -731,3 +731,18 @@ class ScatterPlotGrid(MainGrid):
             legend = Div(text=self._legend_no_hue_html, css_classes=[self._legend])
 
         return legend
+
+
+class ModelsComparisonPlot:
+
+    def __init__(self, plot_design):
+        self.plot_design = plot_design
+
+    @stylize()
+    def models_comparison_plot(self, roc_curves):
+        p = default_figure()
+
+        for model, values in roc_curves.items():
+            p.step(values[0], values[1], line_width=2)
+
+        return p

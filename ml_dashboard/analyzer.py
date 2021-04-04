@@ -66,40 +66,40 @@ class Analyzer:
     def skipped_features(self):
         return self.features.unused_features()
 
-    def features_pairplot_static(self):
+    def features_pairplot_df(self):
         df = self.features.data()[self.features.features()]
-        pairplot = PairPlot(self.default_plot_design).pairplot(df)
-        return pairplot
+        #pairplot = PairPlot(self.default_plot_design).pairplot(df)
+        return df
 
-    def infogrid(self, chosen_feature, feature_description_class):
-        feature_list = self.features.features()
-        infogrid = InfoGrid(
-            features=feature_list,
-            plot_design=self.default_plot_design,
-            feature_description_class=feature_description_class,
-            target_name=self.features.target
-        )
-        plot = infogrid.infogrid(
-            summary_statistics=self._summary_statistics(),
-            histogram_data=self._histogram_data(),
-            correlation_data_normalized=self._correlation_data_normalized(),
-            correlation_data_raw=self._correlation_data_raw(),
-            initial_feature=chosen_feature
-        )
-        return plot
+    # def infogrid(self, chosen_feature, feature_description_class):
+    #     feature_list = self.features.features()
+    #     infogrid = InfoGrid(
+    #         features=feature_list,
+    #         plot_design=self.default_plot_design,
+    #         feature_description_class=feature_description_class,
+    #         target_name=self.features.target
+    #     )
+    #     plot = infogrid.infogrid(
+    #         summary_statistics=self._summary_statistics(),
+    #         histogram_data=self._histogram_data(),
+    #         correlation_data_normalized=self._correlation_data_normalized(),
+    #         correlation_data_raw=self._correlation_data_raw(),
+    #         initial_feature=chosen_feature
+    #     )
+    #     return plot
 
-    def scattergrid(self, chosen_feature, feature_description_class):
-        feature_list = self.features.features()
-        scattergrid = ScatterPlotGrid(
-            features=feature_list,
-            plot_design=self.default_plot_design,
-            categorical_features=self.features.categorical_features(),
-            feature_descriptions=self.features.descriptions(),
-            feature_mapping=self.features.mapping(),
-            feature_description_class=feature_description_class
-        )
-        plot = scattergrid.scattergrid(self._scatter_data(), chosen_feature)
-        return plot
+    # def scattergrid(self, chosen_feature, feature_description_class):
+    #     feature_list = self.features.features()
+    #     scattergrid = ScatterPlotGrid(
+    #         features=feature_list,
+    #         plot_design=self.default_plot_design,
+    #         categorical_features=self.features.categorical_features(),
+    #         feature_descriptions=self.features.descriptions(),
+    #         feature_mapping=self.features.mapping(),
+    #         feature_description_class=feature_description_class
+    #     )
+    #     plot = scattergrid.scattergrid(self._scatter_data(), chosen_feature)
+    #     return plot
 
     def _summary_statistics(self):
         df = self.features.data().describe().T

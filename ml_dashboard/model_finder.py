@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import time
 import copy
 from collections import defaultdict
@@ -10,9 +11,12 @@ from sklearn.experimental import enable_halving_search_cv
 from sklearn.model_selection import train_test_split, HalvingGridSearchCV  # GridSearchCV
 from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, balanced_accuracy_score
 from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score, r2_score
+from sklearn.metrics import roc_curve
 from sklearn.exceptions import NotFittedError
 
 from .models import classifiers, regressors
+
+from .plots import ModelsComparisonPlot
 
 
 def reverse_sorting_order(str_name):
@@ -43,6 +47,10 @@ class ModelNotSetError(ValueError):
     pass
 
 
+class ModelsNotSearchedError(ValueError):
+    pass
+
+
 class ModelFinder:
     """Used to search for the best Models possible with a brute force approach of GridSearching.
 
@@ -64,7 +72,6 @@ class ModelFinder:
 
         Please note that all X, y, train/test data needs to be already transformed.
     """
-
 
     _classification = "classification"
     _regression = "regression"
@@ -104,9 +111,12 @@ class ModelFinder:
         self._chosen_model = None
         self._chosen_model_params = None
         self._chosen_model_scores = None
+
+        self._search_results = None
+        self._search_results_dataframe = None
+
         self._quicksearch_results = None
         self._gridsearch_results = None
-        self._search_results = None
 
         self._dummy_model, self._dummy_model_scores = self._create_dummy_model()
 
@@ -155,13 +165,17 @@ class ModelFinder:
             except TypeError:
                 raise ValueError("models should be Dict, List-like or None, got {models}".format(models=models))
 
-        scored_models, search_results = self._assess_models(initiated_models, scoring)
-        self._search_results = self._create_search_results_dataframe(search_results, scoring)
+        scored_and_fitted_models, search_results = self._assess_models(initiated_models, scoring)
+        self._search_results = scored_and_fitted_models
+        self._search_results_dataframe = self._create_search_results_dataframe(search_results, scoring)
 
         sorting_order = reverse_sorting_order(obj_name(scoring))
-        scored_models.sort(key=lambda x: x[1], reverse=sorting_order)
+        scored_and_fitted_models.sort(key=lambda x: x[1], reverse=sorting_order)
 
-        return scored_models[0][0]
+        best_model = scored_and_fitted_models[0][0]  # first item in the list, first item in the (model, score) tuple
+        new_model = best_model.__class__(**best_model.get_params())
+
+        return new_model
 
     def set_model(self, model):
         # TODO: Assess if the copy for train/test needs to be stored as a property
@@ -188,14 +202,33 @@ class ModelFinder:
     # ===== # Visualization Data for View functions
 
     def search_results(self, model_limit):
-        if self._search_results is None:
-            self.search_and_fit()
+        if self._search_results_dataframe is None:
+            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
 
-        models = self._search_results.iloc[:model_limit]
+        models = self._search_results_dataframe.iloc[:model_limit]
         dummy = self._dummy_model_results()
 
         df = pd.concat([models, dummy], axis=0).set_index(self._model_name)
         return df
+
+    def dataframe_params_name(self):
+        return self._params_name
+
+    def models_plot(self, model_limit):
+        roc_curves = self._roc_curves(model_limit)
+        plot = ModelsComparisonPlot("plot_design").models_comparison_plot(roc_curves)
+        return plot
+
+    def _roc_curves(self, model_limit):
+        if self._search_results is None:
+            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
+
+        curves = {}
+        models = [tp[0] for tp in self._search_results[:model_limit - 1]] + [self._dummy_model]  # 0 indexed
+        for model in models:
+            curves[model] = roc_curve(self.y_test, model.predict(self.X_test))
+
+        return curves
 
     # ===== # Internal functions
 
@@ -306,8 +339,12 @@ class ModelFinder:
         all_results = {}
         scored_models = []
         for model in models:
+            if "random_state" in model().get_params().keys():
+                clf = model(random_state=self.random_state)
+            else:
+                clf = model()
             start_time = time.time()
-            clf = model().fit(X_train, y_train)
+            clf.fit(X_train, y_train)
             stop_time = time.time()
             score = scoring(y_test, clf.predict(X_test))
             params = clf.get_params()
@@ -331,22 +368,22 @@ class ModelFinder:
 
     def _assess_models(self, initiated_models, chosen_scoring):
         all_results = {}
-        scored_models = []
+        fitted_and_scored = []
 
         for model in initiated_models:
-            model_copy = copy.deepcopy(model)
+            #model_copy = copy.deepcopy(model)
             start_time = time.time()
-            model_copy.fit(self.X_train, self.y_train)
+            model.fit(self.X_train, self.y_train)
             stop_time = time.time()
 
             model_results = {self._fit_time_name: stop_time-start_time, self._params_name: model.get_params()}
-            score_results = self._score_model(model_copy, chosen_scoring)
+            score_results = self._score_model(model, chosen_scoring)
             model_results.update(score_results)
 
             all_results[model] = model_results
-            scored_models.append((model, score_results[obj_name(chosen_scoring)]))
+            fitted_and_scored.append((model, score_results[obj_name(chosen_scoring)]))
 
-        return scored_models, all_results
+        return fitted_and_scored, all_results
 
     def _score_model(self, fitted_model, chosen_scoring):
 
@@ -369,13 +406,13 @@ class ModelFinder:
 
         model.fit(self.X_train, self.y_train)
         results = self._score_model(model, self.default_scoring)
-        model.fit(self.X, self.y)
+        # model.fit(self.X, self.y)
         return model, results
 
     def _dummy_model_results(self):
         _ = {
             self._model_name: obj_name(self._dummy_model),
-            self._fit_time_name: "N/A",
+            self._fit_time_name: np.nan,
             self._params_name: str(self._dummy_model.get_params()),
             **self._dummy_model_scores
         }

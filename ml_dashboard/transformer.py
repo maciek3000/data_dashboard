@@ -15,7 +15,7 @@ class Transformer:
         self.categorical_features = categorical_features
         self.numerical_features = numerical_features
         self.target_type = target_type
-        self.random_state = None
+        self.random_state = random_state
 
         # self.features = features
         # self.feature_names = features.features(drop_target=True)

@@ -31,3 +31,5 @@ class PlotDesign:
             "#ebd5d1",
             "#f5eae8"
         ]
+
+        self.color_tuple_contrary_one = ("#9c2b19", "#7597c4")

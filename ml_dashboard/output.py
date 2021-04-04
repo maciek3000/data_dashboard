@@ -1,6 +1,8 @@
 import os, datetime
 from jinja2 import Environment, FileSystemLoader
 from .views import Overview, FeatureView, ModelsView
+from .plots import PairPlot, InfoGrid, ScatterPlotGrid, ModelsComparisonPlot
+from .plot_design import PlotDesign
 
 
 class Output:
@@ -42,10 +44,11 @@ class Output:
     _templates_directory_name = "templates"
 
     # CSS elements
-    _feature_name_with_description_class = "feature-name-w-desc"
+    _element_with_description_class = "elem-w-desc"
 
-    def __init__(self, root_path, output_directory, package_name, analyzer, transformer, model_finder):
+    def __init__(self, root_path, output_directory, package_name, features, analyzer, transformer, model_finder):
 
+        self.features = features
         self.analyzer = analyzer
         self.transformer = transformer
         self.model_finder = model_finder
@@ -66,7 +69,7 @@ class Output:
                     css_path=os.path.join(self.static_path, self._view_overview_css),
                     output_directory=self.output_directory,
                     max_categories=self.analyzer.max_categories,
-                    feature_description_class=self._feature_name_with_description_class
+                    feature_description_class=self._element_with_description_class
                 )
 
         self.view_features = FeatureView(
@@ -78,7 +81,28 @@ class Output:
         self.view_models = ModelsView(
             template=self.env.get_template(self._view_models_html),
             css_path=os.path.join(self.static_path, self._view_models_css),
-            js_path=os.path.join(self.static_path, self._view_models_js)
+            js_path=os.path.join(self.static_path, self._view_models_js),
+            params_name=self.model_finder.dataframe_params_name(),
+            model_with_description_class=self._element_with_description_class
+        )
+
+        self.plot_design = PlotDesign()
+        self.pairplot = PairPlot(self.plot_design)
+
+        self.infogrid = InfoGrid(
+            features=self.features.features(),
+            plot_design=self.plot_design,
+            feature_description_class=self._element_with_description_class,
+            target_name=self.features.target
+        )
+
+        self.scattergrid = ScatterPlotGrid(
+            features=self.features.features(),
+            plot_design=self.plot_design,
+            categorical_features=self.features.categorical_features(),
+            feature_descriptions=self.features.descriptions(),
+            feature_mapping=self.features.mapping(),
+            feature_description_class=self._element_with_description_class
         )
 
     def create_html(self):
@@ -97,6 +121,16 @@ class Output:
         feature_list = self.analyzer.feature_list()
         first_feature = feature_list[0]
 
+        generated_pairplot = self.pairplot.pairplot(self.analyzer.features_pairplot_df())
+        generated_infogrid = self.infogrid.infogrid(
+            summary_statistics=self.analyzer._summary_statistics(),
+            correlation_data_normalized=self.analyzer._correlation_data_normalized(),
+            correlation_data_raw=self.analyzer._correlation_data_raw(),
+            histogram_data=self.analyzer._histogram_data(),
+            initial_feature=first_feature
+        )
+        generated_scattergrid = self.scattergrid.scattergrid(self.analyzer._scatter_data(), first_feature)
+
         overview_rendered = self.view_overview.render(
             base_css=base_css,
             creation_date=created_on,
@@ -105,7 +139,7 @@ class Output:
             categorical_df=self.analyzer.categorical_describe_df(),
             unused_features=self.analyzer.unused_features(),
             head_df=self.analyzer.df_head(),
-            pairplot=self.analyzer.features_pairplot_static(),
+            pairplot=generated_pairplot, #self.analyzer.features_pairplot_static(),
             mapping=self.analyzer.features_mapping(),
             descriptions=self.analyzer.features_descriptions()
         )
@@ -114,8 +148,8 @@ class Output:
             base_css=base_css,
             creation_date=created_on,
             hyperlinks=hyperlinks,
-            histogram=self.analyzer.infogrid(first_feature, self._feature_name_with_description_class),
-            scatterplot=self.analyzer.scattergrid(first_feature, self._feature_name_with_description_class),
+            histogram=generated_infogrid,  # self.analyzer.infogrid(first_feature, self._element_with_description_class),
+            scatterplot=generated_scattergrid,  # self.analyzer.scattergrid(first_feature, self._element_with_description_class),
             feature_list=feature_list,
             first_feature=first_feature
         )
@@ -124,7 +158,8 @@ class Output:
             base_css=base_css,
             creation_date=created_on,
             hyperlinks=hyperlinks,
-            model_results=self.model_finder.search_results(self.view_models.model_limit)
+            model_results=self.model_finder.search_results(self.view_models.model_limit),
+            models_plot=self.model_finder.models_plot(self.view_models.model_limit)
         )
 
         rendered_templates = {

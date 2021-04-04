@@ -115,8 +115,8 @@ classifiers = {
     },
 
     LGBMClassifier: {
-        "num_leaves": [1, 5, 10, 50, 100],
-        #"max_depth": [3, 5, 7],
+        #"num_leaves": [1, 5, 10, 50, 100],
+        "max_depth": [3, 5, 7],
         #"min_data_in_leaf": [10, 100, 1000]
     },
 
