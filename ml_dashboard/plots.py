@@ -1,7 +1,7 @@
 from .views import append_description
 from bokeh.plotting import figure
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, FuncTickFormatter
 from bokeh.models.widgets import Select, Div
 from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, LinearColorMapper, Panel, Tabs, HoverTool
 from bokeh.transform import factor_cmap, linear_cmap
@@ -753,14 +753,19 @@ class ModelsComparisonPlot:
         roc_plot = Panel(child=self._roc_plot(roc_curves), title=self._roc_plot_name)
         precision_recall_plot = Panel(child=self._precision_recall_plot(precision_recall_curves, target_proportion),
                                       title=self._precision_recall_plot_name)
-        det_curves = Panel(child=self._det_plot(det_curves), title=self._det_plot_name)
-        main_plot = Tabs(tabs=[roc_plot, precision_recall_plot, det_curves])
+        det_plot = Panel(child=self._det_plot(det_curves), title=self._det_plot_name)
+        main_plot = Tabs(tabs=[roc_plot, precision_recall_plot, det_plot])
 
         return main_plot
 
     @stylize()
     def _roc_plot(self, roc_curves):
-        p = default_figure()
+        p = default_figure(
+            {
+                "x_range": (-0.01, 1.01),
+                "y_range": (-0.01, 1.01)
+            }
+        )
 
         self._add_step_lines(p, roc_curves)
         p.legend.location = "bottom_right"
@@ -772,7 +777,12 @@ class ModelsComparisonPlot:
 
     @stylize()
     def _precision_recall_plot(self, precision_recall_curves, target_proportion):
-        p = default_figure()
+        p = default_figure(
+            {
+                "x_range": (-0.01, 1.01),
+                "y_range": (-0.01, 1.01)
+            }
+        )
 
         curves = [(model, (values[1], values[0], values[2])) for model, values in precision_recall_curves]
         self._add_step_lines(p, curves)
@@ -783,6 +793,39 @@ class ModelsComparisonPlot:
 
         return p
 
+    @stylize()
+    def _det_plot(self, det_curves):
+
+        # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/det_curve.py#L100
+        p = default_figure({
+            "x_range": (-3, 3),
+            "y_range": (-3, 3)
+        })
+
+        new_curves = []
+        for model, curve in det_curves:
+            f = scipy.stats.norm.ppf
+            new_tuple = (f(curve[0]), f(curve[1]))
+            new_curves.append((model, new_tuple))
+
+        self._add_step_lines(p, new_curves)
+        p.legend.location = "top_right"
+
+        ticks = [0.001, 0.01, 0.05, 0.20, 0.4999, 0.80, 0.95, 0.99, 0.999]
+        tick_location = scipy.stats.norm.ppf(ticks)
+        mapper = {norm_tick: tick for norm_tick, tick in zip(tick_location, ticks)}
+
+        p.xaxis.ticker = tick_location
+        p.yaxis.ticker = tick_location
+
+        formatter = FuncTickFormatter(args={"mapper": mapper}, code="""
+            return (mapper[tick] * 100).toString() + "%";
+        """)
+
+        p.xaxis.formatter = formatter
+        p.yaxis.formatter = formatter
+
+        return p
 
     def _add_step_lines(self, plot, model_values_tuple):
 
@@ -801,43 +844,43 @@ class ModelsComparisonPlot:
 
         plot.legend.click_policy = "mute"
 
-    def _det_plot(self, det_curves):
-
-        p = default_figure()
-
-        lw = 4
-
-        new_curves = det_curves
-        # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/det_curve.py#L100
-        new_curves = []
-        for model, curve in det_curves:
-            f = scipy.stats.norm.ppf
-            new_tuple = (f(curve[0]), f(curve[1]))
-            new_curves.append((model, new_tuple))
-
-        # dummy model is first plotted
-        dummy_model, dummy_values = new_curves[-1]
-        p.step(dummy_values[0], dummy_values[1], line_width=lw - 1, legend_label=obj_name(dummy_model),
-               line_color=self.plot_design.models_dummy_color, muted_alpha=0.2)
-
-        # models in between are plotted in reverse order
-        for model, values in new_curves[-2:0:-1]:
-            p.step(values[0], values[1], line_width=lw - 1, legend_label=obj_name(model),
-                   line_color=self.plot_design.models_color_tuple[1], muted_alpha=0.2)
-
-        # at last, the best model is plotted so that it's line is on the top
-        first_model, first_values = new_curves[0]
-        p.step(first_values[0], first_values[1], line_width=lw, legend_label=obj_name(first_model),
-               line_color=self.plot_design.models_color_tuple[0], muted_alpha=0.2)
-
-        # p.legend.location = "bottom_right"
-        p.legend.click_policy = "mute"
-
-        ticks = [0.001, 0.01, 0.05, 0.20, 0.5, 0.80, 0.95, 0.99, 0.999]
-        tick_locations = ticks
-        # tick_locations = scipy.stats.norm.ppf(ticks)
-
-        # p.xaxis.ticker = tick_locations
-        # p.yaxis.ticker = tick_locations
-
-        return p
+    # def _det_plot(self, det_curves):
+    #
+    #     p = default_figure()
+    #
+    #     lw = 4
+    #
+    #     new_curves = det_curves
+    #     # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/det_curve.py#L100
+    #     new_curves = []
+    #     for model, curve in det_curves:
+    #         f = scipy.stats.norm.ppf
+    #         new_tuple = (f(curve[0]), f(curve[1]))
+    #         new_curves.append((model, new_tuple))
+    #
+    #     # dummy model is first plotted
+    #     dummy_model, dummy_values = new_curves[-1]
+    #     p.step(dummy_values[0], dummy_values[1], line_width=lw - 1, legend_label=obj_name(dummy_model),
+    #            line_color=self.plot_design.models_dummy_color, muted_alpha=0.2)
+    #
+    #     # models in between are plotted in reverse order
+    #     for model, values in new_curves[-2:0:-1]:
+    #         p.step(values[0], values[1], line_width=lw - 1, legend_label=obj_name(model),
+    #                line_color=self.plot_design.models_color_tuple[1], muted_alpha=0.2)
+    #
+    #     # at last, the best model is plotted so that it's line is on the top
+    #     first_model, first_values = new_curves[0]
+    #     p.step(first_values[0], first_values[1], line_width=lw, legend_label=obj_name(first_model),
+    #            line_color=self.plot_design.models_color_tuple[0], muted_alpha=0.2)
+    #
+    #     # p.legend.location = "bottom_right"
+    #     p.legend.click_policy = "mute"
+    #
+    #     ticks = [0.001, 0.01, 0.05, 0.20, 0.5, 0.80, 0.95, 0.99, 0.999]
+    #     tick_locations = ticks
+    #     # tick_locations = scipy.stats.norm.ppf(ticks)
+    #
+    #     # p.xaxis.ticker = tick_locations
+    #     # p.yaxis.ticker = tick_locations
+    #
+    #     return p
