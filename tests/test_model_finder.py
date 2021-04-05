@@ -201,7 +201,7 @@ def test_model_finder_regression_dummy_model_results(model_finder_regression):
 @pytest.mark.parametrize(
     ("mode", "expected_model"),
     (
-            ("quick", LogisticRegression(tol=0.1)),
+            ("quick", SVC(tol=0.1, C=0.1)),
             ("detailed", DecisionTreeClassifier(criterion="entropy", max_depth=10))
     )
 )
@@ -240,7 +240,7 @@ def test_model_finder_classification_search_defined_models(model_finder_classifi
 @pytest.mark.parametrize(
     ("mode", "expected_model"),
     (
-            ("quick", Ridge(alpha=0.0001)),
+            ("quick", SVR(C=0.1, tol=1.0)),
             ("detailed", SVR(C=0.1, tol=1.0))
     )
 )
@@ -453,9 +453,9 @@ def test_model_finder_create_gridsearch_results_dataframe(model_finder_classific
 def test_model_finder_perform_quicksearch_classification(model_finder_classification, chosen_classifiers_grid, seed):
     """Testing if quicksearch works and returns correct Models and result dict (in classification)."""
     expected_models = [
-        (DecisionTreeClassifier, 0.5476190476190477),
-        (LogisticRegression, 0.619047619047619),
-        (SVC, 0.48809523809523814),
+        (DecisionTreeClassifier, 0.5773809523809523),
+        (LogisticRegression, 0.6071428571428571),
+        (SVC, 0.6309523809523809),
     ]
     expected_keys = {"fit_time", "roc_auc_score", "params"}
 
@@ -475,9 +475,9 @@ def test_model_finder_perform_quicksearch_classification(model_finder_classifica
 def test_model_finder_perform_quicksearch_regression(model_finder_regression, chosen_regressors_grid, seed):
     """Testing if quicksearch works and returns correct Models and result dict (in regression)."""
     expected_models = [
-        (DecisionTreeRegressor, 2193.975037560088), #2698.729567845899),
-        (Ridge, 1203.3774696374364),
-        (SVR, 1312.2035599389972),
+        (DecisionTreeRegressor, 2458.2551351805055),
+        (Ridge, 1199.0610634709196),
+        (SVR, 1051.8445189635734),
     ]
     expected_keys = {"fit_time", "mean_squared_error", "params"}
 
@@ -541,8 +541,8 @@ def test_model_finder_create_search_results_dataframe(model_finder_classificatio
 @pytest.mark.parametrize(
     ("limit", "expected_models"),
     (
-            (1, [LogisticRegression]),
-            (2, [LogisticRegression, DecisionTreeClassifier])
+            (1, [SVC]),
+            (2, [SVC, LogisticRegression])
     )
 )
 def test_model_finder_quicksearch_classification(
@@ -559,8 +559,8 @@ def test_model_finder_quicksearch_classification(
 @pytest.mark.parametrize(
     ("limit", "expected_models"),
     (
-            (1, [Ridge]),
-            (2, [Ridge, SVR])
+            (1, [SVR]),
+            (2, [SVR, Ridge])
     )
 )
 def test_model_finder_quicksearch_regression(
