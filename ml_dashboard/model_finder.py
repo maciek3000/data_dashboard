@@ -11,6 +11,7 @@ from sklearn.experimental import enable_halving_search_cv
 from sklearn.model_selection import train_test_split, HalvingGridSearchCV, GridSearchCV
 from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, balanced_accuracy_score
 from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score, r2_score
+from sklearn.metrics import precision_score, recall_score
 from sklearn.metrics import roc_curve, precision_recall_curve, det_curve
 from sklearn.exceptions import NotFittedError
 
@@ -73,9 +74,17 @@ class ModelFinder:
 
     _classification = "classification"
     _regression = "regression"
+    _multiclass = "multiclass"
     _quicksearch_limit = 3
     _scoring_classification = [accuracy_score, balanced_accuracy_score, f1_score, roc_auc_score]
     _scoring_regression = [mean_squared_error, mean_absolute_error, explained_variance_score, r2_score]
+    _scoring_multiclass_parametrized = [
+        (f1_score, {"average": "micro"}, "f1_score_micro"),
+        (f1_score, {"average": "weighted"}, "f1_score_weighted"),
+        (precision_score, {"average": "weighted"}, "precision_score_weighted"),
+        (recall_score, {"average": "weighted"}, "recall_score_weighted")
+    ]
+    _scoring_multiclass = [accuracy_score, balanced_accuracy_score]
 
     _model_name = "model"
     _fit_time_name = "fit_time"
@@ -88,14 +97,7 @@ class ModelFinder:
     _target_numerical = "numerical"
     _target_categories = [_target_categorical, _target_numerical]
 
-    def __init__(self, X, y, X_train, X_test, y_train, y_test, target_type, random_state=None):
-
-        if target_type in self._target_categories:
-            self._set_problem(target_type)
-        else:
-            raise ValueError("Expected one of the categories: {categories}; got {category}".format(
-                categories=", ".join(self._target_categories), category=target_type
-            ))
+    def __init__(self, X, y, X_train, X_test, y_train, y_test, target_type, random_state=None, classification_pos_label=1):
 
         self.random_state = random_state
 
@@ -105,6 +107,13 @@ class ModelFinder:
         self.X_test = X_test
         self.y_train = y_train
         self.y_test = y_test
+
+        if target_type in self._target_categories:
+            self._set_problem(target_type, classification_pos_label)
+        else:
+            raise ValueError("Expected one of the categories: {categories}; got {category}".format(
+                categories=", ".join(self._target_categories), category=target_type
+            ))
 
         self._chosen_model = None
         self._chosen_model_params = None
@@ -213,6 +222,9 @@ class ModelFinder:
     def dataframe_params_name(self):
         return self._params_name
 
+    def target_proportion(self):
+        return self.y_test.sum() / self.y_test.shape[0]
+
     def roc_curves(self, model_limit):
         return self._plot_curves(roc_curve, model_limit)
 
@@ -224,13 +236,21 @@ class ModelFinder:
 
     # ===== # Internal functions
 
-    def _set_problem(self, problem_type):
+    def _set_problem(self, problem_type, classification_pos_label):
 
         if problem_type == self._target_categorical:
-            self.problem = self._classification
-            self.scoring_functions = self._scoring_classification
-            self.default_models = classifiers
-            self.default_scoring = roc_auc_score
+
+            if len(np.unique(self.y)) > 2:
+                self.problem = self._multiclass
+                self.scoring_functions = self._create_scoring_multiclass()
+                self.default_models = classifiers
+                self.default_scoring = self.scoring_functions[0]
+            else:
+                self.problem = self._classification
+                self.scoring_functions = self._scoring_classification
+                self.default_models = classifiers
+                self.default_scoring = roc_auc_score
+                self.classification_pos_label = classification_pos_label
 
         elif problem_type == self._target_numerical:
             self.problem = self._regression
@@ -389,7 +409,7 @@ class ModelFinder:
         return scoring_results
 
     def _create_dummy_model(self):
-        if self.problem == self._classification:
+        if self.problem == self._classification or self.problem == self._multiclass:
             model = DummyClassifier(strategy="stratified", random_state=self.random_state)
         elif self.problem == self._regression:
             model = DummyRegressor(strategy="median")
@@ -438,3 +458,27 @@ class ModelFinder:
             curves.append((model, result))
 
         return curves
+
+    def _create_scoring_multiclass(self):
+
+        # (roc_auc_score, {"average": "weighted", "multi_class": "ovr"})
+        # multiclass roc_auc_score requires probabilities for every class in comparison to simple predictions
+        # required by other metrics, not included cause it breaks program flow
+
+        scorings = []
+        for scoring, params, fname in self._scoring_multiclass_parametrized:
+
+            def closure():
+                func_scoring = scoring
+                func_params = params
+                func_name = fname
+
+                def make_scoring(y_true, y_score):
+                    make_scoring.__name__ = func_name  # name change for results logging
+                    return func_scoring(y_true, y_score, **func_params)
+                return make_scoring
+
+            scorings.append(closure())
+
+        scorings += self._scoring_multiclass
+        return scorings
