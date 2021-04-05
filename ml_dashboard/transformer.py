@@ -10,12 +10,13 @@ class Transformer:
     # https://scikit-learn.org/stable/auto_examples/compose/plot_column_transformer_mixed_types.html
     # https://scikit-learn.org/stable/modules/compose.html
 
-    def __init__(self, categorical_features, numerical_features, target_type, random_state=None):
+    def __init__(self, categorical_features, numerical_features, target_type, random_state=None, classification_pos_label=None):
 
         self.categorical_features = categorical_features
         self.numerical_features = numerical_features
         self.target_type = target_type
         self.random_state = random_state
+        self.classification_pos_label = classification_pos_label
 
         # self.features = features
         # self.feature_names = features.features(drop_target=True)
@@ -82,7 +83,10 @@ class Transformer:
 
     def _create_preprocessor_y(self):
         if self.target_type == "Categorical":
-            transformer = LabelEncoder()
+            if self.classification_pos_label:
+                transformer = FunctionTransformer(lambda x: 1 if x == self.classification_pos_label else 0)
+            else:
+                transformer = LabelEncoder()
         elif self.target_type == "Numerical":
             # in regression model finder wraps its object in TargetRegressor
             transformer = FunctionTransformer(lambda x: x)

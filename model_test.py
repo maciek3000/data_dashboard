@@ -31,15 +31,15 @@ if __name__ == "__main__":
 
     # examples
 
-    # X, y, descriptions = iris()
+    X, y, descriptions = iris()
     # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
     # X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
 
-    coord = Coordinator(X, y, output_directory, accuracy_score, descriptions, os.getcwd(), random_state=42)
+    coord = Coordinator(X, y, output_directory, None, descriptions, os.getcwd(), random_state=42)
     model = coord.search_and_fit()
-    coord.create_dashboard()
+    # coord.create_dashboard()
     # output = coord.quick_find()
     # print("\n".join(map(lambda x: x[0] + ": " + str(x[1]), output)))
 
@@ -47,8 +47,10 @@ if __name__ == "__main__":
     #ml = coord.search_and_fit(mode="quick", scoring=accuracy_score)
 
     #predictions = coord.predict(test_df[features])
-    # results = coord.model_finder._quicksearch_results
-
+    #results = coord.model_finder._gridsearch_results
+    #
+    results = coord.model_finder.search_results(None)
+    print(results.to_markdown())
     #output = pd.DataFrame({'PassengerId': test_df["PassengerId"], 'Survived': predictions})
     #print(ml)
     #print(coord.model_finder._gridsearch_results.to_markdown())

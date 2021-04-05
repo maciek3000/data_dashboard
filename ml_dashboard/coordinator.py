@@ -6,9 +6,11 @@ from .model_finder import ModelFinder
 from .descriptor import FeatureDescriptor
 from .plot_design import PlotDesign
 import os
+import numpy as np
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import random
+import warnings
 
 
 class Coordinator:
@@ -30,13 +32,19 @@ class Coordinator:
     _output_created_text = "Created output at {directory}"
     _model_found_text = "Model: {name}\nScore: {score}\nParams: {params}"
 
-    def __init__(self, X, y, output_directory, scoring=None, feature_descriptions_dict=None, root_path=None, random_state=None):
+    def __init__(self, X, y, output_directory, scoring=None, feature_descriptions_dict=None, root_path=None, random_state=None,
+                 classification_pos_label=None):
+
+        # TODO: add warning for classification_pos_label if used when n_target > 2
 
         self.random_state = random_state
 
         # copy original dataframes to avoid changing the originals
         self.X = X.copy()
         self.y = y.copy()
+
+        if classification_pos_label:
+            classification_pos_label = self._assert_classification_pos_label(classification_pos_label)
 
         self.transformed_X = None
         self.transformed_y = None
@@ -57,7 +65,8 @@ class Coordinator:
             categorical_features=self.features.categorical_features(drop_target=True),
             numerical_features=self.features.numerical_features(drop_target=True),
             target_type=self.features[self.features.target].type,
-            random_state=self.random_state
+            random_state=self.random_state,
+            classification_pos_label=classification_pos_label
         )
 
         # https://scikit-learn.org/stable/modules/cross_validation.html#computing-cross-validated-metrics
@@ -132,3 +141,16 @@ class Coordinator:
 
         self.transformer.fit(X)
         self.transformer.fit_y(y)
+
+    def _assert_classification_pos_label(self, label):
+        unique = set(np.unique(self.y))
+        if label not in unique:
+            raise ValueError(
+                "label '{label}' not in unique values of y: {values}".format(label=label, values=", ".join(unique))
+            )
+
+        if len(unique) > 2:
+            warnings.warn("n of unique values in y is > 2, classification_pos_label will be ignored")
+            return None
+        else:
+            return label

@@ -749,3 +749,9 @@ def test_model_finder_classification_plot_curves(
 
     for actual_arr, expected_arr in zip(actual_results, expected_results):
         assert np.array_equal(actual_arr, expected_arr)
+
+
+def test_model_finder_target_proportion(model_finder_classification_fitted):
+    m = model_finder_classification_fitted
+    print(pd.Series(m.y_test).value_counts())
+    print(m.target_proportion())
