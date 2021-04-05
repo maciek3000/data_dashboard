@@ -21,21 +21,26 @@ def append_description(description, parsed_html):
     return new_tag
 
 
-def df_to_html_table(df):
-    d = df.T.to_dict()
+def series_to_dict(srs):
+    params = srs.to_dict()
+    dict_str = {model: str(params_str)[1:-1].replace(", ", "\n") for model, params_str in params.items()}
+    return dict_str
 
-    output_template = '<table><thead><tr><th></th>{columns}</tr></thead><tbody>{rows}</tbody></table>'
-    columns = ["<th>{col}</th>".format(col=col) for col in df.columns]
-    rows = ""
-    for row, content in d.items():
-        html = "<tr><th>{row}</th>".format(row=row)
-        for value in content.values():
-            html += "<td>{value}</td>".format(value=value)
-        html += "</tr>"
-        rows += html
-
-    output = output_template.format(columns="".join(columns), rows=rows)
-    return output
+# def df_to_html_table(df):
+#     d = df.T.to_dict()
+#
+#     output_template = '<table><thead><tr><th></th>{columns}</tr></thead><tbody>{rows}</tbody></table>'
+#     columns = ["<th>{col}</th>".format(col=col) for col in df.columns]
+#     rows = ""
+#     for row, content in d.items():
+#         html = "<tr><th>{row}</th>".format(row=row)
+#         for value in content.values():
+#             html += "<td>{value}</td>".format(value=value)
+#         html += "</tr>"
+#         rows += html
+#
+#     output = output_template.format(columns="".join(columns), rows=rows)
+#     return output
 
 
 class BaseView:
@@ -319,7 +324,7 @@ class ModelsView(BaseView):
         return self.template.render(**output)
 
     def _models_result_table(self, results_dataframe):
-        new_params = self._parameters_descriptions(results_dataframe[self.params_name])
+        new_params = series_to_dict(results_dataframe[self.params_name])
 
         df = results_dataframe.drop([self.params_name], axis=1)
         df.index.name = None
@@ -344,8 +349,3 @@ class ModelsView(BaseView):
         output = str(table)
 
         return output
-
-    def _parameters_descriptions(self, params_series):
-        params = params_series.to_dict()
-        new_params = {model: str(params_str)[1:-1].replace(", ", "\n") for model, params_str in params.items()}
-        return new_params
