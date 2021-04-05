@@ -11,11 +11,11 @@ import seaborn as sns
 import scipy.stats
 from bs4 import BeautifulSoup
 import pandas as pd
+import numpy as np
 
 from bokeh.core.validation.check import silence
 
 from .model_finder import obj_name
-
 
 contrary_color_palette = ["#FFF7F3", "#FFB695", "#EB6F54", "#9C2B19"]
 
@@ -226,7 +226,8 @@ class InfoGrid(MainGrid):
         super().__init__(features, plot_design, feature_description_class)
         self.target_name = target_name
 
-    def infogrid(self, summary_statistics, histogram_data, correlation_data_normalized, correlation_data_raw, initial_feature):
+    def infogrid(self, summary_statistics, histogram_data, correlation_data_normalized, correlation_data_raw,
+                 initial_feature):
 
         dropdown = self._create_features_dropdown(self._infogrid_dropdown)
 
@@ -234,7 +235,8 @@ class InfoGrid(MainGrid):
         info_div = self._create_info_div(summary_statistics, initial_feature)
 
         # correlation source is left in case it is decided later on that the callback is needed
-        correlation_source, correlation_plot = self._create_correlation(correlation_data_normalized, correlation_data_raw)
+        correlation_source, correlation_plot = self._create_correlation(correlation_data_normalized,
+                                                                        correlation_data_raw)
 
         callbacks = self._create_features_dropdown_callbacks(
             summary_statistics=summary_statistics,
@@ -404,8 +406,8 @@ class InfoGrid(MainGrid):
     def _create_correlation_plot(self, source, cols_for_range, color_mapper, value_to_color):
 
         tooltip_text = [
-            (self._correlation_values_normalized_title, "@"+self._correlation_values_normalized),
-            (self._correlation_values_raw_title, "@"+self._correlation_values_raw)
+            (self._correlation_values_normalized_title, "@" + self._correlation_values_normalized),
+            (self._correlation_values_raw_title, "@" + self._correlation_values_raw)
         ]
 
         kwargs = {
@@ -445,7 +447,8 @@ class InfoGrid(MainGrid):
         very_high_correlation = [tints[2]] * 1
         palette = no_correlation + small_correlation + medium_correlation + high_correlation + very_high_correlation
 
-        cmap = LinearColorMapper(palette=palette, low=0, high=0.9999, high_color=linear_correlation)  # contrary_color_palette
+        cmap = LinearColorMapper(palette=palette, low=0, high=0.9999,
+                                 high_color=linear_correlation)  # contrary_color_palette
 
         return cmap
 
@@ -533,7 +536,8 @@ class ScatterPlotGrid(MainGrid):
     _legend_categorical = "legend-categorical"
     _chosen_feature_scatter_title = "chosen-feature-scatter"
 
-    def __init__(self, features, plot_design, categorical_features, feature_descriptions, feature_mapping, feature_description_class, categorical_suffix="_categorical"):
+    def __init__(self, features, plot_design, categorical_features, feature_descriptions, feature_mapping,
+                 feature_description_class, categorical_suffix="_categorical"):
         self.categorical_columns = categorical_features
         self.feature_descriptions = feature_descriptions
         self.feature_mapping = feature_mapping
@@ -737,7 +741,6 @@ class ScatterPlotGrid(MainGrid):
 
 
 class ModelsComparisonPlot:
-
     _roc_plot_name = "ROC Curve"
     _precision_recall_plot_name = "Precision Recall Plot"
     _det_plot_name = "Detection Error Tradeoff"
@@ -745,10 +748,11 @@ class ModelsComparisonPlot:
     def __init__(self, plot_design):
         self.plot_design = plot_design
 
-    def models_comparison_plot(self, roc_curves, precision_recall_curves, det_curves):
+    def models_comparison_plot(self, roc_curves, precision_recall_curves, det_curves, target_proportion):
 
         roc_plot = Panel(child=self._roc_plot(roc_curves), title=self._roc_plot_name)
-        precision_recall_plot = Panel(child=self._roc_plot(precision_recall_curves), title=self._precision_recall_plot_name)
+        precision_recall_plot = Panel(child=self._precision_recall_plot(precision_recall_curves, target_proportion),
+                                      title=self._precision_recall_plot_name)
         det_curves = Panel(child=self._det_plot(det_curves), title=self._det_plot_name)
         main_plot = Tabs(tabs=[roc_plot, precision_recall_plot, det_curves])
 
@@ -758,27 +762,44 @@ class ModelsComparisonPlot:
     def _roc_plot(self, roc_curves):
         p = default_figure()
 
-        lw = 4
+        self._add_step_lines(p, roc_curves)
+        p.legend.location = "bottom_right"
 
-        # dummy model is first plotted
-        dummy_model, dummy_values = roc_curves[-1]
-        p.step(dummy_values[0], dummy_values[1], line_width=lw-1, legend_label=obj_name(dummy_model),
-                line_color=self.plot_design.models_dummy_color, muted_alpha=0.2)
-
-        # models in between are plotted in reverse order
-        for model, values in roc_curves[-2:0:-1]:
-            p.step(values[0], values[1], line_width=lw-1, legend_label=obj_name(model),
-                   line_color=self.plot_design.models_color_tuple[1], muted_alpha=0.2)
-
-        # at last, the best model is plotted so that it's line is on the top
-        first_model, first_values = roc_curves[0]
-        p.step(first_values[0], first_values[1], line_width=lw, legend_label=obj_name(first_model),
-               line_color=self.plot_design.models_color_tuple[0], muted_alpha=0.2)
-
-        # p.legend.location = "bottom_right"
-        p.legend.click_policy = "mute"
+        p.line([0, 1], [0, 1], line_dash="dashed", line_width=1,
+               color=self.plot_design.models_dummy_color, legend_label="Random Baseline", muted_alpha=0.2)
 
         return p
+
+    @stylize()
+    def _precision_recall_plot(self, precision_recall_curves, target_proportion):
+        p = default_figure()
+
+        curves = [(model, (values[1], values[0], values[2])) for model, values in precision_recall_curves]
+        self._add_step_lines(p, curves)
+        p.legend.location = "bottom_left"
+
+        p.line([0, 1], [target_proportion, target_proportion], line_dash="dashed", line_width=1,
+               color=self.plot_design.models_dummy_color, legend_label="Random Baseline", muted_alpha=0.2)
+
+        return p
+
+
+    def _add_step_lines(self, plot, model_values_tuple):
+
+        new_tuples = list(reversed(model_values_tuple))
+        lw = 4
+
+        # models are plotted in reverse order (without the first one)
+        for model, values in new_tuples[:-1]:
+            plot.step(values[0], values[1], line_width=lw - 2, legend_label=obj_name(model),
+                      line_color=self.plot_design.models_color_tuple[1], muted_alpha=0.2)
+
+        # the best model is plotted as last to be on top of other lines
+        first_model, first_values = new_tuples[-1]
+        plot.step(first_values[0], first_values[1], line_width=lw, legend_label=obj_name(first_model),
+                  line_color=self.plot_design.models_color_tuple[0], muted_alpha=0.2)
+
+        plot.legend.click_policy = "mute"
 
     def _det_plot(self, det_curves):
 
@@ -796,12 +817,12 @@ class ModelsComparisonPlot:
 
         # dummy model is first plotted
         dummy_model, dummy_values = new_curves[-1]
-        p.step(dummy_values[0], dummy_values[1], line_width=lw-1, legend_label=obj_name(dummy_model),
+        p.step(dummy_values[0], dummy_values[1], line_width=lw - 1, legend_label=obj_name(dummy_model),
                line_color=self.plot_design.models_dummy_color, muted_alpha=0.2)
 
         # models in between are plotted in reverse order
         for model, values in new_curves[-2:0:-1]:
-            p.step(values[0], values[1], line_width=lw-1, legend_label=obj_name(model),
+            p.step(values[0], values[1], line_width=lw - 1, legend_label=obj_name(model),
                    line_color=self.plot_design.models_color_tuple[1], muted_alpha=0.2)
 
         # at last, the best model is plotted so that it's line is on the top
@@ -814,7 +835,7 @@ class ModelsComparisonPlot:
 
         ticks = [0.001, 0.01, 0.05, 0.20, 0.5, 0.80, 0.95, 0.99, 0.999]
         tick_locations = ticks
-        #tick_locations = scipy.stats.norm.ppf(ticks)
+        # tick_locations = scipy.stats.norm.ppf(ticks)
 
         # p.xaxis.ticker = tick_locations
         # p.yaxis.ticker = tick_locations

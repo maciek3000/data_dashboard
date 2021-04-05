@@ -97,7 +97,7 @@ class ModelFinder:
     _target_numerical = "numerical"
     _target_categories = [_target_categorical, _target_numerical]
 
-    def __init__(self, X, y, X_train, X_test, y_train, y_test, target_type, random_state=None, classification_pos_label=1):
+    def __init__(self, X, y, X_train, X_test, y_train, y_test, target_type, random_state=None):
 
         self.random_state = random_state
 
@@ -109,7 +109,7 @@ class ModelFinder:
         self.y_test = y_test
 
         if target_type in self._target_categories:
-            self._set_problem(target_type, classification_pos_label)
+            self._set_problem(target_type)
         else:
             raise ValueError("Expected one of the categories: {categories}; got {category}".format(
                 categories=", ".join(self._target_categories), category=target_type
@@ -223,6 +223,7 @@ class ModelFinder:
         return self._params_name
 
     def target_proportion(self):
+        # only meaningful in binary classification
         return self.y_test.sum() / self.y_test.shape[0]
 
     def roc_curves(self, model_limit):
@@ -236,7 +237,7 @@ class ModelFinder:
 
     # ===== # Internal functions
 
-    def _set_problem(self, problem_type, classification_pos_label):
+    def _set_problem(self, problem_type):
 
         if problem_type == self._target_categorical:
 
@@ -250,7 +251,6 @@ class ModelFinder:
                 self.scoring_functions = self._scoring_classification
                 self.default_models = classifiers
                 self.default_scoring = roc_auc_score
-                self.classification_pos_label = classification_pos_label
 
         elif problem_type == self._target_numerical:
             self.problem = self._regression

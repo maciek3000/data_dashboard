@@ -140,7 +140,8 @@ class Output:
         generated_models_plot = self.models_plots.models_comparison_plot(
             roc_curves=self.model_finder.roc_curves(self._view_models_model_limit),
             precision_recall_curves=self.model_finder.precision_recall_curves(self._view_models_model_limit),
-            det_curves=self.model_finder.det_curves(self._view_models_model_limit)
+            det_curves=self.model_finder.det_curves(self._view_models_model_limit),
+            target_proportion=self.model_finder.target_proportion()
         )
 
         overview_rendered = self.view_overview.render(
