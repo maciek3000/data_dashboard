@@ -119,12 +119,10 @@ def test_transformer_transform_y_classification_pos_label(
     """Testing if transformer correctly changes mappings of y when explicit classification_pos_label is provided."""
     df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1)
     expected_result = df[feature].apply(lambda x: 1 if x == classification_pos_label else 0)
-    print(df[feature])
     tr = Transformer(
         categorical_features, numerical_features, "Categorical", classification_pos_label=classification_pos_label
     )
     actual_result = tr.fit_transform_y(df[feature])
-    print(actual_result)
     assert np.array_equal(actual_result, expected_result)
 
 

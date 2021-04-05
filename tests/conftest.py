@@ -12,6 +12,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.svm import SVC, SVR
+from sklearn.metrics import f1_score, precision_score
+
 
 # this package
 from ml_dashboard.descriptor import FeatureDescriptor
@@ -486,6 +488,30 @@ def chosen_regressors_grid():
 
 
 @pytest.fixture
+def multiclass_scorings():
+    scorings = [
+        (f1_score, {"average": "weighted"}, "f1_score_weighted"),
+        (precision_score, {"average": "weighted"}, "precision_score_weighted")
+    ]
+
+    new_scorings = []
+    for scoring, params, fname in scorings:
+        def f():
+            f_sc = scoring
+            f_par = params
+            f_nam = fname
+
+            def make_scoring(y_true, y_score):
+                make_scoring.__name__ = f_nam
+                return f_sc(y_true, y_score, **f_par)
+            return make_scoring
+
+        new_scorings.append(f())
+
+    return new_scorings
+
+
+@pytest.fixture
 def model_finder_classification(transformed_classification_data, split_dataset_categorical, chosen_classifiers_grid,
                                 seed):
     X = transformed_classification_data[0]
@@ -527,7 +553,9 @@ def model_finder_regression(transformed_regression_data, split_dataset_numerical
 
 
 @pytest.fixture
-def model_finder_multiclass(transformed_multiclass_data, split_dataset_multiclass, chosen_classifiers_grid, seed):
+def model_finder_multiclass(
+        transformed_multiclass_data, split_dataset_multiclass, chosen_classifiers_grid, multiclass_scorings, seed
+):
     X = transformed_multiclass_data[0]
     y = transformed_multiclass_data[1]
     X_train, X_test, y_train, y_test = split_dataset_multiclass
@@ -543,6 +571,7 @@ def model_finder_multiclass(transformed_multiclass_data, split_dataset_multiclas
     )
 
     mf.default_models = chosen_classifiers_grid
+    mf.scoring_functions = multiclass_scorings
     return mf
 
 

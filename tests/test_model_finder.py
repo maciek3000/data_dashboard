@@ -5,6 +5,7 @@ from sklearn.linear_model import Ridge, PassiveAggressiveClassifier, LogisticReg
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.svm import SVC, SVR, LinearSVR
 from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accuracy_score, roc_curve, det_curve
+from sklearn.metrics import f1_score, precision_score
 from sklearn.exceptions import NotFittedError
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
@@ -126,12 +127,12 @@ def test_model_finder_init_improper_problem_type(
             ([12, 13, 14, 15, 16, 17],),
     )
 )
-def test_model_finder_dummy_categorical(model_finder_classification, data_classification_balanced, seed, test_input):
+def test_model_finder_dummy_categorical(model_finder_classification, split_dataset_categorical, seed, test_input):
     """Testing if DummyModel (for classification) is created correctly."""
-    X = data_classification_balanced[0]
-    y = data_classification_balanced[1]
+    X_train = split_dataset_categorical[0]
+    y_train = split_dataset_categorical[2]
     expected_model = DummyClassifier(strategy="stratified", random_state=seed)
-    expected_model.fit(X, y)
+    expected_model.fit(X_train, y_train)
     expected_model_scores = {"roc_auc_score": 0.41666666666666663, "accuracy_score": 0.48}
 
     model_finder_classification.scoring_functions = [roc_auc_score, accuracy_score]
@@ -161,6 +162,35 @@ def test_model_finder_dummy_regression(model_finder_regression, test_input):
 
     assert str(actual_model) == str(expected_model)
     assert np.array_equal(actual_model.predict(test_input), np.array([median] * len(test_input)))
+    assert actual_model_scores == expected_model_scores
+
+
+@pytest.mark.parametrize(
+    ("test_input",),
+    (
+            ([0, 1, 2, 3, 4, 5],),
+            ([6, 7, 8, 9, 10, 11],),
+            ([12, 13, 14, 15, 16, 17],),
+    )
+)
+def test_model_finder_dummy_multiclass(
+        model_finder_multiclass, split_dataset_multiclass, seed, multiclass_scorings, test_input
+):
+    """Testing if DummyModel (for multiclass) is created correctly."""
+    X_train = split_dataset_multiclass[0]
+    y_train = split_dataset_multiclass[2]
+    expected_model = DummyClassifier(strategy="stratified", random_state=seed)
+    expected_model.fit(X_train, y_train)
+    expected_model_scores = {"f1_score_weighted": 0.4772161172161172, "precision_score_weighted": 0.508}
+
+    model_finder_multiclass.scoring_functions = multiclass_scorings
+    model_finder_multiclass.default_scoring = multiclass_scorings[0]
+    actual_model, actual_model_scores = model_finder_multiclass._create_dummy_model()
+
+    print(expected_model.predict(test_input))
+
+    assert str(actual_model) == str(expected_model)
+    assert np.array_equal(actual_model.predict(test_input), expected_model.predict(test_input))
     assert actual_model_scores == expected_model_scores
 
 
@@ -194,6 +224,25 @@ def test_model_finder_regression_dummy_model_results(model_finder_regression):
     }
     expected_df = pd.DataFrame(_, index=[9999])
     actual_df = model_finder_regression._dummy_model_results()
+
+    assert actual_df.equals(expected_df[actual_df.columns])
+
+
+def test_model_finder_multiclass_dummy_model_results(model_finder_multiclass, seed):
+    """Testing if dummy_model_results() function returns correct DataFrame (multiclass)."""
+    _ = {
+        "model": "DummyClassifier",
+        "fit_time": np.nan,
+        "params": "{{'constant': None, 'random_state': {seed}, 'strategy': 'stratified'}}".format(seed=seed),
+        "f1_score_micro": 0.48,
+        "f1_score_weighted": 0.4772161172161172,
+        "precision_score_weighted": 0.508,
+        "recall_score_weighted": 0.48,
+        "accuracy_score": 0.48,
+        "balanced_accuracy_score": 0.4987373737373737
+    }
+    expected_df = pd.DataFrame(_, index=[9999])
+    actual_df = model_finder_multiclass._dummy_model_results()
 
     assert actual_df.equals(expected_df[actual_df.columns])
 
@@ -232,7 +281,7 @@ def test_model_finder_classification_search(model_finder_classification, mode, e
 )
 def test_model_finder_classification_search_defined_models(model_finder_classification, models, expected_model):
     """Testing if models provided explicitly are being scored and chosen properly in classification
-    (including models not present in default models collection."""
+    (including models not present in default models collection)."""
     actual_model = model_finder_classification.search(models=models, scoring=roc_auc_score)
     assert str(actual_model) == str(expected_model)
 
@@ -271,8 +320,49 @@ def test_model_finder_regression_search(model_finder_regression, mode, expected_
 )
 def test_model_finder_regression_search_defined_models(model_finder_regression, models, expected_model):
     """Testing if models provided explicitly are being scored and chosen properly in regression
-    (including models not present in default models collection."""
+    (including models not present in default models collection)."""
     actual_model = model_finder_regression.search(models=models, scoring=mean_squared_error)
+    assert str(actual_model) == str(expected_model)
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected_model"),
+    (
+            ("quick", DecisionTreeClassifier(max_depth=10)),
+            ("detailed", LogisticRegression(tol=0.1))
+    )
+)
+def test_model_finder_multiclass_search(model_finder_multiclass, multiclass_scorings, mode, expected_model, seed):
+    """Testing if search() function returns expected Model (for multiclass)."""
+    model_finder_multiclass._quicksearch_limit = 1
+    actual_model = model_finder_multiclass.search(models=None, scoring=multiclass_scorings[0], mode=mode)
+    expected_model.random_state = seed
+    assert str(actual_model) == str(expected_model)
+
+
+@pytest.mark.parametrize(
+    ("models", "expected_model"),
+    (
+            ([
+                 RidgeClassifier(alpha=1.0, random_state=1),
+                 RidgeClassifier(alpha=100.0, random_state=1)
+             ],
+             RidgeClassifier(alpha=1.0, random_state=1)),
+
+            ([
+                 SVC(C=1.0, random_state=10),
+                 SVC(C=10.0, random_state=14),
+                 SVC(C=100.0, random_state=35)
+             ],
+             SVC(C=10.0, random_state=14))
+    )
+)
+def test_model_finder_multiclass_search_defined_models(
+        model_finder_multiclass, multiclass_scorings, models, expected_model
+):
+    """Testing if models provided explicitly are being scored and chosen properly in multiclass
+    (including models not present in default models collection)."""
+    actual_model = model_finder_multiclass.search(models=models, scoring=multiclass_scorings[0])
     assert str(actual_model) == str(expected_model)
 
 
@@ -409,6 +499,39 @@ def test_model_finder_perform_gridsearch_regression(model_finder_regression, cho
         assert actual_keys == expected_keys
 
 
+def test_model_finder_perform_gridsearch_multiclass(
+        model_finder_multiclass, multiclass_scorings, chosen_classifiers_grid, seed
+):
+    """Testing if gridsearch works and returns correct Models and result dict (in multiclass)."""
+    expected_models = [
+        (DecisionTreeClassifier, {"max_depth": 10, "criterion": "gini", "random_state": seed}),
+        (LogisticRegression, {"C": 1.0, "tol": 0.1, "random_state": seed}),
+        (SVC, {"C": 1.0, "tol": 0.1, "random_state": seed})
+    ]
+    standard_keys = [
+        "iter", "n_resources", "mean_fit_time", "std_fit_time", "mean_score_time", "std_score_time", "params",
+        "split0_train_score", "split1_train_score", "split2_train_score", "split3_train_score", "split4_train_score",
+        "split0_test_score", "split1_test_score", "split2_test_score", "split3_test_score", "split4_test_score",
+        "rank_test_score", "mean_test_score", "mean_train_score", "std_test_score", "std_train_score"
+    ]
+
+    actual_models, actual_results = model_finder_multiclass._perform_gridsearch(
+        chosen_classifiers_grid, multiclass_scorings[0], cv=5
+    )
+
+    assert sorted(actual_models, key=lambda x: x[0].__name__) == expected_models
+
+    # checking if the keys in dicts from actual_results match what is expected
+    assert len(actual_results.keys()) == len(expected_models)
+    for model_tuple in expected_models:
+        ml = model_tuple[0]
+        params = model_tuple[1]
+        ml_specific_keys = ["param_" + param for param in params.keys()] + standard_keys
+        expected_keys = set(ml_specific_keys)
+        actual_keys = set(actual_results[ml].keys())
+        assert actual_keys == expected_keys
+
+
 @pytest.mark.parametrize(
     ("input_dict", "expected_result"),
     (
@@ -483,6 +606,30 @@ def test_model_finder_perform_quicksearch_regression(model_finder_regression, ch
 
     actual_models, actual_results = model_finder_regression._perform_quicksearch(
         chosen_regressors_grid, mean_squared_error
+    )
+
+    assert sorted(actual_models, key=lambda x: x[0].__name__) == expected_models
+    # checking if the keys in dicts from actual_results match what is expected
+    assert len(actual_results.keys()) == len(expected_models)
+    for model_tuple in expected_models:
+        model = model_tuple[0]
+        actual_keys = set(actual_results[model].keys())
+        assert actual_keys == expected_keys
+
+
+def test_model_finder_perform_quicksearch_multiclass(
+        model_finder_multiclass, multiclass_scorings, chosen_classifiers_grid, seed
+):
+    """Testing if quicksearch works and returns correct Models and result dict (in multiclass)."""
+    expected_models = [
+        (DecisionTreeClassifier, 0.948507632718159),
+        (LogisticRegression, 0.8982456140350877),
+        (SVC, 0.6207827260458838),
+    ]
+    expected_keys = {"fit_time", "f1_score_weighted", "params"}
+
+    actual_models, actual_results = model_finder_multiclass._perform_quicksearch(
+        chosen_classifiers_grid, multiclass_scorings[0]
     )
 
     assert sorted(actual_models, key=lambda x: x[0].__name__) == expected_models
@@ -574,6 +721,24 @@ def test_model_finder_quicksearch_regression(
     assert actual_models == expected_models
 
 
+@pytest.mark.parametrize(
+    ("limit", "expected_models"),
+    (
+            (1, [DecisionTreeClassifier]),
+            (2, [DecisionTreeClassifier, LogisticRegression])
+    )
+)
+def test_model_finder_quicksearch_multiclass(
+        model_finder_multiclass, chosen_classifiers_grid, multiclass_scorings, limit, expected_models
+):
+    """Testing if quicksearch correctly chooses only a limited number of found Models based on the limit
+    (in multiclass)."""
+    model_finder_multiclass._quicksearch_limit = limit
+    actual_models = model_finder_multiclass._quicksearch(chosen_classifiers_grid, multiclass_scorings[0])
+
+    assert actual_models == expected_models
+
+
 def test_model_finder_assess_models_classification(model_finder_classification, seed):
     """Testing if assess_model function returns correct Models and result dict (in classification)."""
     models = [
@@ -610,6 +775,27 @@ def test_model_finder_assess_models_regression(model_finder_regression, seed):
     }
 
     actual_models, actual_results = model_finder_regression._assess_models(models, mean_squared_error)
+
+    assert actual_models == expected_models
+    assert len(actual_results.keys()) == len(expected_models)
+
+    for model in actual_results:
+        assert set(actual_results[model].keys()) == set(expected_keys)  # testing keys from act and exp dicts
+
+
+def test_model_finder_assess_models_multiclass(model_finder_multiclass, multiclass_scorings, seed):
+    """Testing if assess_model function returns correct Models and result dict (in multiclass)."""
+    models = [
+        DecisionTreeClassifier(**{"max_depth": 10, "criterion": "entropy", "random_state": seed}),
+        LogisticRegression(**{"C": 1.0, "tol": 0.1, "random_state": seed}),
+        SVC(**{"C": 0.1, "tol": 0.1, "random_state": seed})
+    ]
+    scores = [1.0, 1.0, 0.26888888888888896]
+
+    expected_models = list(zip(models, scores))
+    expected_keys = {"fit_time", "f1_score_weighted", "params", "precision_score_weighted"}
+
+    actual_models, actual_results = model_finder_multiclass._assess_models(models, multiclass_scorings[0])
 
     assert actual_models == expected_models
     assert len(actual_results.keys()) == len(expected_models)
@@ -658,7 +844,7 @@ def test_model_finder_score_model(model_finder_classification, model, expected_r
 
 def test_model_finder_set_model(model_finder_classification, seed):
     """Testing if set_model() function correctly sets chosen Model and corresponding properties.
-    Additionally checks if the set Model wasn't fitter in the process."""
+    Additionally checks if the set Model wasn't fitted in the process."""
     model = LogisticRegression(C=1.0, tol=0.1, random_state=seed)
     mf = model_finder_classification
     mf.scoring_functions = [roc_auc_score, accuracy_score]
@@ -717,6 +903,28 @@ def test_model_finder_regression_search_results_dataframe(model_finder_regressio
 
 
 @pytest.mark.parametrize(
+    ("limit",),
+    (
+            (1,),
+            (2,),
+    )
+)
+def test_model_finder_multiclass_search_results_dataframe(model_finder_multiclass_fitted, limit, seed):
+    """Testing if search_results_dataframe is being correctly filtered out to a provided
+    model_limit (in multiclass)"""
+    models = ["DecisionTreeClassifier", "LogisticRegression", "SVC"]
+    dummy = ["DummyClassifier"]
+    expected_index = models[:limit] + dummy
+    expected_keys = {"fit_time", "params", "f1_score_weighted", "f1_score_micro", "precision_score_weighted",
+                     "accuracy_score", "recall_score_weighted", "balanced_accuracy_score"}
+
+    actual_results = model_finder_multiclass_fitted.search_results(limit)
+
+    assert actual_results.index.tolist() == expected_index
+    assert set(actual_results.columns) == expected_keys
+
+
+@pytest.mark.parametrize(
     ("model", "params", "response_method", "plot_func"),
     (
             (LogisticRegression, {"C": 1.0, "tol": 0.1}, "predict_proba", roc_curve),
@@ -751,11 +959,44 @@ def test_model_finder_classification_plot_curves(
         assert np.array_equal(actual_arr, expected_arr)
 
 
-def test_model_finder_target_proportion(model_finder_classification_fitted):
-    m = model_finder_classification_fitted
-    print(pd.Series(m.y_test).value_counts())
-    print(m.target_proportion())
+@pytest.mark.parametrize(
+    ("input_func", "expected_results"),
+    (
+            ((
+                     lambda y_true, y_score, param_one, param_two: y_true + y_score + param_one + param_two,
+                     {"param_one": 10, "param_two": 20}, "test_func1"
+             ), [33, 4, 5]),
+            (
+                    (lambda y_true, y_score, param_multiply: (y_true + y_score) * param_multiply,
+                     {"param_multiply": 100}, "test_func2"),
+                    [300, 4, 5]
+            )
+    )
+)
+def test_model_finder_multiclass_create_scoring_multiclass(
+        model_finder_multiclass, input_func, expected_results
+):
+    """Testing if creating closures (and adding them to regular scorings) for multiclass scorings works correctly."""
+    y_true = 1
+    y_score = 2
+
+    def plus_one(y_true, y_score):
+        return y_true + y_score + 1
+
+    def plus_two(y_true, y_score):
+        return y_true + y_score + 2
+
+    model_finder_multiclass._scoring_multiclass = [plus_one, plus_two]
+    model_finder_multiclass._scoring_multiclass_parametrized = [input_func]
+
+    scorings = model_finder_multiclass._create_scoring_multiclass()
+    actual_results = []
+    for sc in scorings:
+        actual_results.append(sc(y_true, y_score))
+
+    assert actual_results == expected_results
 
 
-def test_model_finder_multiclass(model_finder_multiclass_fitted):
-    assert True
+def test_model_finder_test_target_proportion(model_finder_classification_fitted):
+    """Testing if proportion of 1s in target (y_test) is calculated correctly (in classification)."""
+    assert model_finder_classification_fitted.test_target_proportion() == 0.6

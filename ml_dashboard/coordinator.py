@@ -150,7 +150,7 @@ class Coordinator:
             )
 
         if len(unique) > 2:
-            # I dont understand why warnings arent showing up in the console
+            # TODO: I dont understand why warnings arent showing up in the console
             warnings.warn("n of unique values in y is > 2, classification_pos_label will be ignored")
             print("WARNING: n of unique values in y is > 2, classification_pos_label will be ignored")
             return None

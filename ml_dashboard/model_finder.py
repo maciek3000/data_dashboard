@@ -222,7 +222,7 @@ class ModelFinder:
     def dataframe_params_name(self):
         return self._params_name
 
-    def target_proportion(self):
+    def test_target_proportion(self):
         # only meaningful in binary classification
         return self.y_test.sum() / self.y_test.shape[0]
 
