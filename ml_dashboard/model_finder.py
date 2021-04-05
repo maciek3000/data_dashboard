@@ -203,7 +203,8 @@ class ModelFinder:
         if self._search_results_dataframe is None:
             raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
 
-        models = self._search_results_dataframe.iloc[:model_limit - 1]
+        # dummy is always included, regardless of model limit
+        models = self._search_results_dataframe.iloc[:model_limit]
         dummy = self._dummy_model_results()
 
         df = pd.concat([models, dummy], axis=0).set_index(self._model_name)
@@ -213,66 +214,13 @@ class ModelFinder:
         return self._params_name
 
     def roc_curves(self, model_limit):
-        if self._search_results is None:
-            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
-
-        curves = []
-
-        models = [tp[0] for tp in self._search_results[:model_limit - 1]] + [self._dummy_model]
-
-        for model in models:
-            try:
-                y_score = model.predict_proba(self.X_test)
-                # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/base.py#L104
-                y_score = y_score[:, 1]
-            except AttributeError:
-                y_score = model.decision_function(self.X_test)
-
-            result = roc_curve(self.y_test, y_score)
-            curves.append((model, result))
-
-        return curves
+        return self._plot_curves(roc_curve, model_limit)
 
     def precision_recall_curves(self, model_limit):
-        if self._search_results is None:
-            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
-
-        curves = []
-
-        models = [tp[0] for tp in self._search_results[:model_limit - 1]] + [self._dummy_model]
-        for model in models:
-            try:
-                y_score = model.predict_proba(self.X_test)
-                # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/base.py#L104
-                y_score = y_score[:, 1]
-            except AttributeError:
-                y_score = model.decision_function(self.X_test)
-
-            result = precision_recall_curve(self.y_test, y_score)
-            curves.append((model, result))
-
-        return curves
+        return self._plot_curves(precision_recall_curve, model_limit)
 
     def det_curves(self, model_limit):
-        if self._search_results is None:
-            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
-
-        curves = []
-
-        models = [tp[0] for tp in self._search_results[:model_limit - 1]] + [self._dummy_model]
-        for model in models:
-            try:
-                y_score = model.predict_proba(self.X_test)
-                # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/base.py#L104
-                y_score = y_score[:, 1]
-            except AttributeError:
-                y_score = model.decision_function(self.X_test)
-
-            result = det_curve(self.y_test, y_score)
-            curves.append((model, result))
-
-        return curves
-
+        return self._plot_curves(det_curve, model_limit)
 
     # ===== # Internal functions
 
@@ -469,3 +417,24 @@ class ModelFinder:
             scorings = [chosen_scoring] + self.scoring_functions
 
         return scorings
+
+    def _plot_curves(self, plot_func, model_limit):
+        if self._search_results is None:
+            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
+
+        curves = []
+
+        models = [tp[0] for tp in self._search_results[:model_limit]]
+        for model in models:
+            try:
+                y_score = model.predict_proba(self.X_test)
+                # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/base.py#L104
+                # predictions for class 1 in a binary setting - second column
+                y_score = y_score[:, 1]
+            except AttributeError:
+                y_score = model.decision_function(self.X_test)
+
+            result = plot_func(self.y_test, y_score)
+            curves.append((model, result))
+
+        return curves

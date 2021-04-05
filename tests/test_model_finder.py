@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.linear_model import Ridge, PassiveAggressiveClassifier, LogisticRegression, RidgeClassifier
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.svm import SVC, SVR, LinearSVR
-from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accuracy_score
+from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accuracy_score, roc_curve, det_curve
 from sklearn.exceptions import NotFittedError
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
@@ -680,6 +680,8 @@ def test_model_finder_set_model(model_finder_classification, seed):
     )
 )
 def test_model_finder_classification_search_results_dataframe(model_finder_classification_fitted, limit, seed):
+    """Testing if search_results_dataframe is being correctly filtered out to a provided
+    model_limit (in classification)"""
     models = ["DecisionTreeClassifier", "SVC", "LogisticRegression"]
     dummy = ["DummyClassifier"]
     expected_index = models[:limit] + dummy
@@ -699,6 +701,8 @@ def test_model_finder_classification_search_results_dataframe(model_finder_class
     )
 )
 def test_model_finder_regression_search_results_dataframe(model_finder_regression_fitted, limit, seed):
+    """Testing if search_results_dataframe is being correctly filtered out to a provided
+    model_limit (in regression)"""
     models = ["SVR", "Ridge", "DecisionTreeRegressor"]
     dummy = ["DummyRegressor"]
     expected_index = models[:limit] + dummy
@@ -712,10 +716,36 @@ def test_model_finder_regression_search_results_dataframe(model_finder_regressio
     assert set(actual_results.columns) == expected_keys
 
 
-def test_model_finder_roc_curves(model_finder_classification_fitted):
-    curves = model_finder_classification_fitted.roc_curves(4)
-    for model, curve in curves:
-        print(model)
-        print(curve)
+@pytest.mark.parametrize(
+    ("model", "params", "response_method", "plot_func"),
+    (
+            (LogisticRegression, {"C": 1.0, "tol": 0.1}, "predict_proba", roc_curve),
+            (SVC, {"C": 100.0}, "decision_function", roc_curve),
+            (LogisticRegression, {"C": 100.0, "tol": 10.0}, "predict_proba", det_curve),
+            (SVC, {"C": 1.0, "tol": 100.0}, "decision_function", det_curve)
+    )
+)
+def test_model_finder_classification_plot_curves(
+        model_finder_classification_fitted, split_dataset_categorical, seed, model, params, response_method, plot_func
+):
+    """Testing if _plot_curves correctly assesses prediction probabilities and calculates the results based on the
+    provided plot_func."""
 
-    assert False
+    params["random_state"] = seed
+    clf = model(**params)
+    X_train, X_test, y_train, y_test = split_dataset_categorical
+    clf.fit(X_train, y_train)
+    y_scores = getattr(clf, response_method)(X_test)
+
+    if response_method == "predict_proba":
+        y_scores = y_scores[:, 1]
+
+    expected_results = plot_func(y_test, y_scores)
+
+    mock_search_results = [(clf,), ]
+    model_finder_classification_fitted._search_results = mock_search_results
+    limit = None
+    actual_results = model_finder_classification_fitted._plot_curves(plot_func, limit)[0][1]
+
+    for actual_arr, expected_arr in zip(actual_results, expected_results):
+        assert np.array_equal(actual_arr, expected_arr)

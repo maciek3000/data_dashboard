@@ -47,7 +47,7 @@ class Output:
     _element_with_description_class = "elem-w-desc"
 
     # view specific properties
-    _view_models_model_limit = 4
+    _view_models_model_limit = 3
 
     def __init__(self, root_path, output_directory, package_name, features, analyzer, transformer, model_finder):
 
