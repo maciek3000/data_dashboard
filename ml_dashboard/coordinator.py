@@ -43,7 +43,7 @@ class Coordinator:
         self.X = X.copy()
         self.y = y.copy()
 
-        if classification_pos_label:
+        if classification_pos_label is not None:
             classification_pos_label = self._assert_classification_pos_label(classification_pos_label)
 
         self.transformed_X = None
@@ -146,11 +146,13 @@ class Coordinator:
         unique = set(np.unique(self.y))
         if label not in unique:
             raise ValueError(
-                "label '{label}' not in unique values of y: {values}".format(label=label, values=", ".join(unique))
+                "label '{label}' not in unique values of y: {values}".format(label=label, values=str(unique))
             )
 
         if len(unique) > 2:
+            # I dont understand why warnings arent showing up in the console
             warnings.warn("n of unique values in y is > 2, classification_pos_label will be ignored")
+            print("WARNING: n of unique values in y is > 2, classification_pos_label will be ignored")
             return None
         else:
             return label

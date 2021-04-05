@@ -333,6 +333,19 @@ def data_regression(data_classification_balanced):
 
 
 @pytest.fixture
+def data_multiclass(data_classification_balanced):
+    X = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1)
+    y = pd.Series(np.where(
+        X["Product"].isin(["Apples", "Oranges", "Bananas"]), "Fruits",
+        np.where(
+            X["Product"].isin(["Honey", "Cookies"]), "Sweets",
+            "Dairy")
+    ), name="Product Type")
+    y = y.fillna("Fruits")
+    return X, y
+
+
+@pytest.fixture
 def transformer_classification(categorical_features, numerical_features, seed):
     categorical_features.remove("Target")
     tr = Transformer(
@@ -351,6 +364,17 @@ def transformer_regression(categorical_features, numerical_features, seed):
         categorical_features=categorical_features,
         numerical_features=numerical_features,
         target_type="Numerical",
+        random_state=seed
+    )
+    return tr
+
+
+@pytest.fixture
+def transformer_multiclass(categorical_features, numerical_features, seed):
+    tr = Transformer(
+        categorical_features=categorical_features,
+        numerical_features=numerical_features,
+        target_type="Categorical",
         random_state=seed
     )
     return tr
@@ -377,6 +401,16 @@ def transformed_regression_data(data_regression, transformer_regression):
 
 
 @pytest.fixture
+def transformed_multiclass_data(data_multiclass, transformer_multiclass):
+    X = data_multiclass[0]
+    y = data_multiclass[1]
+    X = X.drop(["Date"], axis=1)
+    transformer_multiclass.fit(X)
+    transformer_multiclass.fit_y(y)
+    return transformer_multiclass.transform(X), transformer_multiclass.transform_y(y)
+
+
+@pytest.fixture
 def split_dataset_categorical(data_classification_balanced, transformer_classification, seed):
     X = data_classification_balanced[0]
     y = data_classification_balanced[1]
@@ -395,6 +429,18 @@ def split_dataset_numerical(data_regression, transformer_regression, seed):
     X = X.drop(["Date"], axis=1)
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, random_state=seed)
     t = transformer_regression
+    t.fit(X_train)
+    t.fit_y(y_train)
+    return t.transform(X_train), t.transform(X_test), t.transform_y(y_train), t.transform_y(y_test)
+
+
+@pytest.fixture
+def split_dataset_multiclass(data_multiclass, transformer_multiclass, seed):
+    X = data_multiclass[0]
+    y = data_multiclass[1]
+    X = X.drop(["Date"], axis=1)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, random_state=seed)
+    t = transformer_multiclass
     t.fit(X_train)
     t.fit_y(y_train)
     return t.transform(X_train), t.transform(X_test), t.transform_y(y_train), t.transform_y(y_test)
@@ -440,7 +486,8 @@ def chosen_regressors_grid():
 
 
 @pytest.fixture
-def model_finder_classification(transformed_classification_data, split_dataset_categorical, chosen_classifiers_grid, seed):
+def model_finder_classification(transformed_classification_data, split_dataset_categorical, chosen_classifiers_grid,
+                                seed):
     X = transformed_classification_data[0]
     y = transformed_classification_data[1]
     X_train, X_test, y_train, y_test = split_dataset_categorical
@@ -480,6 +527,26 @@ def model_finder_regression(transformed_regression_data, split_dataset_numerical
 
 
 @pytest.fixture
+def model_finder_multiclass(transformed_multiclass_data, split_dataset_multiclass, chosen_classifiers_grid, seed):
+    X = transformed_multiclass_data[0]
+    y = transformed_multiclass_data[1]
+    X_train, X_test, y_train, y_test = split_dataset_multiclass
+    mf = ModelFinder(
+        X=X,
+        y=y,
+        X_train=X_train,
+        X_test=X_test,
+        y_train=y_train,
+        y_test=y_test,
+        target_type="categorical",
+        random_state=seed
+    )
+
+    mf.default_models = chosen_classifiers_grid
+    return mf
+
+
+@pytest.fixture
 def model_finder_classification_fitted(model_finder_classification):
     model_finder_classification.search_and_fit(mode="quick")
     return model_finder_classification
@@ -489,6 +556,12 @@ def model_finder_classification_fitted(model_finder_classification):
 def model_finder_regression_fitted(model_finder_regression):
     model_finder_regression.search_and_fit(mode="quick")
     return model_finder_regression
+
+
+@pytest.fixture
+def model_finder_multiclass_fitted(model_finder_multiclass):
+    model_finder_multiclass.search_and_fit(mode="quick")
+    return model_finder_multiclass
 
 
 @pytest.fixture

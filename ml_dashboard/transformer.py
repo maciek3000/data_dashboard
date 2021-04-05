@@ -2,6 +2,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, QuantileTransformer, LabelEncoder, FunctionTransformer
 from sklearn.impute import SimpleImputer
+import numpy as np
 
 
 class Transformer:
@@ -83,8 +84,8 @@ class Transformer:
 
     def _create_preprocessor_y(self):
         if self.target_type == "Categorical":
-            if self.classification_pos_label:
-                transformer = FunctionTransformer(lambda x: 1 if x == self.classification_pos_label else 0)
+            if self.classification_pos_label is not None:
+                transformer = FunctionTransformer(lambda x: np.where(x == self.classification_pos_label, 1, 0))
             else:
                 transformer = LabelEncoder()
         elif self.target_type == "Numerical":

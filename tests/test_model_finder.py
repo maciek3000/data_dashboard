@@ -755,3 +755,7 @@ def test_model_finder_target_proportion(model_finder_classification_fitted):
     m = model_finder_classification_fitted
     print(pd.Series(m.y_test).value_counts())
     print(m.target_proportion())
+
+
+def test_model_finder_multiclass(model_finder_multiclass_fitted):
+    assert True

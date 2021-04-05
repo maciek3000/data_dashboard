@@ -103,6 +103,30 @@ def test_transformer_transform_y_numerical(
 
     assert np.allclose(actual_result, expected_result, equal_nan=True)
 
+@pytest.mark.parametrize(
+    ("feature", "classification_pos_label", ),
+    (
+            ("Sex", "Female"),
+            ("Sex", "Male"),
+            ("Target", 0),
+            ("Product", "Apples"),
+            ("Product", "Potato")
+    )
+)
+def test_transformer_transform_y_classification_pos_label(
+        data_classification_balanced, categorical_features, numerical_features, feature, classification_pos_label,
+):
+    """Testing if transformer correctly changes mappings of y when explicit classification_pos_label is provided."""
+    df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1)
+    expected_result = df[feature].apply(lambda x: 1 if x == classification_pos_label else 0)
+    print(df[feature])
+    tr = Transformer(
+        categorical_features, numerical_features, "Categorical", classification_pos_label=classification_pos_label
+    )
+    actual_result = tr.fit_transform_y(df[feature])
+    print(actual_result)
+    assert np.array_equal(actual_result, expected_result)
+
 
 @pytest.mark.parametrize(
     ("feature_name", "csr_matrix_flag"),
@@ -151,7 +175,7 @@ def test_transformer_transform_X_numerical(data_classification_balanced, feature
     feature = QuantileTransformer(output_distribution="normal", random_state=random_state ).fit_transform(feature.to_numpy().reshape(-1, 1))
     expected_result = StandardScaler().fit_transform(feature)
 
-    tr = tr = Transformer([], [feature_name], "Categorical", random_state=random_state)
+    tr = Transformer([], [feature_name], "Categorical", random_state=random_state)
     actual_result = tr.fit_transform(pd.DataFrame(df[feature_name]))
 
     assert np.allclose(actual_result, expected_result)
