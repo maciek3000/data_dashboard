@@ -87,7 +87,6 @@ class Output:
             js_path=os.path.join(self.static_path, self._view_models_js),
             params_name=self.model_finder.dataframe_params_name(),
             model_with_description_class=self._element_with_description_class,
-            model_limit=self._view_models_model_limit
         )
 
         self.plot_design = PlotDesign()
@@ -152,7 +151,7 @@ class Output:
             categorical_df=self.analyzer.categorical_describe_df(),
             unused_features=self.analyzer.unused_features(),
             head_df=self.analyzer.df_head(),
-            pairplot=generated_pairplot, #self.analyzer.features_pairplot_static(),
+            pairplot=generated_pairplot,
             mapping=self.analyzer.features_mapping(),
             descriptions=self.analyzer.features_descriptions()
         )
@@ -161,8 +160,8 @@ class Output:
             base_css=base_css,
             creation_date=created_on,
             hyperlinks=hyperlinks,
-            histogram=generated_infogrid,  # self.analyzer.infogrid(first_feature, self._element_with_description_class),
-            scatterplot=generated_scattergrid,  # self.analyzer.scattergrid(first_feature, self._element_with_description_class),
+            histogram=generated_infogrid,
+            scatterplot=generated_scattergrid,
             feature_list=feature_list,
             first_feature=first_feature
         )

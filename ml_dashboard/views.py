@@ -295,16 +295,15 @@ class ModelsView(BaseView):
 
     # CSS
     _table_first_row = "first-row"
-    _table_other_row = "other-row"
+    _table_middle_row = "other-row"
 
-    def __init__(self, template, css_path, js_path, params_name, model_with_description_class, model_limit):
+    def __init__(self, template, css_path, js_path, params_name, model_with_description_class):
         super().__init__()
         self.template = template
         self.css = css_path
         self.js = js_path
         self.params_name = params_name
         self.model_with_description_class = model_with_description_class
-        # self.model_limit = model_limit
 
     def render(self, base_css, creation_date, hyperlinks, model_results, models_plot):
         output = {}
@@ -344,7 +343,7 @@ class ModelsView(BaseView):
         rows = table.select("table tbody tr")
         rows[0]["class"] = self._table_first_row
         for row in rows[1:-1]:
-            row["class"] = self._table_other_row
+            row["class"] = self._table_middle_row
 
         output = str(table)
 

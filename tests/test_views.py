@@ -2,7 +2,7 @@ import pytest
 from bs4 import BeautifulSoup
 import pandas as pd
 
-from ml_dashboard.views import Overview, FeatureView, append_description, series_to_dict
+from ml_dashboard.views import Overview, FeatureView, ModelsView, append_description, series_to_dict
 
 
 @pytest.mark.parametrize(
@@ -18,12 +18,34 @@ from ml_dashboard.views import Overview, FeatureView, append_description, series
             (6, "Random Flag", "<span>Random Flag</span>")
     )
 )
-def test_overview_append_descriptions(html_test_table, header_index, description, expected_html):
+def test_append_descriptions(html_test_table, header_index, description, expected_html):
     """Testing if appending description (wrapped in HTML tags) to the element works properly."""
     html_table = BeautifulSoup(html_test_table, "html.parser")
     actual_html = str(append_description(description, html_table))
 
     assert actual_html == expected_html
+
+
+@pytest.mark.parametrize(
+    ("param_series", "expected_result"),
+    (
+            (pd.Series({"1": {'C': 1.0, 'alpha': 0.001}, "2": {'max_depth': 10.0, 'criterion': 'gini'}}),
+             {"1": "'C': 1.0\n'alpha': 0.001", "2": "'max_depth': 10.0\n'criterion': 'gini'"}),
+            (pd.Series({
+                "test1": {"C": 1.0, "alpha": 0.001, "depth": "10"},
+                "test2": {"aa": 1.0, "bb": "cc", "test": "test"},
+                "test3": {"test1": 10.0, "C": 0.001, "alpha": 1000.0}
+            }),
+             {
+                 "test1": "'C': 1.0\n'alpha': 0.001\n'depth': '10'",
+                 "test2": "'aa': 1.0\n'bb': 'cc'\n'test': 'test'",
+                 "test3": "'test1': 10.0\n'C': 0.001\n'alpha': 1000.0"
+             })
+    )
+)
+def test_series_to_dict(param_series, expected_result):
+    actual_result = series_to_dict(param_series)
+    assert actual_result == expected_result
 
 
 @pytest.mark.parametrize(
@@ -196,22 +218,45 @@ def test_feature_view_create_features_menu(input_features):
 
 
 @pytest.mark.parametrize(
-    ("param_series", "expected_result"),
+    ("input_df", "expected_row_number"),
     (
-            (pd.Series({"1": {'C': 1.0, 'alpha': 0.001}, "2": {'max_depth': 10.0, 'criterion': 'gini'}}),
-             {"1": "'C': 1.0\n'alpha': 0.001", "2": "'max_depth': 10.0\n'criterion': 'gini'"}),
-            (pd.Series({
-                "test1": {"C": 1.0, "alpha": 0.001, "depth": "10"},
-                "test2": {"aa": 1.0, "bb": "cc", "test": "test"},
-                "test3": {"test1": 10.0, "C": 0.001, "alpha": 1000.0}
-            }),
-             {
-                 "test1": "'C': 1.0\n'alpha': 0.001\n'depth': '10'",
-                 "test2": "'aa': 1.0\n'bb': 'cc'\n'test': 'test'",
-                 "test3": "'test1': 10.0\n'C': 0.001\n'alpha': 1000.0"
-             })
+            (
+                    pd.DataFrame(
+                        data={
+                            "col1": [1, 2, 3, 4, 5],
+                            "col2": [6, 7, 8, 9, 10],
+                            "params": [{1: 1}, {2: 2}, {3: 3}, {4: 4}, {5: 5}]
+                        },
+                        index=["index1", "index2", "index3", "index4", "index5"]
+                    ), 5),
+            (
+                    pd.DataFrame(
+                        data={
+                            "col1": [0.1, 0.2],
+                            "col2": [0.6, 0.7],
+                            "col3": ["test", "test"],
+                            "col4": [True, False],
+                            "params": [{"A": "a"}, {"B": "b"}]
+                        },
+                        index=["index1", "index2"]
+                    ),
+                    2
+            )
     )
 )
-def test_models_view_create_parameters_descriptions_str(param_series, expected_result):
-    actual_result = series_to_dict(param_series)
-    assert actual_result == expected_result
+def test_model_view_results_table(input_df, expected_row_number):
+    """Testing if html output produced by results_table method properly assigns css classes to table rows."""
+    mv = ModelsView("template", "test_css", "test_js", "params", "test-class")
+    first_row_class = mv._table_first_row
+    middle_row_class = mv._table_middle_row
+
+    actual_result = mv._models_result_table(input_df)
+    table = BeautifulSoup(actual_result, "html.parser")
+    rows = table.select("table tbody tr")
+
+    assert len(rows) == expected_row_number
+    assert rows[0]["class"] == [first_row_class]
+    for row in rows[1:-1]:
+        assert row["class"] == [middle_row_class]
+    with pytest.raises(KeyError):
+        _ = rows[-1]["class"]
