@@ -66,12 +66,13 @@ tbody tr:hover {
 }
 
 .section_title {
-    font-size: 1.1em;
-    color: black;
+    font-size: 1.3em;
+    color: var(--normal-text-color);
     margin-bottom: 16px;
     border-style: solid;
-    border-width: 0px 0px 1px 0px;
+    border-width: 0px 0px 2px 0px;
     border-color: var(--light-gray);
+    font-weight: bold;
 }
 
 .pairplot {

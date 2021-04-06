@@ -43,12 +43,17 @@ def stylize(force=False):
             p.axis.axis_label_text_color = text_color
             p.axis.axis_label_text_font_style = "normal"
 
+            p.xaxis.axis_label_text_font_size = "16px"
+            p.xaxis.major_label_text_font_size = "14px"
+            p.yaxis.axis_label_text_font_size = "16px"
+            p.yaxis.major_label_text_font_size = "14px"
+
             p.xgrid.grid_line_color = None
             p.ygrid.grid_line_color = None
 
             p.title.text_font = "Lato"
             p.title.text_color = text_color
-            p.title.text_font_size = "16px"
+            p.title.text_font_size = "20px"
 
             return p
 
@@ -741,6 +746,7 @@ class ScatterPlotGrid(MainGrid):
 
 
 class ModelsComparisonPlot:
+
     _roc_plot_name = "ROC Curve"
     _precision_recall_plot_name = "Precision Recall Plot"
     _det_plot_name = "Detection Error Tradeoff"
@@ -762,8 +768,10 @@ class ModelsComparisonPlot:
     def _roc_plot(self, roc_curves):
         p = default_figure(
             {
-                "x_range": (-0.01, 1.01),
-                "y_range": (-0.01, 1.01)
+                "x_range": (-0.01, 1.1),
+                "y_range": (-0.01, 1.1),
+                "tools": "pan,wheel_zoom,box_zoom,reset",
+                "toolbar_location": "right"
             }
         )
 
@@ -771,7 +779,12 @@ class ModelsComparisonPlot:
         p.legend.location = "bottom_right"
 
         p.line([0, 1], [0, 1], line_dash="dashed", line_width=1,
-               color=self.plot_design.models_dummy_color, legend_label="Random Baseline", muted_alpha=0.2)
+               color=self.plot_design.models_dummy_color, legend_label="Random Baseline", muted_alpha=0.5)
+
+        p.xaxis.axis_label = "False Positive Rate"
+        p.yaxis.axis_label = "True Positive Rate"
+
+        p.toolbar.autohide = True
 
         return p
 
@@ -779,8 +792,10 @@ class ModelsComparisonPlot:
     def _precision_recall_plot(self, precision_recall_curves, target_proportion):
         p = default_figure(
             {
-                "x_range": (-0.01, 1.01),
-                "y_range": (-0.01, 1.01)
+                "x_range": (-0.01, 1.1),
+                "y_range": (-0.01, 1.1),
+                "tools": "pan,wheel_zoom,box_zoom,reset",
+                "toolbar_location": "right"
             }
         )
 
@@ -789,7 +804,12 @@ class ModelsComparisonPlot:
         p.legend.location = "bottom_left"
 
         p.line([0, 1], [target_proportion, target_proportion], line_dash="dashed", line_width=1,
-               color=self.plot_design.models_dummy_color, legend_label="Random Baseline", muted_alpha=0.2)
+               color=self.plot_design.models_dummy_color, legend_label="Random Baseline", muted_alpha=0.5)
+
+        p.xaxis.axis_label = "Recall"
+        p.yaxis.axis_label = "Precision"
+
+        p.toolbar.autohide = True
 
         return p
 
@@ -799,7 +819,9 @@ class ModelsComparisonPlot:
         # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/det_curve.py#L100
         p = default_figure({
             "x_range": (-3, 3),
-            "y_range": (-3, 3)
+            "y_range": (-3, 3),
+            "tools": "pan,wheel_zoom,box_zoom,reset",
+            "toolbar_location": "right"
         })
 
         new_curves = []
@@ -811,6 +833,8 @@ class ModelsComparisonPlot:
         self._add_step_lines(p, new_curves)
         p.legend.location = "top_right"
 
+        # 0.4999 was included instead of 0.5 as after normal transformation, 0.5 becomes 0.0. FuncTickFormatter would
+        # then try to access dictionary of ticks with a key of 0, which JS evaluated to undefined and error was raised.
         ticks = [0.001, 0.01, 0.05, 0.20, 0.4999, 0.80, 0.95, 0.99, 0.999]
         tick_location = scipy.stats.norm.ppf(ticks)
         mapper = {norm_tick: tick for norm_tick, tick in zip(tick_location, ticks)}
@@ -825,12 +849,20 @@ class ModelsComparisonPlot:
         p.xaxis.formatter = formatter
         p.yaxis.formatter = formatter
 
+        p.xaxis.axis_label = "False Positive Rate"
+        p.yaxis.axis_label = "False Negative Rate"
+
+        # p.xaxis.major_label_text_font_size = "18px"
+        # p.xaxis.axis_label_text_font_size = "24px"
+
+        p.toolbar.autohide = True
+
         return p
 
     def _add_step_lines(self, plot, model_values_tuple):
 
         new_tuples = list(reversed(model_values_tuple))
-        lw = 4
+        lw = 5
 
         # models are plotted in reverse order (without the first one)
         for model, values in new_tuples[:-1]:
@@ -843,44 +875,3 @@ class ModelsComparisonPlot:
                   line_color=self.plot_design.models_color_tuple[0], muted_alpha=0.2)
 
         plot.legend.click_policy = "mute"
-
-    # def _det_plot(self, det_curves):
-    #
-    #     p = default_figure()
-    #
-    #     lw = 4
-    #
-    #     new_curves = det_curves
-    #     # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/det_curve.py#L100
-    #     new_curves = []
-    #     for model, curve in det_curves:
-    #         f = scipy.stats.norm.ppf
-    #         new_tuple = (f(curve[0]), f(curve[1]))
-    #         new_curves.append((model, new_tuple))
-    #
-    #     # dummy model is first plotted
-    #     dummy_model, dummy_values = new_curves[-1]
-    #     p.step(dummy_values[0], dummy_values[1], line_width=lw - 1, legend_label=obj_name(dummy_model),
-    #            line_color=self.plot_design.models_dummy_color, muted_alpha=0.2)
-    #
-    #     # models in between are plotted in reverse order
-    #     for model, values in new_curves[-2:0:-1]:
-    #         p.step(values[0], values[1], line_width=lw - 1, legend_label=obj_name(model),
-    #                line_color=self.plot_design.models_color_tuple[1], muted_alpha=0.2)
-    #
-    #     # at last, the best model is plotted so that it's line is on the top
-    #     first_model, first_values = new_curves[0]
-    #     p.step(first_values[0], first_values[1], line_width=lw, legend_label=obj_name(first_model),
-    #            line_color=self.plot_design.models_color_tuple[0], muted_alpha=0.2)
-    #
-    #     # p.legend.location = "bottom_right"
-    #     p.legend.click_policy = "mute"
-    #
-    #     ticks = [0.001, 0.01, 0.05, 0.20, 0.5, 0.80, 0.95, 0.99, 0.999]
-    #     tick_locations = ticks
-    #     # tick_locations = scipy.stats.norm.ppf(ticks)
-    #
-    #     # p.xaxis.ticker = tick_locations
-    #     # p.yaxis.ticker = tick_locations
-    #
-    #     return p

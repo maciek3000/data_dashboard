@@ -100,14 +100,31 @@
 
 .infogrid-row {
     width: 100% !important;
+    border-top: 1px solid var(--light-gray);
 }
 
 .bk.info-div-left-pane {
     width: 23% !important;
+    border-right: 1px solid var(--light-gray);
 }
 
 .infogrid-row > div:nth-child(2) {
-    left: 35% !important;
+    left: 30% !important;
+}
+
+@media only screen and (max-width: 1600px) {
+    .bk.infogrid-row {
+        display: flex !important;;
+        flex-direction: column !important;
+    }
+
+    .bk.info-div-left-pane {
+        width: 100% !important;
+    }
+
+    .infogrid-row > div:nth-child(2) {
+
+    }
 }
 
 .info-div-content div {

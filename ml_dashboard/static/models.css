@@ -5,18 +5,49 @@
     padding-top: 36px;
 }
 
-.models-table {
-    width: 40%;
+.subtitle {
+    font-size: 1.4em;
+    border-bottom: 2px solid var(--light-gray);
+    margin-bottom: 36px;
+    color: var(--normal-text-color);
+    font-weight: bold;
 }
 
-.models-plots {
-    margin-left: 154px;
+.models-left {
+    width: 60%;
+    height: auto;
+    margin-right: 48px;
+}
+
+@media screen and (max-width: 1620px) {
+    .body {
+        margin-left: 16px;
+    }
+
+    .models-comparison {
+        flex-direction: column;
+    }
+
+    .models-left {
+        margin-bottom: 48px;
+        width: 90%;
+        margin-right: none;
+    }
+
+}
+
+.models-right {
+
+}
+
+.models-left-upper {
+    margin-bottom: 48px;
 }
 
 table {
     border-collapse: collapse;
     border: 0px solid black;
-    font-size: 1em;
+    font-size: 1.1em;
     width: 100%;
 }
 

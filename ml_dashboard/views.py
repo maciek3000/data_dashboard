@@ -289,13 +289,22 @@ class ModelsView(BaseView):
 
     _models_css = "models_css"
     _models_js = "models_js"
-    _models_table = "models_table"
-    _models_plot_script = "models_plot_script"
-    _models_plot = "models_plot"
+
+    _models_table = "models_left_upper"
+
+    _models_plot_title = "models_right_title"
+    _models_plot = "models_right_plot"
+    _models_plot_script = "models_right_plot_script"
+
+    _models_confusion_matrix_title = "models_left_bottom_title"
+    _models_confusion_matrix = "models_left_bottom"
 
     # CSS
     _table_first_row = "first-row"
     _table_middle_row = "other-row"
+
+    _models_plot_title_text = "Result Curves Comparison"
+    _models_confusion_matrix_title_text = "Confusion Matrices"
 
     def __init__(self, template, css_path, js_path, params_name, model_with_description_class):
         super().__init__()
@@ -317,8 +326,12 @@ class ModelsView(BaseView):
         output[self._models_table] = self._models_result_table(model_results)
 
         models_plot_script, models_plot_div = components(models_plot)
+        output[self._models_plot_title] = self._models_plot_title_text
         output[self._models_plot_script] = models_plot_script
         output[self._models_plot] = models_plot_div
+
+        output[self._models_confusion_matrix_title] = self._models_confusion_matrix_title_text
+        output[self._models_confusion_matrix] = "Lorem Ipsum Test"
 
         return self.template.render(**output)
 

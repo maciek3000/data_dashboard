@@ -33,4 +33,4 @@ class PlotDesign:
         ]
 
         self.models_color_tuple = (self.contrary_color_tints[0], self.base_color_tints[4])
-        self.models_dummy_color = "#DCDCDC"
+        self.models_dummy_color = "#ABABAB"
