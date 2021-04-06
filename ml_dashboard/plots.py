@@ -774,17 +774,14 @@ class ModelsComparisonPlot:
                 "toolbar_location": "right"
             }
         )
+        self._default_models_lines(p, roc_curves)
 
-        self._add_step_lines(p, roc_curves)
         p.legend.location = "bottom_right"
-
         p.line([0, 1], [0, 1], line_dash="dashed", line_width=1,
                color=self.plot_design.models_dummy_color, legend_label="Random Baseline", muted_alpha=0.5)
 
         p.xaxis.axis_label = "False Positive Rate"
         p.yaxis.axis_label = "True Positive Rate"
-
-        p.toolbar.autohide = True
 
         return p
 
@@ -800,16 +797,14 @@ class ModelsComparisonPlot:
         )
 
         curves = [(model, (values[1], values[0], values[2])) for model, values in precision_recall_curves]
-        self._add_step_lines(p, curves)
-        p.legend.location = "bottom_left"
+        self._default_models_lines(p, curves)
 
+        p.legend.location = "bottom_left"
         p.line([0, 1], [target_proportion, target_proportion], line_dash="dashed", line_width=1,
                color=self.plot_design.models_dummy_color, legend_label="Random Baseline", muted_alpha=0.5)
 
         p.xaxis.axis_label = "Recall"
         p.yaxis.axis_label = "Precision"
-
-        p.toolbar.autohide = True
 
         return p
 
@@ -830,7 +825,7 @@ class ModelsComparisonPlot:
             new_tuple = (f(curve[0]), f(curve[1]))
             new_curves.append((model, new_tuple))
 
-        self._add_step_lines(p, new_curves)
+        self._default_models_lines(p, new_curves)
         p.legend.location = "top_right"
 
         # 0.4999 was included instead of 0.5 as after normal transformation, 0.5 becomes 0.0. FuncTickFormatter would
@@ -852,11 +847,9 @@ class ModelsComparisonPlot:
         p.xaxis.axis_label = "False Positive Rate"
         p.yaxis.axis_label = "False Negative Rate"
 
-        p.toolbar.autohide = True
-
         return p
 
-    def _add_step_lines(self, plot, model_values_tuple):
+    def _default_models_lines(self, plot, model_values_tuple):
 
         new_tuples = list(reversed(model_values_tuple))
         lw = 5
@@ -872,3 +865,4 @@ class ModelsComparisonPlot:
                   line_color=self.plot_design.models_color_tuple[0], muted_alpha=0.2)
 
         plot.legend.click_policy = "mute"
+        plot.toolbar.autohide = True

@@ -1,6 +1,8 @@
 import pytest
 from bs4 import BeautifulSoup
 import pandas as pd
+import numpy as np
+from sklearn.linear_model import LinearRegression, SGDClassifier, SGDRegressor, Lasso
 
 from ml_dashboard.views import Overview, FeatureView, ModelsView, append_description, series_to_dict
 
@@ -260,3 +262,67 @@ def test_model_view_results_table(input_df, expected_row_number):
         assert row["class"] == [middle_row_class]
     with pytest.raises(KeyError):
         _ = rows[-1]["class"]
+
+
+@pytest.mark.parametrize(
+    ("input_array", "expected_string"),
+    (
+            (np.array(([1, 0], [2, 3])), "<tr><th>Actual Negative</th><td>1</td><td>0</td></tr>" \
+                                         "<tr><th>Actual Positive</th><td>2</td><td>3</td></tr>"
+             ),
+
+            (np.array(([15, 20], [100, 80])), "<tr><th>Actual Negative</th><td>15</td><td>20</td></tr>" \
+                                              "<tr><th>Actual Positive</th><td>100</td><td>80</td></tr>")
+    )
+)
+def test_model_view_single_matrix_table(input_array, expected_string):
+    """Testing if confusion matrix html table is created correctly."""
+    expected_class = "test-class"
+    mv = ModelsView("template", "test_css", "test_js", "params", "test-class")
+    mv._confusion_matrices_single_matrix_table = expected_class
+    actual_result = mv._single_confusion_matrix_html(input_array)
+
+    assert expected_string in actual_result
+    assert expected_class in actual_result
+
+
+@pytest.mark.parametrize(
+    ("input_tuple",),
+    (
+            ([
+                    (Lasso(), np.array(([1, 2], [3, 4]))),
+            ],),
+            ([
+                    (Lasso(), np.array(([10, 20], [40, 50]))),
+                    (LinearRegression(), np.array(([70, 70], [1, 1]))),
+                    (SGDRegressor(), np.array(([0, 0], [0, 0]))),
+                    (SGDClassifier(), np.array(([1, 1,], [1, 1])))
+            ],),
+    )
+)
+def test_model_view_confusion_matrices(input_tuple):
+    """Testing if the confusion matrices html is created correctly and classes are assigned to elements
+    appropriately."""
+    first_model = "test-first-model"
+    other_model = "test-other-model"
+    title_class = "test-title-class"
+    matrix_class = "test-matrix-class"
+    mv = ModelsView("template", "test_css", "test_js", "params", "test-class")
+
+    mv._first_model_class = first_model
+    mv._other_model_class = other_model
+    mv._confusion_matrices_single_matrix_title = title_class
+    mv._confusion_matrices_single_matrix = matrix_class
+
+    actual_results = mv._confusion_matrices(input_tuple)
+
+    parsed = BeautifulSoup(actual_results, "html.parser")
+    titles = parsed.select("." + title_class)
+    matrices = parsed.select("." + matrix_class)
+
+    for actual_title, expected_tuple in zip(titles, input_tuple):
+        assert actual_title.string == expected_tuple[0].__class__.__name__
+
+    assert first_model in matrices[0]["class"]
+    for matrix in matrices[1:]:
+        assert other_model in matrix["class"]

@@ -308,22 +308,21 @@ class ModelsView(BaseView):
     _confusion_matrices_single_matrix_title = "confusion-matrix-title"
     _confusion_matrices_single_matrix_table = "confusion-matrix-table"
 
-
     _models_plot_title_text = "Result Curves Comparison"
     _models_confusion_matrix_title_text = "Confusion Matrices"
 
     # confusion matrices html
     _single_confusion_matrix_html_template = """
-        <table>
-        <thead>
-        <tr><th></th><th>Predicted Negative</th><th>Predicted Positive</th></tr>
-        </thead>
-        <tbody>
-        <tr><th>Actual Negative</th><td>{tn}</td><td>{fp}</td></tr>
-        <tr><th>Actual Positive</th><td>{fn}</td><td>{tp}</td></tr>
-        </tbody>
-        </table>
-    """
+<table>
+<thead>
+<tr><th></th><th>Predicted Negative</th><th>Predicted Positive</th></tr>
+</thead>
+<tbody>
+<tr><th>Actual Negative</th><td>{tn}</td><td>{fp}</td></tr>
+<tr><th>Actual Positive</th><td>{fn}</td><td>{tp}</td></tr>
+</tbody>
+</table>
+"""
 
 
     def __init__(self, template, css_path, js_path, params_name, model_with_description_class):
@@ -405,6 +404,6 @@ class ModelsView(BaseView):
 
     def _single_confusion_matrix_html(self, confusion_array):
         tn, fp, fn, tp = confusion_array.ravel()
-        table = self._single_confusion_matrix_html_template.format(tn=tn, fp=fp, fn=fn, tp=tp)
+        table = self._single_confusion_matrix_html_template.format(tn=tn, fp=fp, fn=fn, tp=tp).replace("\n", "")
         output = "<div class='{}'>{}</div>".format(self._confusion_matrices_single_matrix_table, table)
         return output
