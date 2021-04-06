@@ -11,7 +11,7 @@ from sklearn.experimental import enable_halving_search_cv
 from sklearn.model_selection import train_test_split, HalvingGridSearchCV, GridSearchCV
 from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, balanced_accuracy_score
 from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score, r2_score
-from sklearn.metrics import precision_score, recall_score
+from sklearn.metrics import precision_score, recall_score, confusion_matrix
 from sklearn.metrics import roc_curve, precision_recall_curve, det_curve
 from sklearn.exceptions import NotFittedError
 
@@ -234,6 +234,17 @@ class ModelFinder:
 
     def det_curves(self, model_limit):
         return self._plot_curves(det_curve, model_limit)
+
+    def confusion_matrices(self, model_limit):
+        if self._search_results_dataframe is None:
+            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
+
+        models = [tp[0] for tp in self._search_results[:model_limit]]
+
+        _ = []
+        for model in models:
+            _.append((model, confusion_matrix(self.y_test, model.predict(self.X_test))))
+        return _
 
     # ===== # Internal functions
 

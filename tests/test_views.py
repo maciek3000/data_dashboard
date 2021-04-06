@@ -247,8 +247,8 @@ def test_feature_view_create_features_menu(input_features):
 def test_model_view_results_table(input_df, expected_row_number):
     """Testing if html output produced by results_table method properly assigns css classes to table rows."""
     mv = ModelsView("template", "test_css", "test_js", "params", "test-class")
-    first_row_class = mv._table_first_row
-    middle_row_class = mv._table_middle_row
+    first_row_class = mv._first_model_class
+    middle_row_class = mv._other_model_class
 
     actual_result = mv._models_result_table(input_df)
     table = BeautifulSoup(actual_result, "html.parser")

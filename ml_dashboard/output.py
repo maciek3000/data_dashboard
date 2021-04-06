@@ -172,6 +172,7 @@ class Output:
             creation_date=created_on,
             hyperlinks=hyperlinks,
             model_results=self.model_finder.search_results(self._view_models_model_limit),
+            confusion_matrices=self.model_finder.confusion_matrices(self._view_models_model_limit),
             models_plot=generated_models_plot
         )
 

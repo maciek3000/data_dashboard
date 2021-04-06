@@ -6,21 +6,19 @@
 {% endblock %}
 
 {% block content %}
-<!-- <div class="submenu">Models Comparison</div>
-<div class="submenu-content"> -->
-    <div class="models-comparison">
-        <div class="models-left">
-            <div class="subtitle">Search Results</div>
-            <div class="models-left-upper">{{ models_left_upper }}</div>
-            <div class="subtitle">{{ models_left_bottom_title }}</div>
-            <div class="models-left-bottom">{{ models_left_bottom }}</div>
-        </div>
-        <div class="models-right">
-            <div class="subtitle">{{ models_right_title }}</div>
-            <div class="models-right-plot">{{ models_right_plot }}</div>
-        </div>
+<div class="models-comparison">
+    <div class="models-left">
+        <div class="subtitle">Search Results</div>
+        <div class="models-left-upper">{{ models_left_upper }}</div>
+        <div class="subtitle">{{ models_left_bottom_title }}</div>
+        <div class="models-left-bottom">{{ models_left_bottom }}</div>
     </div>
-<!-- </div> -->
+    <div class="models-right">
+        <div class="subtitle">{{ models_right_title }}</div>
+        <div class="models-right-plot">{{ models_right_plot }}</div>
+    </div>
+</div>
+
 
 <div class="subtitle">Incorrect Predictions Table</div>
 <div class="incorrect-predictions-table">incorrect_predictions_grid</div>

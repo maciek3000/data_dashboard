@@ -1000,3 +1000,27 @@ def test_model_finder_multiclass_create_scoring_multiclass(
 def test_model_finder_test_target_proportion(model_finder_classification_fitted):
     """Testing if proportion of 1s in target (y_test) is calculated correctly (in classification)."""
     assert model_finder_classification_fitted.test_target_proportion() == 0.6
+
+
+@pytest.mark.parametrize(
+    ("limit",),
+    (
+            (1,),
+            (2,),
+            (3,),
+    )
+)
+def test_model_finder_classification_confusion_matrices(model_finder_classification_fitted, limit):
+    """Testing if confusion matrices are being correctly calculated and returned (in classification)."""
+    results = [
+        ("DecisionTreeClassifier", [2, 8, 2, 13]), #np.array(([2, 8], [2, 13]))),
+        ("SVC", [0, 10, 0, 15]),
+        ("LogisticRegression", [0, 10, 2, 13])
+    ]
+    expected_results = results[:limit]
+
+    actual_results = model_finder_classification_fitted.confusion_matrices(limit)
+
+    for actual_result, expected_result in zip(actual_results, expected_results):
+        assert actual_result[0].__class__.__name__ == expected_result[0]
+        assert actual_result[1].ravel().tolist() == expected_result[1]

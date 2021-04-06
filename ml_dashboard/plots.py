@@ -852,9 +852,6 @@ class ModelsComparisonPlot:
         p.xaxis.axis_label = "False Positive Rate"
         p.yaxis.axis_label = "False Negative Rate"
 
-        # p.xaxis.major_label_text_font_size = "18px"
-        # p.xaxis.axis_label_text_font_size = "24px"
-
         p.toolbar.autohide = True
 
         return p

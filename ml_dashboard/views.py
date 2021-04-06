@@ -1,6 +1,7 @@
 import os
 from bs4 import BeautifulSoup
 from bokeh.embed import components
+from .model_finder import obj_name
 
 
 def info_symbol_html():
@@ -300,11 +301,30 @@ class ModelsView(BaseView):
     _models_confusion_matrix = "models_left_bottom"
 
     # CSS
-    _table_first_row = "first-row"
-    _table_middle_row = "other-row"
+    _first_model_class = "first-model"
+    _other_model_class = "other-model"
+    _confusion_matrices_class = "confusion-matrices"
+    _confusion_matrices_single_matrix = "confusion-matrix"
+    _confusion_matrices_single_matrix_title = "confusion-matrix-title"
+    _confusion_matrices_single_matrix_table = "confusion-matrix-table"
+
 
     _models_plot_title_text = "Result Curves Comparison"
     _models_confusion_matrix_title_text = "Confusion Matrices"
+
+    # confusion matrices html
+    _single_confusion_matrix_html_template = """
+        <table>
+        <thead>
+        <tr><th></th><th>Predicted Negative</th><th>Predicted Positive</th></tr>
+        </thead>
+        <tbody>
+        <tr><th>Actual Negative</th><td>{tn}</td><td>{fp}</td></tr>
+        <tr><th>Actual Positive</th><td>{fn}</td><td>{tp}</td></tr>
+        </tbody>
+        </table>
+    """
+
 
     def __init__(self, template, css_path, js_path, params_name, model_with_description_class):
         super().__init__()
@@ -314,7 +334,7 @@ class ModelsView(BaseView):
         self.params_name = params_name
         self.model_with_description_class = model_with_description_class
 
-    def render(self, base_css, creation_date, hyperlinks, model_results, models_plot):
+    def render(self, base_css, creation_date, hyperlinks, model_results, confusion_matrices, models_plot):
         output = {}
 
         # Standard variables
@@ -331,7 +351,7 @@ class ModelsView(BaseView):
         output[self._models_plot] = models_plot_div
 
         output[self._models_confusion_matrix_title] = self._models_confusion_matrix_title_text
-        output[self._models_confusion_matrix] = "Lorem Ipsum Test"
+        output[self._models_confusion_matrix] = self._confusion_matrices(confusion_matrices)
 
         return self.template.render(**output)
 
@@ -354,10 +374,37 @@ class ModelsView(BaseView):
             header.p["class"] = self.model_with_description_class
 
         rows = table.select("table tbody tr")
-        rows[0]["class"] = self._table_first_row
+        rows[0]["class"] = self._first_model_class
         for row in rows[1:-1]:
-            row["class"] = self._table_middle_row
+            row["class"] = self._other_model_class
 
         output = str(table)
 
+        return output
+
+    def _confusion_matrices(self, models_confusion_matrices):
+
+        output = "<div class='{}'>".format(self._confusion_matrices_class)
+        i = 0
+
+        for model, matrix in models_confusion_matrices:
+            if i == 0:
+                color_class = self._first_model_class
+                i += 1
+            else:
+                color_class = self._other_model_class
+
+            single_matrix = "<div class='{} {}'>".format(self._confusion_matrices_single_matrix, color_class)
+            title = "<div class='{}'>{}</div>".format(self._confusion_matrices_single_matrix_title, obj_name(model))
+            table = self._single_confusion_matrix_html(matrix)
+            single_matrix += title + table + "</div>"
+            output += single_matrix
+
+        output += "</div>"
+        return output
+
+    def _single_confusion_matrix_html(self, confusion_array):
+        tn, fp, fn, tp = confusion_array.ravel()
+        table = self._single_confusion_matrix_html_template.format(tn=tn, fp=fp, fn=fn, tp=tp)
+        output = "<div class='{}'>{}</div>".format(self._confusion_matrices_single_matrix_table, table)
         return output

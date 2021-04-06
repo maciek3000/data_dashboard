@@ -9,12 +9,12 @@
     font-size: 1.4em;
     border-bottom: 2px solid var(--light-gray);
     margin-bottom: 36px;
-    color: var(--normal-text-color);
+    color: black ;
     font-weight: bold;
 }
 
 .models-left {
-    width: 60%;
+    width: 50%;
     height: auto;
     margin-right: 48px;
 }
@@ -44,20 +44,20 @@
     margin-bottom: 48px;
 }
 
-table {
+.models-left-upper table {
     border-collapse: collapse;
     border: 0px solid black;
     font-size: 1.1em;
     width: 100%;
 }
 
-th {
+.models-left-upper th {
     border: 0px solid black;
     text-align: right;
     font-weight: bold;
 }
 
-thead th {
+.models-left-upper thead th {
     border-width: 0px 0px 1px 0px;
     border-color: black;
     text-align: right;
@@ -65,32 +65,74 @@ thead th {
     color: #636363;
 }
 
-td {
+.models-left-upper td {
     border: 0px solid black;
     text-align: right;
     padding: 12px 4px;
 }
 
-tr {
+.models-left-upper tr {
     border-bottom: 1px solid var(--light-gray);
 }
 
-.first-row {
+.first-model {
     color: #9c2b19;
 }
 
-.other-row {
+.other-model {
     color: #7597c4;
 }
 
-tbody tr:last-child {
+.models-left-upper tbody tr:last-child {
     color: var(--gray-title);
 }
 
-tbody tr:hover {
+.models-left-upper tbody tr:hover {
     background-color: #e8eef5;
 }
 
-tbody tr th {
+.models-left-upper tbody tr th {
     padding-right: 12px;
+}
+
+.confusion-matrices {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+}
+
+.confusion-matrix {
+    width: 30%;
+    margin-right: 24px;
+}
+
+.confusion-matrix-title {
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 36px;
+}
+
+.confusion-matrix-table table {
+    color: inherit;
+    border-collapse: collapse;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.confusion-matrix-table th {
+    border: 1px solid var(--light-gray);
+    font-weight: normal;
+}
+
+.confusion-matrix-table thead th:first-child {
+    border-top: 0px;
+    border-left: 0px;
+}
+
+.confusion-matrix-table td {
+    border: 1px solid var(--light-gray);
+    font-size: 1.4em;
+    font-weight: bold;
 }

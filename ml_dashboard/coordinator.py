@@ -100,6 +100,8 @@ class Coordinator:
         )
 
     def search_and_fit(self, models=None, scoring=None, mode="quick"):
+        if scoring is None:
+            scoring = self.scoring
         clf = self.model_finder.search_and_fit(models, scoring, mode)
         return clf
 
