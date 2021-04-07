@@ -155,4 +155,5 @@
     border: 1px solid var(--light-gray);
     font-size: 1.4em;
     font-weight: bold;
+    padding: 4px;
 }

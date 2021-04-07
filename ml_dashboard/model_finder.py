@@ -246,6 +246,17 @@ class ModelFinder:
             _.append((model, confusion_matrix(self.y_test, model.predict(self.X_test))))
         return _
 
+    def prediction_errors(self, model_limit):
+        if self._search_results_dataframe is None:
+            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
+
+        models = [tp[0] for tp in self._search_results[:model_limit]]
+        _ = []
+        for model in models:
+            _.append((model, (self.y_test, model.predict(self.X_test))))
+
+        return _
+
     # ===== # Internal functions
 
     def _set_problem(self, problem_type):
