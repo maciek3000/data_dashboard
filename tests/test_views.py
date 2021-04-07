@@ -4,7 +4,8 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression, SGDClassifier, SGDRegressor, Lasso
 
-from ml_dashboard.views import Overview, FeatureView, ModelsView, append_description, series_to_dict
+from ml_dashboard.views import Overview, FeatureView,  append_description, series_to_dict, ModelsView
+from ml_dashboard.views import ModelsViewClassification
 
 
 @pytest.mark.parametrize(
@@ -275,10 +276,10 @@ def test_model_view_results_table(input_df, expected_row_number):
                                               "<tr><th>Actual Positive</th><td>100</td><td>80</td></tr>")
     )
 )
-def test_model_view_single_matrix_table(input_array, expected_string):
+def test_models_view_classification_single_matrix_table(input_array, expected_string):
     """Testing if confusion matrix html table is created correctly."""
     expected_class = "test-class"
-    mv = ModelsView("template", "test_css", "test_js", "params", "test-class")
+    mv = ModelsViewClassification("template", "test_css", "test_js", "params", "test-class")
     mv._confusion_matrices_single_matrix_table = expected_class
     actual_result = mv._single_confusion_matrix_html(input_array)
 
@@ -300,14 +301,14 @@ def test_model_view_single_matrix_table(input_array, expected_string):
             ],),
     )
 )
-def test_model_view_confusion_matrices(input_tuple):
+def test_models_view_classification_confusion_matrices(input_tuple):
     """Testing if the confusion matrices html is created correctly and classes are assigned to elements
     appropriately."""
     first_model = "test-first-model"
     other_model = "test-other-model"
     title_class = "test-title-class"
     matrix_class = "test-matrix-class"
-    mv = ModelsView("template", "test_css", "test_js", "params", "test-class")
+    mv = ModelsViewClassification("template", "test_css", "test_js", "params", "test-class")
 
     mv._first_model_class = first_model
     mv._other_model_class = other_model

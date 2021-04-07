@@ -310,27 +310,30 @@ class ModelsView(BaseView):
     # CSS
     _first_model_class = "first-model"
     _other_model_class = "other-model"
-    _confusion_matrices_class = "confusion-matrices"
-    _confusion_matrices_single_matrix = "confusion-matrix"
-    _confusion_matrices_single_matrix_title = "confusion-matrix-title"
-    _confusion_matrices_single_matrix_table = "confusion-matrix-table"
 
-    _models_plot_title_text = "Result Curves Comparison"
-    _models_confusion_matrix_title_text = "Confusion Matrices"
-
-    # confusion matrices html
-    _single_confusion_matrix_html_template = """
-<table>
-<thead>
-<tr><th></th><th>Predicted Negative</th><th>Predicted Positive</th></tr>
-</thead>
-<tbody>
-<tr><th>Actual Negative</th><td>{tn}</td><td>{fp}</td></tr>
-<tr><th>Actual Positive</th><td>{fn}</td><td>{tp}</td></tr>
-</tbody>
-</table>
-"""
-
+#     # CSS
+#     _first_model_class = "first-model"
+#     _other_model_class = "other-model"
+#     _confusion_matrices_class = "confusion-matrices"
+#     _confusion_matrices_single_matrix = "confusion-matrix"
+#     _confusion_matrices_single_matrix_title = "confusion-matrix-title"
+#     _confusion_matrices_single_matrix_table = "confusion-matrix-table"
+#
+#     _models_plot_title_text = "Result Curves Comparison"
+#     _models_confusion_matrix_title_text = "Confusion Matrices"
+#
+#     # confusion matrices html
+#     _single_confusion_matrix_html_template = """
+# <table>
+# <thead>
+# <tr><th></th><th>Predicted Negative</th><th>Predicted Positive</th></tr>
+# </thead>
+# <tbody>
+# <tr><th>Actual Negative</th><td>{tn}</td><td>{fp}</td></tr>
+# <tr><th>Actual Positive</th><td>{fn}</td><td>{tp}</td></tr>
+# </tbody>
+# </table>
+# """
 
     def __init__(self, template, css_path, js_path, params_name, model_with_description_class):
         super().__init__()
@@ -340,7 +343,10 @@ class ModelsView(BaseView):
         self.params_name = params_name
         self.model_with_description_class = model_with_description_class
 
-    def render(self, base_css, creation_date, hyperlinks, model_results, confusion_matrices, models_plot):
+    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom):
+        raise NotImplementedError
+
+    def _base_output(self, base_css, creation_date, hyperlinks, model_results):
         output = {}
 
         # Standard variables
@@ -351,15 +357,7 @@ class ModelsView(BaseView):
         output[self._models_js] = self.js
         output[self._models_table] = self._models_result_table(model_results)
 
-        models_plot_script, models_plot_div = components(models_plot)
-        output[self._models_plot_title] = self._models_plot_title_text
-        output[self._models_plot_script] = models_plot_script
-        output[self._models_plot] = models_plot_div
-
-        output[self._models_confusion_matrix_title] = self._models_confusion_matrix_title_text
-        output[self._models_confusion_matrix] = self._confusion_matrices(confusion_matrices)
-
-        return self.template.render(**output)
+        return output
 
     def _models_result_table(self, results_dataframe):
         new_params = series_to_dict(results_dataframe[self.params_name])
@@ -388,6 +386,51 @@ class ModelsView(BaseView):
 
         return output
 
+
+class ModelsViewClassification(ModelsView):
+
+    # CSS
+    _confusion_matrices_class = "confusion-matrices"
+    _confusion_matrices_single_matrix = "confusion-matrix"
+    _confusion_matrices_single_matrix_title = "confusion-matrix-title"
+    _confusion_matrices_single_matrix_table = "confusion-matrix-table"
+
+    _models_plot_title_text = "Result Curves Comparison"
+    _models_confusion_matrix_title_text = "Confusion Matrices"
+
+    # confusion matrices html
+    _single_confusion_matrix_html_template = """
+<table>
+<thead>
+<tr><th></th><th>Predicted Negative</th><th>Predicted Positive</th></tr>
+</thead>
+<tbody>
+<tr><th>Actual Negative</th><td>{tn}</td><td>{fp}</td></tr>
+<tr><th>Actual Positive</th><td>{fn}</td><td>{tp}</td></tr>
+</tbody>
+</table>
+"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom):
+
+        models_plot = models_right
+        confusion_matrices = models_left_bottom
+
+        output = super()._base_output(base_css, creation_date, hyperlinks, model_results)
+
+        models_plot_script, models_plot_div = components(models_plot)
+        output[self._models_plot_title] = self._models_plot_title_text
+        output[self._models_plot_script] = models_plot_script
+        output[self._models_plot] = models_plot_div
+
+        output[self._models_confusion_matrix_title] = self._models_confusion_matrix_title_text
+        output[self._models_confusion_matrix] = self._confusion_matrices(confusion_matrices)
+
+        return self.template.render(**output)
+
     def _confusion_matrices(self, models_confusion_matrices):
 
         output = "<div class='{}'>".format(self._confusion_matrices_class)
@@ -414,3 +457,35 @@ class ModelsView(BaseView):
         table = self._single_confusion_matrix_html_template.format(tn=tn, fp=fp, fn=fn, tp=tp).replace("\n", "")
         output = "<div class='{}'>{}</div>".format(self._confusion_matrices_single_matrix_table, table)
         return output
+
+
+class ModelsViewRegression(ModelsView):
+
+    _prediction_errors_title = "Prediction Error Plots"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom):
+
+        prediction_errors_plot = models_right
+
+        output = self._base_output(base_css, creation_date, hyperlinks, model_results)
+
+        models_plot_script, models_plot_div = components(prediction_errors_plot)
+        output[self._models_plot_title] = self._prediction_errors_title
+        output[self._models_plot_script] = models_plot_script
+        output[self._models_plot] = models_plot_div
+
+        return self.template.render(**output)
+
+
+class ModelsViewMulticlass(ModelsView):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom):
+        output = self._base_output(base_css, creation_date, hyperlinks, model_results)
+
+        return self.template.render(**output)

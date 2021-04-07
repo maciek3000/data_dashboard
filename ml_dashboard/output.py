@@ -1,7 +1,8 @@
 import os, datetime
 from jinja2 import Environment, FileSystemLoader
-from .views import Overview, FeatureView, ModelsView
-from .plots import PairPlot, InfoGrid, ScatterPlotGrid, ModelsComparisonPlot
+from .views import Overview, FeatureView, ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
+from .plots import PairPlot, InfoGrid, ScatterPlotGrid
+from .plots import ModelsPlotClassification, ModelsPlotRegression, ModelsPlotMulticlass
 from .plot_design import PlotDesign
 
 
@@ -81,13 +82,7 @@ class Output:
                     js_path=os.path.join(self.static_path, self._view_features_js),
                 )
 
-        self.view_models = ModelsView(
-            template=self.env.get_template(self._view_models_html),
-            css_path=os.path.join(self.static_path, self._view_models_css),
-            js_path=os.path.join(self.static_path, self._view_models_js),
-            params_name=self.model_finder.dataframe_params_name(),
-            model_with_description_class=self._element_with_description_class,
-        )
+        self.view_models = self._models_view_creator(self.model_finder.problem)
 
         self.plot_design = PlotDesign()
         self.pairplot = PairPlot(self.plot_design)
@@ -108,10 +103,6 @@ class Output:
             feature_description_class=self._element_with_description_class
         )
 
-        self.models_plots = ModelsComparisonPlot(
-            plot_design=self.plot_design
-        )
-
     def create_html(self):
 
         base_css = os.path.join(self.static_path, self._base_css)
@@ -130,29 +121,16 @@ class Output:
 
         generated_pairplot = self.pairplot.pairplot(self.analyzer.features_pairplot_df())
         generated_infogrid_summary = self.infogrid.summary_grid(
-            summary_statistics=self.analyzer._summary_statistics(),
-            histogram_data=self.analyzer._histogram_data(),
+            summary_statistics=self.analyzer.summary_statistics(),
+            histogram_data=self.analyzer.histogram_data(),
             initial_feature=first_feature
         )
         generated_infogrid_correlations = self.infogrid.correlation_plot(
-            correlation_data_normalized=self.analyzer._correlation_data_normalized(),
-            correlation_data_raw=self.analyzer._correlation_data_raw()
+            correlation_data_normalized=self.analyzer.correlation_data_normalized(),
+            correlation_data_raw=self.analyzer.correlation_data_raw()
         )
 
-        # generated_infogrid = self.infogrid.infogrid(
-        #     summary_statistics=self.analyzer._summary_statistics(),
-        #     correlation_data_normalized=self.analyzer._correlation_data_normalized(),
-        #     correlation_data_raw=self.analyzer._correlation_data_raw(),
-        #     histogram_data=self.analyzer._histogram_data(),
-        #     initial_feature=first_feature
-        # )
-        generated_scattergrid = self.scattergrid.scattergrid(self.analyzer._scatter_data(), first_feature)
-        generated_models_plot = self.models_plots.models_comparison_plot(
-            roc_curves=self.model_finder.roc_curves(self._view_models_model_limit),
-            precision_recall_curves=self.model_finder.precision_recall_curves(self._view_models_model_limit),
-            det_curves=self.model_finder.det_curves(self._view_models_model_limit),
-            target_proportion=self.model_finder.test_target_proportion()
-        )
+        generated_scattergrid = self.scattergrid.scattergrid(self.analyzer.scatter_data(), first_feature)
 
         overview_rendered = self.view_overview.render(
             base_css=base_css,
@@ -178,14 +156,47 @@ class Output:
             first_feature=first_feature
         )
 
+        models_right, models_left_bottom = self._models_plot_output(self.model_finder.problem)
+
         models_rendered = self.view_models.render(
             base_css=base_css,
             creation_date=created_on,
             hyperlinks=hyperlinks,
             model_results=self.model_finder.search_results(self._view_models_model_limit),
-            confusion_matrices=self.model_finder.confusion_matrices(self._view_models_model_limit),
-            models_plot=generated_models_plot
+            models_right=models_right,
+            models_left_bottom=models_left_bottom,
         )
+
+        # if problem_type == "classification":
+        #     generated_models_plot = self.models_plots.models_comparison_plot(
+        #         roc_curves=self.model_finder.roc_curves(self._view_models_model_limit),
+        #         precision_recall_curves=self.model_finder.precision_recall_curves(self._view_models_model_limit),
+        #         det_curves=self.model_finder.det_curves(self._view_models_model_limit),
+        #         target_proportion=self.model_finder.test_target_proportion()
+        #     )
+        #
+        #     models_rendered = self.view_models.render(
+        #         base_css=base_css,
+        #         creation_date=created_on,
+        #         hyperlinks=hyperlinks,
+        #         model_results=self.model_finder.search_results(self._view_models_model_limit),
+        #         confusion_matrices=self.model_finder.confusion_matrices(self._view_models_model_limit),
+        #         models_plot=generated_models_plot
+        #     )
+        #
+        # elif problem_type == "regression":
+        #
+        #     generated_model_plot = self.models_plots.prediction_error_plots(
+        #         prediction_errors=self.model_finder.prediction_errors(self._view_models_model_limit)
+        #     )
+        #
+        #     models_rendered = self.view_models.render_regression(
+        #         base_css=base_css,
+        #         creation_date=created_on,
+        #         hyperlinks=hyperlinks,
+        #         model_results=self.model_finder.search_results(self._view_models_model_limit),
+        #         prediction_errors_plot=generated_model_plot
+        #     )
 
         rendered_templates = {
             self._view_overview_html: overview_rendered,
@@ -203,3 +214,56 @@ class Output:
 
     def _path_to_file(self, filename):
         return os.path.join(self.output_directory, filename)
+
+    def _models_view_creator(self, problem_type):
+
+        kwargs = {
+            "template": self.env.get_template(self._view_models_html),
+            "css_path": os.path.join(self.static_path, self._view_models_css),
+            "js_path": os.path.join(self.static_path, self._view_models_js),
+            "params_name": self.model_finder.dataframe_params_name(),
+            "model_with_description_class": self._element_with_description_class,
+        }
+
+        if problem_type == self.model_finder._classification:
+            mv = ModelsViewClassification
+
+        elif problem_type == self.model_finder._regression:
+            mv = ModelsViewRegression
+
+        elif problem_type == self.model_finder._multiclass:
+            mv = ModelsViewMulticlass
+
+        else:
+            raise ValueError("Incorrect problem type provided: {problem_type}".format(problem_type=problem_type))
+
+        return mv(**kwargs)
+
+    def _models_plot_output(self, problem_type):
+
+        pd = self.plot_design
+
+        if problem_type == self.model_finder._classification:
+            mp = ModelsPlotClassification(pd)
+            models_right = mp.models_comparison_plot(
+                roc_curves=self.model_finder.roc_curves(self._view_models_model_limit),
+                precision_recall_curves=self.model_finder.precision_recall_curves(self._view_models_model_limit),
+                det_curves=self.model_finder.det_curves(self._view_models_model_limit),
+                target_proportion=self.model_finder.test_target_proportion()
+            )
+            models_left_bottom = self.model_finder.confusion_matrices(self._view_models_model_limit)
+
+        elif problem_type == self.model_finder._regression:
+            mp = ModelsPlotRegression(pd)
+            models_right = mp.prediction_error_plot(self.model_finder.prediction_errors(self._view_models_model_limit))
+            models_left_bottom = None
+
+        elif problem_type == self.model_finder._multiclass:
+            mp = ModelsPlotMulticlass
+            models_right = None
+            models_left_bottom = None
+
+        else:
+            raise ValueError("Incorrect problem type provided: {problem_type}".format(problem_type=problem_type))
+
+        return models_right, models_left_bottom

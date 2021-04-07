@@ -264,42 +264,42 @@ class InfoGrid(MainGrid):
 
         return correlation_plot
 
-    def infogrid(self, summary_statistics, histogram_data, correlation_data_normalized, correlation_data_raw,
-                 initial_feature):
-
-        dropdown = self._create_features_dropdown(self._infogrid_dropdown)
-
-        histogram_source, histogram_plot = self._create_histogram(histogram_data, initial_feature)
-        info_div = self._create_info_div(summary_statistics, initial_feature)
-
-        # correlation source is left in case it is decided later on that the callback is needed
-        correlation_source, correlation_plot = self._create_correlation(correlation_data_normalized,
-                                                                        correlation_data_raw)
-
-        callbacks = self._create_features_dropdown_callbacks(
-            summary_statistics=summary_statistics,
-            histogram_data=histogram_data,
-            histogram_source=histogram_source,
-        )
-        for callback in callbacks:
-            dropdown.js_on_change("value", callback)
-
-        infogrid_row = row(
-            column(
-                info_div, histogram_plot, css_classes=[self._infogrid_left_pane]
-            ),
-            correlation_plot,
-            css_classes=[self._infogrid_row],
-            height_policy="max",
-            height=500
-        )
-
-        output = column(
-            dropdown,  # this dropdown will be invisible (display: none)
-            infogrid_row,
-            css_classes=[self._infogrid_all]
-        )
-        return output
+    # def infogrid(self, summary_statistics, histogram_data, correlation_data_normalized, correlation_data_raw,
+    #              initial_feature):
+    #
+    #     dropdown = self._create_features_dropdown(self._infogrid_dropdown)
+    #
+    #     histogram_source, histogram_plot = self._create_histogram(histogram_data, initial_feature)
+    #     info_div = self._create_info_div(summary_statistics, initial_feature)
+    #
+    #     # correlation source is left in case it is decided later on that the callback is needed
+    #     correlation_source, correlation_plot = self._create_correlation(correlation_data_normalized,
+    #                                                                     correlation_data_raw)
+    #
+    #     callbacks = self._create_features_dropdown_callbacks(
+    #         summary_statistics=summary_statistics,
+    #         histogram_data=histogram_data,
+    #         histogram_source=histogram_source,
+    #     )
+    #     for callback in callbacks:
+    #         dropdown.js_on_change("value", callback)
+    #
+    #     infogrid_row = row(
+    #         column(
+    #             info_div, histogram_plot, css_classes=[self._infogrid_left_pane]
+    #         ),
+    #         correlation_plot,
+    #         css_classes=[self._infogrid_row],
+    #         height_policy="max",
+    #         height=500
+    #     )
+    #
+    #     output = column(
+    #         dropdown,  # this dropdown will be invisible (display: none)
+    #         infogrid_row,
+    #         css_classes=[self._infogrid_all]
+    #     )
+    #     return output
 
     def _create_features_dropdown_callbacks(self, summary_statistics, histogram_data, histogram_source):
         callbacks = []
@@ -777,7 +777,7 @@ class ScatterPlotGrid(MainGrid):
         return legend
 
 
-class ModelsComparisonPlot:
+class ModelsPlotClassification:
 
     _roc_plot_name = "ROC Curve"
     _precision_recall_plot_name = "Precision Recall Plot"
@@ -898,3 +898,40 @@ class ModelsComparisonPlot:
 
         plot.legend.click_policy = "mute"
         plot.toolbar.autohide = True
+
+
+class ModelsPlotRegression:
+
+    def __init__(self, plot_design):
+        self.plot_design = plot_design
+
+    def prediction_error_plot(self, prediction_errors):
+
+        _ = []
+        for model, scatter_points in prediction_errors:
+            plot = self._single_prediction_error_plot(scatter_points)
+            _.append(Panel(child=plot, title=obj_name(model)))
+
+        main_plot = Tabs(tabs=_)
+        return main_plot
+
+    @stylize()
+    def _single_prediction_error_plot(self, scatter_data):
+        p = default_figure(
+            {
+                "tools": "pan,wheel_zoom,box_zoom,reset",
+                "toolbar_location": "right"
+            }
+        )
+
+        p.scatter(scatter_data[0], scatter_data[1])
+
+        p.toolbar.autohide = True
+
+        return p
+
+
+class ModelsPlotMulticlass:
+
+    def __init__(self, plot_design):
+        self.plot_design = plot_design
