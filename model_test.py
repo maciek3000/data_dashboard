@@ -37,7 +37,7 @@ if __name__ == "__main__":
     # X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
 
-    coord = Coordinator(X, y, output_directory, accuracy_score, descriptions, os.getcwd(), random_state=42)
+    coord = Coordinator(X, y, output_directory, None, descriptions, os.getcwd(), random_state=42)
     model = coord.search_and_fit()
     coord.create_dashboard()
     # output = coord.quick_find()

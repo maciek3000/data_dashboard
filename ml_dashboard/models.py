@@ -1,16 +1,17 @@
 import numpy as np
 from sklearn.linear_model import SGDClassifier, PassiveAggressiveClassifier, RidgeClassifier, Perceptron, LogisticRegression
-from sklearn.linear_model import Ridge
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier, BaggingClassifier, ExtraTreesClassifier #, HistGradientBoostingClassifier
-from sklearn.svm import SVC, SVR
+from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
+from sklearn.neural_network import MLPClassifier
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
-from sklearn.tree import DecisionTreeRegressor
+
+
 from sklearn.naive_bayes import GaussianNB
 from sklearn.experimental import enable_hist_gradient_boosting
 
-alpha = np.logspace(-7, 2, 10)
+alpha = np.logspace(-4, 5, 10)
 tol = np.logspace(-5, -1, 5)
 C = np.logspace(-2, 3, 6)
 
@@ -68,7 +69,7 @@ classifiers = {
     },
 
     RandomForestClassifier: {
-        "n_estimators": [100, 250, 500],
+        "n_estimators": [10, 100, 200],
         "criterion": ["gini", "entropy"],
         # "max_depth": [None, 10, 100],
         #"min_samples_split": [2, 10, 0.01],
@@ -130,6 +131,11 @@ classifiers = {
         "shrink_threshold": [None, 1e-5, 1e-2]
     },
 
+    MLPClassifier: {
+        "solver": ["lbfgs", "sgd"],
+        "alpha": alpha
+    }
+
     #     HistGradientBoostingClassifier: {
     #         "learning_rate": {1e-5, 1e-2, 1e-1, 0},
     #         "max_iter": {10, 100, 200},
@@ -143,10 +149,85 @@ classifiers = {
 
 # BernoulliNB, MultinomialNB
 
+from sklearn.linear_model import HuberRegressor, Lasso, SGDRegressor, ElasticNet
+from sklearn.linear_model import Ridge, PassiveAggressiveRegressor
+from sklearn.svm import SVR
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, AdaBoostRegressor, BaggingRegressor
+from xgboost import XGBRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neural_network import MLPRegressor
+
 regressors = {
+    HuberRegressor: {
+        "epsilon": np.linspace(1.0, 2.0, 10),
+        "alpha": alpha
+    },
+
+    Lasso: {
+        "alpha": np.logspace(1, 6, 6)
+    },
+
+    SGDRegressor: {
+        "loss": ["squared_loss", "huber", "epsilon_insensitive", "squared_epsilon_insensitive"],
+        "alpha": alpha
+    },
+
+    ElasticNet: {
+        "alpha": np.logspace(1, 6, 6),
+        "l1_ratio": np.linspace(0, 1, 4)
+    },
+
     Ridge: {
         "alpha": alpha,
         "tol": tol,
     },
+
+    PassiveAggressiveRegressor: {
+        "C": C,
+        "max_iter": [100, 300, 1000]
+    },
+
+    SVR: {
+        "C": C,
+        "kernel": ["linear", "poly", "rbf", "sigmoid"]
+    },
+
+    RandomForestRegressor: {
+        "n_estimators": [10, 100, 200],
+        "max_depth": [None, 10, 50],
+        "min_samples_split": [2, 0.001, 0.01, 0.1]
+    },
+
+    ExtraTreesRegressor: {
+        "n_estimators": [10, 100, 200],
+        "max_depth": [None, 10, 50],
+        "min_samples_split": [2, 0.001, 0.01, 0.1]
+    },
+
+    AdaBoostRegressor: {
+        "n_estimators": [10, 50, 100],
+        "learning_rate": [0.1, 1, 10, 100]
+    },
+
+    BaggingRegressor: {
+        "n_estimators": [10, 100, 200],
+        "max_samples": [1, 0.001, 0.01, 0.1],
+        "max_features": [1, 0.001, 0.01, 0.1]
+    },
+
+    XGBRegressor: {
+        "max_depth": [1, 6, 10, 20],
+        "alpha": alpha,
+    },
+
+    KNeighborsRegressor: {
+        "n_neighbors": [1, 2, 5, 10],
+        "weights": ["uniform", "distance"],
+    },
+
+    MLPRegressor: {
+        "solver": ["lbfgs", "sgd"],
+        "alpha": alpha
+    }
 }
 
