@@ -131,7 +131,7 @@ def test_analyzer_summary_statistics(
     expected_dict[cat_keyword] = expected_category
     expected_dict[missing_keyword] = missing
 
-    actual_dict = a._summary_statistics()[feature]
+    actual_dict = a.summary_statistics()[feature]
 
     assert actual_dict == expected_dict
 
@@ -154,7 +154,7 @@ def test_analyzer_histogram_data(fixture_features, feature_name, expected_number
         np.histogram works correctly 3) would be cumbersome to calculate all of that by hand."""
 
     analyzer = Analyzer(fixture_features)
-    histogram_output = analyzer._histogram_data()
+    histogram_output = analyzer.histogram_data()
 
     # number of bins - size of one of the edges array
     actual_number_of_bins = histogram_output[feature_name][1].shape[0]
@@ -179,7 +179,7 @@ def test_analyzer_correlation_data(fixture_features, feature, expected_result):
     cols_in_order = ["Sex", "AgeGroup", "Height", "Product", "Price", "bool", "Target"]
     rs = 1
     analyzer = Analyzer(fixture_features)
-    corr = analyzer._correlation_data_normalized(random_state=rs).loc[cols_in_order, cols_in_order]
+    corr = analyzer.correlation_data_normalized(random_state=rs).loc[cols_in_order, cols_in_order]
 
     actual_result = corr[feature].round(4)
 
@@ -202,7 +202,7 @@ def test_analyzer_correlation_data_raw(fixture_features, feature, expected_resul
     """Testing if correlations between features are calculated correctly."""
     cols_in_order = ["Sex", "AgeGroup", "Height", "Product", "Price", "bool", "Target"]
     analyzer = Analyzer(fixture_features)
-    corr = analyzer._correlation_data_raw().loc[cols_in_order, cols_in_order]
+    corr = analyzer.correlation_data_raw().loc[cols_in_order, cols_in_order]
 
     actual_result = corr[feature].round(4)
 
@@ -226,6 +226,6 @@ def test_analyzer_scatter_data(
         df[feat + suffix] = df[feat].apply(lambda x: str(x))
 
     expected = df.dropna().to_dict(orient="list")
-    actual = analyzer._scatter_data()
+    actual = analyzer.scatter_data()
 
     assert expected == actual
