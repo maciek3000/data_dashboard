@@ -232,8 +232,10 @@ class FeatureView(BaseView):
     _features_js = "features_js"
     _features_menu = "features_menu"
 
-    _infogrid_script = "bokeh_script_info_grid"
-    _infogrid = "info_grid"
+    _infogrid_summary_script = "bokeh_script_infogrid_summary"
+    _infogrid_summary = "infogrid_summary"
+    _infogrid_correlations_script = "bokeh_script_infogrid_correlations"
+    _infogrid_correlations = "infogrid_correlations"
 
     _scatterplot_script = "bokeh_script_scatter_plot_grid"
     _scatterplot = "scatter_plot_grid"
@@ -247,7 +249,7 @@ class FeatureView(BaseView):
         self.css = css_path
         self.js = js_path
 
-    def render(self, base_css, creation_date, hyperlinks, histogram, scatterplot, feature_list, first_feature):
+    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, first_feature):
 
         output = {}
 
@@ -264,9 +266,14 @@ class FeatureView(BaseView):
         output[self._features_menu] = self._create_features_menu(feature_list)
 
         # Histogram
-        infogrid_script, infogrid_div = components(histogram)
-        output[self._infogrid_script] = infogrid_script
-        output[self._infogrid] = infogrid_div
+        infogrid_script, infogrid_div = components(summary_grid)
+        output[self._infogrid_summary_script] = infogrid_script
+        output[self._infogrid_summary] = infogrid_div
+
+        # Correlations
+        corr_script, corr_div = components(correlations_plot)
+        output[self._infogrid_correlations_script] = corr_script
+        output[self._infogrid_correlations] = corr_div
 
         # Scatter Plot
         scatterplot_script, scatterplot_div = components(scatterplot)

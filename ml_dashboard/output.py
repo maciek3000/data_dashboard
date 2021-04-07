@@ -129,13 +129,23 @@ class Output:
         first_feature = feature_list[0]
 
         generated_pairplot = self.pairplot.pairplot(self.analyzer.features_pairplot_df())
-        generated_infogrid = self.infogrid.infogrid(
+        generated_infogrid_summary = self.infogrid.summary_grid(
             summary_statistics=self.analyzer._summary_statistics(),
-            correlation_data_normalized=self.analyzer._correlation_data_normalized(),
-            correlation_data_raw=self.analyzer._correlation_data_raw(),
             histogram_data=self.analyzer._histogram_data(),
             initial_feature=first_feature
         )
+        generated_infogrid_correlations = self.infogrid.correlation_plot(
+            correlation_data_normalized=self.analyzer._correlation_data_normalized(),
+            correlation_data_raw=self.analyzer._correlation_data_raw()
+        )
+
+        # generated_infogrid = self.infogrid.infogrid(
+        #     summary_statistics=self.analyzer._summary_statistics(),
+        #     correlation_data_normalized=self.analyzer._correlation_data_normalized(),
+        #     correlation_data_raw=self.analyzer._correlation_data_raw(),
+        #     histogram_data=self.analyzer._histogram_data(),
+        #     initial_feature=first_feature
+        # )
         generated_scattergrid = self.scattergrid.scattergrid(self.analyzer._scatter_data(), first_feature)
         generated_models_plot = self.models_plots.models_comparison_plot(
             roc_curves=self.model_finder.roc_curves(self._view_models_model_limit),
@@ -161,7 +171,8 @@ class Output:
             base_css=base_css,
             creation_date=created_on,
             hyperlinks=hyperlinks,
-            histogram=generated_infogrid,
+            summary_grid=generated_infogrid_summary,
+            correlations_plot=generated_infogrid_correlations,
             scatterplot=generated_scattergrid,
             feature_list=feature_list,
             first_feature=first_feature

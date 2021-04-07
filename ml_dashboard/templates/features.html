@@ -12,14 +12,26 @@
 </div>
 <div class="features-menu">{{ features_menu }}</div>
 
-<div class="submenu">Info</div>
-<div class="submenu-content">{{ info_grid }}</div>
+<div class="submenu">Chosen Feature Information</div>
+<div class="submenu-content">
+    <div class="infogrid-container">
+        <div class="infogrid-stats">
+            <div class="subtitle">Summary Statistics</div>
+            <div class="infogrid-stats-content">{{ infogrid_summary }}</div>
+        </div>
+        <div class="infogrid-correlations">
+            <div class="subtitle">Feature Correlations</div>
+            <div class="infogrid-correlations-content">{{ infogrid_correlations }}</div>
+        </div>
+    </div>
+</div>
 
-<div class="submenu">Scatter Plot</div>
+<div class="submenu">Hued Scatter Plots</div>
 <div class="submenu-content">{{ scatter_plot_grid }}</div>
 
-<div>{{ bokeh_script_info_grid }}</div>
+<div>{{ bokeh_script_infogrid_summary }}</div>
 <div>{{ bokeh_script_scatter_plot_grid }}</div>
+<div>{{ bokeh_script_infogrid_correlations }}</div>
 <script src="{{ features_js }}"></script>
 {% endblock %}
 

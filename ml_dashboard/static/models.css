@@ -36,10 +36,6 @@
 
 }
 
-.models-right {
-
-}
-
 .models-left-upper {
     margin-bottom: 48px;
 }
@@ -55,6 +51,7 @@
     border: 0px solid black;
     text-align: right;
     font-weight: bold;
+
 }
 
 .models-left-upper thead th {
@@ -102,9 +99,31 @@
     justify-content: center;
 }
 
+
 .confusion-matrix {
     width: 30%;
     margin-right: 24px;
+}
+
+@media screen and (max-width: 850px) {
+
+    .confusion-matrices {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .confusion-matrix {
+        width: 100%;
+        height: auto;
+        margin-bottom: 24px;
+    }
+
+    .confusion-matrix-table table {
+        width: 100%;
+        align-self: center;
+    }
+
 }
 
 .confusion-matrix-title {
@@ -124,6 +143,7 @@
 .confusion-matrix-table th {
     border: 1px solid var(--light-gray);
     font-weight: normal;
+    padding: 4px;
 }
 
 .confusion-matrix-table thead th:first-child {

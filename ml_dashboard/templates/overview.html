@@ -6,30 +6,27 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex-tables">
-    <div class="describe_tables">
-        <div class="describe">
-            <div class="section_title">Numeric</div>
-            <div>{{ described_numeric }}</div>
-        </div>
-        <div class="describe">
-            <div class="section_title">Categorical</div>
-            <div>{{ described_categorical }}</div>
-        </div>
-        <div class="describe_unused">
-            <div class="section_title">Unused Columns</div>
-            <div>{{ unused_cols }}</div>
-        </div>
-    </div>
 
-    <div class="head">
-        <div class="section_title">First 5 rows of data (transposed)</div>
-        <div>{{ head }}</div>
+<div class="describe-tables">
+    <div class="describe">
+        <div class="section-title">Numeric</div>
+        <div>{{ described_numeric }}</div>
     </div>
-
+    <div class="describe">
+        <div class="section-title">Categorical</div>
+        <div>{{ described_categorical }}</div>
+    </div>
+    <div class="describe-unused">
+        <div class="section-title">Unused Columns</div>
+        <div>{{ unused_cols }}</div>
+    </div>
+</div>
+<div class="head">
+    <div class="section-title">First 5 rows of data (transposed)</div>
+    <div>{{ head }}</div>
 </div>
 <div class="pairplot">
-    <div class="section_title">Pairplot of Features</div>
-    <div class="pairplot_img">{{ pairplot }}</div>
+    <div class="section-title">Pairplot of Features</div>
+    <div class="pairplot-img">{{ pairplot }}</div>
 </div>
 {% endblock %}

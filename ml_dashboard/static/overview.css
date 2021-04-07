@@ -34,38 +34,46 @@ tbody tr:hover {
     background-color: #ebd5d1;
 }
 
-.flex-tables {
-    display: flex;
-    flex-direction: column;
-}
 
-.flex-tables > div {
-    padding-bottom: 16px;
-    margin-bottom: 12px;
-}
-
-.describe_tables {
+.describe-tables {
     display: flex;
     flex-direction: row;
+    margin-bottom: 28px;
 }
 
-.describe_tables div {
+.describe-tables div {
     margin-right: 8px;
 }
 
-.head {
-    width: 100%;
+@media screen and (max-width: 1620px) {
+    body {
+        margin-left: 16px;
+    }
+
+    .describe-tables {
+        flex-direction: column;
+    }
+
+    .describe-tables div {
+        width: 100%;
+        margin-bottom: 28px;
+    }
+
+    .section-title {
+        width: 100%;
+    }
+
 }
 
 .describe {
     width: 45%;
 }
 
-.describe_unused {
+.describe-unused {
     width: 10%;
 }
 
-.section_title {
+.section-title {
     font-size: 1.3em;
     color: black;
     margin-bottom: 16px;
@@ -75,10 +83,16 @@ tbody tr:hover {
     font-weight: bold;
 }
 
+
+.head {
+    width: 100%;
+    margin-bottom: 28px;
+}
+
 .pairplot {
     width: 100%;
 }
 
-.pairplot_img img {
+.pairplot-img img {
     width: 100%;
 }

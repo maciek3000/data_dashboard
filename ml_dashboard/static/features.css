@@ -93,38 +93,51 @@
 
 /* InfoGrid */
 
-.infogrid {
-    width: 100% !important;
+.infogrid-container {
+    display: flex;
+    flex-direction: row;
+    height: auto;
+    margin-top: 36px;
+    width: 100%;
+}
+
+.infogrid-stats {
+    margin-right: 192px;
     margin-bottom: 56px !important;
 }
 
-.infogrid-row {
-    width: 100% !important;
-    border-top: 1px solid var(--light-gray);
+.subtitle {
+    font-size: 1.4em;
+    border-bottom: 2px solid var(--light-gray);
+    margin-bottom: 36px;
+    color: black;
+    font-weight: bold;
+    width: 90%;
 }
 
-.bk.info-div-left-pane {
-    width: 23% !important;
-    border-right: 1px solid var(--light-gray);
+.bk.infogrid {
+    margin-top: -18px !important;
 }
 
-.infogrid-row > div:nth-child(2) {
-    left: 30% !important;
-}
-
-@media only screen and (max-width: 1600px) {
-    .bk.infogrid-row {
-        display: flex !important;;
-        flex-direction: column !important;
+@media screen and (max-width: 1620px) {
+    .submenu-content {
+        margin-left: 16px;
     }
 
-    .bk.info-div-left-pane {
-        width: 100% !important;
+    .infogrid-container {
+        flex-direction: column;
     }
 
-    .infogrid-row > div:nth-child(2) {
-
+    .infogrid-stats {
+        width: 90%;
+        margin-bottom: 48px;
+        margin-right: 0px;
     }
+
+    .infogrid-correlations {
+        width: 90%;
+    }
+
 }
 
 .info-div-content div {
@@ -132,8 +145,12 @@
     font-size: 1.35em;
     color: var(--normal-text-color);
     border-bottom: 1px solid var(--light-gray);
+}
+
+.info-div-content div:not(:first-child) {
     padding-top: 12px;
 }
+
 
 .info-div-content div > span {
     float: right;
@@ -144,7 +161,7 @@
 #info-div-description {
     color: var(--normal-link-color);
     font-size: 1.75em;
-    cursor: context-menu;
+    cursor: help;
 }
 
 .bk.histogram-plot {

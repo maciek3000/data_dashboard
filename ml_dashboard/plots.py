@@ -231,6 +231,39 @@ class InfoGrid(MainGrid):
         super().__init__(features, plot_design, feature_description_class)
         self.target_name = target_name
 
+    def summary_grid(self, summary_statistics, histogram_data, initial_feature):
+        dropdown = self._create_features_dropdown(self._infogrid_dropdown)
+
+        histogram_source, histogram_plot = self._create_histogram(histogram_data, initial_feature)
+        info_div = self._create_info_div(summary_statistics, initial_feature)
+
+        callbacks = self._create_features_dropdown_callbacks(
+            summary_statistics=summary_statistics,
+            histogram_data=histogram_data,
+            histogram_source=histogram_source,
+        )
+        for callback in callbacks:
+            dropdown.js_on_change("value", callback)
+
+        output = column(
+            dropdown,  # this dropdown will be invisible (display: none)
+            column(
+                info_div, histogram_plot, css_classes=[self._infogrid_left_pane]
+            ),
+            # height_policy="max",
+            # height=500,
+            css_classes=[self._infogrid_all]
+        )
+
+        return output
+
+    def correlation_plot(self, correlation_data_normalized, correlation_data_raw):
+        # correlation source is left in case it is decided later on that the callback is needed
+        correlation_source, correlation_plot = self._create_correlation(correlation_data_normalized,
+                                                                        correlation_data_raw)
+
+        return correlation_plot
+
     def infogrid(self, summary_statistics, histogram_data, correlation_data_normalized, correlation_data_raw,
                  initial_feature):
 
@@ -420,7 +453,6 @@ class InfoGrid(MainGrid):
             "x_range": cols_for_range,
             "y_range": cols_for_range[::-1],  # first value to be at the top of the axis
             "tooltips": tooltip_text,
-            "title": "Features Correlation"
         }
 
         p = default_figure(kwargs)
