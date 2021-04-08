@@ -906,6 +906,11 @@ class ModelsPlotClassification:
 
 class ModelsPlotRegression:
 
+    # negative numbers are having a wacky formatting
+    _formatter = FuncTickFormatter(code="""
+            return String(tick);
+        """)
+
     def __init__(self, plot_design):
         self.plot_design = plot_design
 
@@ -913,15 +918,21 @@ class ModelsPlotRegression:
 
         prediction_errors = assess_models_names(prediction_errors)
         _ = []
+        i = 0
         for model, scatter_points in prediction_errors:
-            plot = self._single_prediction_error_plot(scatter_points)
+            if i == 0:
+                color = self.plot_design.models_color_tuple[0]
+                i += 1
+            else:
+                color = self.plot_design.models_color_tuple[1]
+            plot = self._single_prediction_error_plot(scatter_points, color)
             _.append(Panel(child=plot, title=model))
 
         main_plot = Tabs(tabs=_)
         return main_plot
 
     @stylize()
-    def _single_prediction_error_plot(self, scatter_data):
+    def _single_prediction_error_plot(self, scatter_data, color):
         p = default_figure(
             {
                 "tools": "pan,wheel_zoom,box_zoom,reset",
@@ -929,7 +940,61 @@ class ModelsPlotRegression:
             }
         )
 
-        p.scatter(scatter_data[0], scatter_data[1])
+        p.scatter(scatter_data[0], scatter_data[1], color=color, size=16, fill_alpha=0.8)
+
+        # TODO: will it really work or is it plotted always as a straight line?
+        y_line = []
+        for q in np.linspace(0, 1, 11):
+            y_line.append(scatter_data[0].quantile(q=q))
+
+        p.line(y_line, y_line, line_width=1, color=self.plot_design.models_dummy_color, line_dash="dashed")
+
+        p.xaxis.axis_label = "Actual"
+        p.yaxis.axis_label = "Predicted"
+
+        p.xaxis.formatter = self._formatter
+        p.yaxis.formatter = self._formatter
+
+        p.toolbar.autohide = True
+
+        return p
+
+    def residual_plot(self, residual_tuples):
+        residual_tuples = assess_models_names(residual_tuples)
+        _ = []
+        i = 0
+        for model, scatter_points in residual_tuples:
+            if i == 0:
+                color = self.plot_design.models_color_tuple[0]
+                i += 1
+            else:
+                color = self.plot_design.models_color_tuple[1]
+            plot = self._single_residual_plot(scatter_points, color)
+            _.append(Panel(child=plot, title=model))
+
+        main_plot = Tabs(tabs=_)
+        return main_plot
+
+    @stylize()
+    def _single_residual_plot(self, scatter_data, color):
+        p = default_figure(
+            {
+                "tools": "pan,wheel_zoom,box_zoom,reset",
+                "toolbar_location": "right",
+                "width": 900,
+                "height": 300
+            }
+        )
+
+        p.scatter(scatter_data[0], scatter_data[1], color=color, size=10, fill_alpha=0.8)
+
+        p.line([min(scatter_data[0]), max(scatter_data[0])], [0, 0], line_width=2, color=self.plot_design.models_dummy_color)
+
+        p.xaxis.axis_label = "Predicted"
+        p.yaxis.axis_label = "Residual"
+
+        p.xaxis.formatter = self._formatter
+        p.yaxis.formatter = self._formatter
 
         p.toolbar.autohide = True
 

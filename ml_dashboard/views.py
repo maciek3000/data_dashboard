@@ -330,10 +330,11 @@ class ModelsView(BaseView):
 
     _models_plot_title = "models_right_title"
     _models_plot = "models_right_plot"
-    _models_plot_script = "models_right_plot_script"
+    _models_plot_script = "bokeh_script_models_right"
 
-    _models_confusion_matrix_title = "models_left_bottom_title"
-    _models_confusion_matrix = "models_left_bottom"
+    _models_left_bottom_title = "models_left_bottom_title"
+    _models_left_bottom = "models_left_bottom"
+    _models_left_bottom_script = "bokeh_script_models_left_bottom"
 
     # CSS
     _first_model_class = "first-model"
@@ -456,8 +457,8 @@ class ModelsViewClassification(ModelsView):
         output[self._models_plot_script] = models_plot_script
         output[self._models_plot] = models_plot_div
 
-        output[self._models_confusion_matrix_title] = self._models_confusion_matrix_title_text
-        output[self._models_confusion_matrix] = self._confusion_matrices(confusion_matrices)
+        output[self._models_left_bottom_title] = self._models_confusion_matrix_title_text
+        output[self._models_left_bottom] = self._confusion_matrices(confusion_matrices)
 
         return self.template.render(**output)
 
@@ -492,6 +493,7 @@ class ModelsViewClassification(ModelsView):
 class ModelsViewRegression(ModelsView):
 
     _prediction_errors_title = "Prediction Error Plots"
+    _residuals_title = "Residual Plots"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -499,13 +501,19 @@ class ModelsViewRegression(ModelsView):
     def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom):
 
         prediction_errors_plot = models_right
+        residual_plot = models_left_bottom
 
         output = self._base_output(base_css, creation_date, hyperlinks, model_results)
 
-        models_plot_script, models_plot_div = components(prediction_errors_plot)
+        models_right_plot_script, models_right_plot_div = components(prediction_errors_plot)
         output[self._models_plot_title] = self._prediction_errors_title
-        output[self._models_plot_script] = models_plot_script
-        output[self._models_plot] = models_plot_div
+        output[self._models_plot_script] = models_right_plot_script
+        output[self._models_plot] = models_right_plot_div
+
+        models_left_bottom_plot_script, models_left_bottom_plot_div = components(residual_plot)
+        output[self._models_left_bottom_title] = self._residuals_title
+        output[self._models_left_bottom_script] = models_left_bottom_plot_script
+        output[self._models_left_bottom] = models_left_bottom_plot_div
 
         return self.template.render(**output)
 
