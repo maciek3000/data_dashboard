@@ -1030,6 +1030,7 @@ def test_model_finder_classification_confusion_matrices(model_finder_classificat
 
     for actual_result, expected_result in zip(actual_results, expected_results):
         assert actual_result[0].__class__.__name__ == expected_result[0]
+        assert actual_result[1].shape == (2, 2)
         assert actual_result[1].ravel().tolist() == expected_result[1]
 
 
@@ -1110,3 +1111,27 @@ def test_model_finder_regression_residual_error(model_finder_regression):
     with pytest.raises(ModelsNotSearchedError) as excinfo:
         _ = model_finder_regression.residuals(1)
     assert "Search Results is not available. " in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("limit",),
+    (
+            (1,),
+            (2,),
+            (3,),
+    )
+)
+def test_model_finder_multiclass_confusion_matrices(model_finder_multiclass_fitted, limit):
+    """Testing if confusion matrices are being correctly calculated and returned (in multiclass)."""
+    results = [
+        ("DecisionTreeClassifier", [11, 0, 0, 0, 6, 0, 0, 0, 8]),
+        ("LogisticRegression", [11, 0, 0, 0, 6, 0, 0, 0, 8]),
+        ("SVC", [11, 0, 0, 0, 6, 0, 3, 0, 5])
+    ]
+    expected_results = results[:limit]
+    actual_results = model_finder_multiclass_fitted.confusion_matrices(limit)
+
+    for actual_result, expected_result in zip(actual_results, expected_results):
+        assert actual_result[0].__class__.__name__ == expected_result[0]
+        assert actual_result[1].shape == (3, 3)
+        assert actual_result[1].ravel().tolist() == expected_result[1]

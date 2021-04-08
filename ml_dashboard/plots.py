@@ -1005,3 +1005,70 @@ class ModelsPlotMulticlass:
 
     def __init__(self, plot_design):
         self.plot_design = plot_design
+
+    def confusion_matrices_plot(self, confusion_matrices):
+
+        confusion_matrices = assess_models_names(confusion_matrices)
+        _ = []
+        i = 0
+        for model, array in confusion_matrices:
+            if i == 0:
+                color = self.plot_design.models_color_tuple[0]
+                i += 1
+            else:
+                color = self.plot_design.models_color_tuple[1]
+            plot = self._single_confusion_matrix_plot(array, color)
+            _.append(Panel(child=plot, title=model))
+
+        main_plot = Tabs(tabs=_)
+        return main_plot
+
+    @stylize()
+    def _single_confusion_matrix_plot(self, confusion_array, color):
+        source = self._create_column_data_source(confusion_array)
+
+        cmap = LinearColorMapper(palette=self.plot_design.contrary_color_tints, low=0, high=max(confusion_array.ravel()))
+
+        tooltip_text = [
+            ("x", "@x"),
+            ("y", "@y"),
+            ("values", "@values")
+        ]
+
+        p = default_figure(
+            {
+                "tools": "pan,wheel_zoom,box_zoom,reset",
+                "toolbar_location": "right",
+                "tooltips": tooltip_text
+            }
+        )
+
+        p.rect(
+            x="x",
+            y="y",
+            source=source,
+            fill_color={"field": "values", "transform": cmap},
+            width=1,
+            height=1,
+            line_color=None,
+        )
+
+        p.toolbar.autohide = True
+
+        return p
+
+    def _create_column_data_source(self, confusion_array):
+
+        cds = ColumnDataSource()
+        df = pd.DataFrame(confusion_array).stack()
+        x = df.index.droplevel(0).to_list()  # one of the indexes
+        y = df.index.droplevel(1).to_list()  # second of the indexes
+        values = df.to_list()
+
+        cds.data = {
+            "x": x,
+            "y": y,
+            "values": values
+        }
+
+        return cds

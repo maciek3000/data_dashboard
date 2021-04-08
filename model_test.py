@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     # examples
 
-    # X, y, descriptions = iris()
+    X, y, descriptions = iris()
     # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
     # X, y, descriptions = wine()

@@ -49,6 +49,7 @@ def test_output_write_html(output, filename, template, tmpdir):
     )
 )
 def test_models_view_creator(output, problem_type, expected_result):
+    """Testing if output creates a correct ModelsView based on a provided problem type."""
     if problem_type == "classification":
         problem = output.model_finder._classification
     elif problem_type == "regression":
@@ -72,6 +73,7 @@ def test_models_view_creator(output, problem_type, expected_result):
     )
 )
 def test_models_view_creator_error(output, incorrect_problem_type):
+    """Testing if _models_view_creator raises an Exception when an incorrect problem type is provided."""
     with pytest.raises(ValueError) as excinfo:
         _ = output._models_view_creator(incorrect_problem_type)
     assert str(incorrect_problem_type) in str(excinfo.value)
@@ -89,6 +91,7 @@ def test_models_plot_output(
         output, model_finder_classification_fitted, model_finder_regression_fitted, model_finder_multiclass_fitted,
         problem_type, expected_result
 ):
+    """Testing if output creates output of a correct type based on a provided problem type."""
     if problem_type == "classification":
         output.model_finder = model_finder_classification_fitted
         problem = output.model_finder._classification
@@ -117,6 +120,7 @@ def test_models_plot_output(
     )
 )
 def test_models_plot_output_error(output, incorrect_problem_type):
+    """Testing if _models_view_creator raises an Exception when an incorrect problem type is provided."""
     with pytest.raises(ValueError) as excinfo:
         _ = output._models_plot_output(incorrect_problem_type)
     assert str(incorrect_problem_type) in str(excinfo.value)

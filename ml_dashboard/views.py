@@ -520,10 +520,18 @@ class ModelsViewRegression(ModelsView):
 
 class ModelsViewMulticlass(ModelsView):
 
+    _confusion_matrices_title = "Confusion Matrices"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom):
+        confusion_matrices = models_right
+
         output = self._base_output(base_css, creation_date, hyperlinks, model_results)
+        models_right_plot_script, models_right_plot_div = components(confusion_matrices)
+        output[self._models_plot_title] = self._confusion_matrices_title
+        output[self._models_plot_script] = models_right_plot_script
+        output[self._models_plot] = models_right_plot_div
 
         return self.template.render(**output)
