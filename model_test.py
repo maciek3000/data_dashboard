@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # examples
 
     # X, y, descriptions = iris()
-    X, y, descriptions = boston()
+    # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
     # X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
@@ -53,6 +53,8 @@ if __name__ == "__main__":
               SVR(C=10.0, kernel="linear"),
               SVR(C=100.0)
               ]
+
+    models = None
 
     model = coord.search_and_fit(models=models)
     coord.create_dashboard()

@@ -256,7 +256,7 @@ class Output:
         elif problem_type == self.model_finder._regression:
             mp = ModelsPlotRegression(pd)
             models_right = mp.prediction_error_plot(self.model_finder.prediction_errors(self._view_models_model_limit))
-            models_left_bottom = None
+            models_left_bottom = mp.residual_plot(self.model_finder.residuals(self._view_models_model_limit))
 
         elif problem_type == self.model_finder._multiclass:
             mp = ModelsPlotMulticlass

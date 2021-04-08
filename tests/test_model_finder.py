@@ -9,7 +9,7 @@ from sklearn.metrics import f1_score, precision_score
 from sklearn.exceptions import NotFittedError
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
-from ml_dashboard.model_finder import obj_name, reverse_sorting_order, ModelFinder, ModelNotSetError
+from ml_dashboard.model_finder import obj_name, reverse_sorting_order, ModelFinder, ModelNotSetError, ModelsNotSearchedError
 from ml_dashboard.models import classifiers, regressors
 
 
@@ -959,6 +959,13 @@ def test_model_finder_classification_plot_curves(
         assert np.array_equal(actual_arr, expected_arr)
 
 
+def test_model_finder_classification_plot_curves_error(model_finder_classification):
+    """Testing if _plot_curves raises an Exception when there are no search results available (classification)."""
+    with pytest.raises(ModelsNotSearchedError) as excinfo:
+        model_finder_classification._plot_curves("test_func", 1)
+    assert "Search Results is not available. " in str(excinfo.value)
+
+
 @pytest.mark.parametrize(
     ("input_func", "expected_results"),
     (
@@ -1024,3 +1031,82 @@ def test_model_finder_classification_confusion_matrices(model_finder_classificat
     for actual_result, expected_result in zip(actual_results, expected_results):
         assert actual_result[0].__class__.__name__ == expected_result[0]
         assert actual_result[1].ravel().tolist() == expected_result[1]
+
+
+def test_model_finder_classification_confusion_matrices_error(model_finder_classification):
+    """Testing if confusion_matrices raises an error when there are no search results available (classification)."""
+    with pytest.raises(ModelsNotSearchedError) as excinfo:
+        _ = model_finder_classification.confusion_matrices(1)
+    assert "Search Results is not available. " in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("limit",),
+    (
+            (1,),
+            (2,),
+            (3,),
+    )
+)
+def test_model_finder_regression_prediction_errors(model_finder_regression_fitted, limit, seed):
+    """Testing if calculated prediction errors are correct (for regression)."""
+    results = [
+        SVR(**{"C": 0.1, "tol": 1.0}),
+        Ridge(**{"alpha": 0.0001, "random_state": seed}),
+        DecisionTreeRegressor(**{"max_depth": 10, "criterion": "mae", "random_state": seed}),
+    ]
+    expected_results = results[:limit]
+    expected_len = 25
+
+    actual_results = model_finder_regression_fitted.prediction_errors(limit)
+
+    for actual_result, expected_result in zip(actual_results, expected_results):
+        assert str(actual_result[0]) == str(expected_result)
+        y_score, y_pred = actual_result[1]
+        assert y_score.shape[0] == expected_len
+        assert y_pred.shape[0] == expected_len
+
+        assert not np.array_equal(y_score, y_pred)
+
+
+def test_model_finder_regression_prediction_errors_error(model_finder_regression):
+    """Testing if prediction_errors raises an error when there are no search results available (regression)."""
+    with pytest.raises(ModelsNotSearchedError) as excinfo:
+        _ = model_finder_regression.prediction_errors(1)
+    assert "Search Results is not available. " in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("limit",),
+    (
+            (1,),
+            (2,),
+            (3,),
+    )
+)
+def test_model_finder_regression_residuals(model_finder_regression_fitted, limit, seed):
+    """Testing if calculated residuals are correct (for regression)."""
+    results = [
+        SVR(**{"C": 0.1, "tol": 1.0}),
+        Ridge(**{"alpha": 0.0001, "random_state": seed}),
+        DecisionTreeRegressor(**{"max_depth": 10, "criterion": "mae", "random_state": seed}),
+    ]
+    expected_results = results[:limit]
+    expected_len = 25
+
+    actual_results = model_finder_regression_fitted.residuals(limit)
+
+    for actual_result, expected_result in zip(actual_results, expected_results):
+        assert str(actual_result[0]) == str(expected_result)
+        y_score, y_pred = actual_result[1]
+        assert y_score.shape[0] == expected_len
+        assert y_pred.shape[0] == expected_len
+
+        assert not np.array_equal(y_score, y_pred)
+
+
+def test_model_finder_regression_residual_error(model_finder_regression):
+    """Testing if prediction_errors raises an error when there are no search results available (regression)."""
+    with pytest.raises(ModelsNotSearchedError) as excinfo:
+        _ = model_finder_regression.residuals(1)
+    assert "Search Results is not available. " in str(excinfo.value)

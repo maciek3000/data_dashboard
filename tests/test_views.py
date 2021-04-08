@@ -335,13 +335,13 @@ def test_models_view_classification_single_matrix_table(input_array, expected_st
     ("input_tuple",),
     (
             ([
-                    (Lasso(), np.array(([1, 2], [3, 4]))),
+                    ("Lasso", np.array(([1, 2], [3, 4]))),
             ],),
             ([
-                    (Lasso(), np.array(([10, 20], [40, 50]))),
-                    (LinearRegression(), np.array(([70, 70], [1, 1]))),
-                    (SGDRegressor(), np.array(([0, 0], [0, 0]))),
-                    (SGDClassifier(), np.array(([1, 1,], [1, 1])))
+                    ("Lasso", np.array(([10, 20], [40, 50]))),
+                    ("Lasso", np.array(([70, 70], [1, 1]))),
+                    ("SGDRegressor", np.array(([0, 0], [0, 0]))),
+                    ("SGDClassifier", np.array(([1, 1,], [1, 1])))
             ],),
     )
 )
@@ -366,7 +366,7 @@ def test_models_view_classification_confusion_matrices(input_tuple):
     matrices = parsed.select("." + matrix_class)
 
     for actual_title, expected_tuple in zip(titles, input_tuple):
-        assert actual_title.string == expected_tuple[0].__class__.__name__
+        assert actual_title.string == expected_tuple[0]
 
     assert first_model in matrices[0]["class"]
     for matrix in matrices[1:]:

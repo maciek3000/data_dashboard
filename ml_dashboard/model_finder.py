@@ -257,6 +257,18 @@ class ModelFinder:
 
         return _
 
+    def residuals(self, model_limit):
+        if self._search_results_dataframe is None:
+            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
+
+        models = [tp[0] for tp in self._search_results[:model_limit]]
+        _ = []
+        for model in models:
+            predictions = model.predict(self.X_test)
+            _.append((model, (predictions, predictions - self.y_test)))
+
+        return _
+
     # ===== # Internal functions
 
     def _set_problem(self, problem_type):
@@ -275,6 +287,7 @@ class ModelFinder:
                 self.default_scoring = roc_auc_score
 
         elif problem_type == self._target_numerical:
+            # TODO: y transformer wrapper for clf
             self.problem = self._regression
             self.scoring_functions = self._scoring_regression
             self.default_models = regressors

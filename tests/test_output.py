@@ -1,6 +1,8 @@
 import os
 import pytest
+from bokeh.models.layouts import Tabs
 
+from ml_dashboard.views import ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
 
 @pytest.mark.parametrize(
     ("output_directory", "filename"),
@@ -36,3 +38,85 @@ def test_output_write_html(output, filename, template, tmpdir):
     assert os.path.exists(created_file)
     with open(created_file) as f:
         assert f.read() == template
+
+
+@pytest.mark.parametrize(
+    ("problem_type", "expected_result"),
+    (
+            ("classification", ModelsViewClassification),
+            ("regression", ModelsViewRegression),
+            ("multiclass", ModelsViewMulticlass)
+    )
+)
+def test_models_view_creator(output, problem_type, expected_result):
+    if problem_type == "classification":
+        problem = output.model_finder._classification
+    elif problem_type == "regression":
+        problem = output.model_finder._regression
+    else:
+        problem = output.model_finder._multiclass
+
+    actual_result = output._models_view_creator(problem)
+    assert isinstance(actual_result, expected_result)
+
+
+@pytest.mark.parametrize(
+    ("incorrect_problem_type",),
+    (
+            ("class",),
+            ("reg",),
+            (None,),
+            (True,),
+            (False,),
+            (10,),
+    )
+)
+def test_models_view_creator_error(output, incorrect_problem_type):
+    with pytest.raises(ValueError) as excinfo:
+        _ = output._models_view_creator(incorrect_problem_type)
+    assert str(incorrect_problem_type) in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("problem_type", "expected_result"),
+    (
+            ("classification", (Tabs, list)),
+            ("regression", (Tabs, Tabs)),
+            ("multiclass", (Tabs, None))
+    )
+)
+def test_models_plot_output(
+        output, model_finder_classification_fitted, model_finder_regression_fitted, model_finder_multiclass_fitted,
+        problem_type, expected_result
+):
+    if problem_type == "classification":
+        output.model_finder = model_finder_classification_fitted
+        problem = output.model_finder._classification
+    elif problem_type == "regression":
+        output.model_finder = model_finder_regression_fitted
+        problem = output.model_finder._regression
+    else:
+        output.model_finder = model_finder_multiclass_fitted
+        problem = output.model_finder._multiclass
+
+    actual_result = output._models_plot_output(problem)
+
+    assert isinstance(actual_result[0], expected_result[0])
+    assert isinstance(actual_result[1], expected_result[1])
+
+
+@pytest.mark.parametrize(
+    ("incorrect_problem_type",),
+    (
+            ("class",),
+            ("reg",),
+            (None,),
+            (True,),
+            (False,),
+            (10,),
+    )
+)
+def test_models_plot_output_error(output, incorrect_problem_type):
+    with pytest.raises(ValueError) as excinfo:
+        _ = output._models_plot_output(incorrect_problem_type)
+    assert str(incorrect_problem_type) in str(excinfo.value)
