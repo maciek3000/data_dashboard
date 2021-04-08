@@ -4,8 +4,8 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression, SGDClassifier, SGDRegressor, Lasso
 
-from ml_dashboard.views import Overview, FeatureView,  append_description, series_to_dict, ModelsView
-from ml_dashboard.views import ModelsViewClassification
+from ml_dashboard.views import Overview, FeatureView,  append_description, series_to_dict, replace_duplicate_str
+from ml_dashboard.views import assess_models_names, ModelsView, ModelsViewClassification
 
 
 @pytest.mark.parametrize(
@@ -139,6 +139,50 @@ def test_stylize_html_table(html_test_table, expected_mapping, fixture_features)
 
     assert actual_html == expected_html
 
+@pytest.mark.parametrize(
+    ("input_list", "expected_result"),
+    (
+            (["test", "not-test", "test", "another-test"], ["test #1", "not-test", "test #2", "another-test"]),
+            (["a", "a", "A", "b", "b", "c", "c", "c"], ["a #1", "a #2", "A", "b #1", "b #2", "c #1", "c #2", "c #3"]),
+            (["a", "a", "a", "a"], ["a #1", "a #2", "a #3", "a #4"]),
+            (["a", "b", "c", "d"], ["a", "b", "c", "d"]),
+            (["a", "b", "b", "b", "c"], ["a", "b #1", "b #2", "b #3", "c"])
+    )
+)
+def test_replace_duplicate_str(input_list, expected_result):
+    """Testing if replacing duplicate entries in a list works correctly."""
+    actual_result = replace_duplicate_str(input_list)
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
+    ("input_tuple_list", "expected_names"),
+    (
+            ([(SGDRegressor, ("1", "2")), (SGDRegressor, ("3", "4"), SGDClassifier, "test")],
+             ["SGDRegressor #1", "SGDRegressor #2", "SGDClassifier"]),
+            ([
+                (SGDRegressor, "test"),
+                (SGDClassifier, "test2"),
+                (Lasso, "test3"),
+                (SGDClassifier, "test4"),
+                (SGDRegressor, "test4"),
+                (LinearRegression, "test5"),
+                 (SGDClassifier, "test6")
+            ],
+                ["SGDRegressor #1", "SGDClassifier #1", "Lasso", "SGDClassifier #2",
+                 "SGDRegressor #2", "LinearRegression", "SGDClassifier #3"]
+            )
+
+    )
+)
+def test_assess_model_names(input_tuple_list, expected_names):
+    """Testing if replacing duplicate model names in a tuple of (model, values) works correctly."""
+    expected_results = []
+    for name, tp in zip(expected_names, input_tuple_list):
+        expected_results.append((name, tp[1]))
+
+    actual_results = assess_models_names(input_tuple_list)
+    assert actual_results == expected_results
 
 # @pytest.mark.parametrize(
 #     ("input_df", "expected_result"),

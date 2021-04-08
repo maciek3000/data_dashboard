@@ -16,6 +16,7 @@ import numpy as np
 from bokeh.core.validation.check import silence
 
 from .model_finder import obj_name
+from .views import assess_models_names
 
 contrary_color_palette = ["#FFF7F3", "#FFB695", "#EB6F54", "#9C2B19"]
 
@@ -788,6 +789,9 @@ class ModelsPlotClassification:
 
     def models_comparison_plot(self, roc_curves, precision_recall_curves, det_curves, target_proportion):
 
+        new_tps = [assess_models_names(tp) for tp in [roc_curves, precision_recall_curves, det_curves]]
+        roc_curves, precision_recall_curves, det_curves = new_tps
+
         roc_plot = Panel(child=self._roc_plot(roc_curves), title=self._roc_plot_name)
         precision_recall_plot = Panel(child=self._precision_recall_plot(precision_recall_curves, target_proportion),
                                       title=self._precision_recall_plot_name)
@@ -888,12 +892,12 @@ class ModelsPlotClassification:
 
         # models are plotted in reverse order (without the first one)
         for model, values in new_tuples[:-1]:
-            plot.step(values[0], values[1], line_width=lw - 2, legend_label=obj_name(model),
+            plot.step(values[0], values[1], line_width=lw - 2, legend_label=model,
                       line_color=self.plot_design.models_color_tuple[1], muted_alpha=0.2)
 
         # the best model is plotted as last to be on top of other lines
         first_model, first_values = new_tuples[-1]
-        plot.step(first_values[0], first_values[1], line_width=lw, legend_label=obj_name(first_model),
+        plot.step(first_values[0], first_values[1], line_width=lw, legend_label=first_model,
                   line_color=self.plot_design.models_color_tuple[0], muted_alpha=0.2)
 
         plot.legend.click_policy = "mute"
@@ -907,10 +911,11 @@ class ModelsPlotRegression:
 
     def prediction_error_plot(self, prediction_errors):
 
+        prediction_errors = assess_models_names(prediction_errors)
         _ = []
         for model, scatter_points in prediction_errors:
             plot = self._single_prediction_error_plot(scatter_points)
-            _.append(Panel(child=plot, title=obj_name(model)))
+            _.append(Panel(child=plot, title=model))
 
         main_plot = Tabs(tabs=_)
         return main_plot

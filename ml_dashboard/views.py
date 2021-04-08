@@ -2,6 +2,7 @@ import os
 from bs4 import BeautifulSoup
 from bokeh.embed import components
 from .model_finder import obj_name
+from collections import Counter, defaultdict
 
 
 def info_symbol_html():
@@ -26,6 +27,33 @@ def series_to_dict(srs):
     params = srs.to_dict()
     dict_str = {model: str(params_str)[1:-1].replace(", ", "\n") for model, params_str in params.items()}
     return dict_str
+
+
+def replace_duplicate_str(duplicate_list_of_str):
+
+    if len(set(duplicate_list_of_str)) != len(duplicate_list_of_str):
+        base_cnt = Counter(duplicate_list_of_str)
+        item_cnt = defaultdict(int)
+        new_container = []
+
+        for item in duplicate_list_of_str:
+            if base_cnt[item] > 1:
+                new_item = item + " #" + str(item_cnt[item] + 1)
+                item_cnt[item] += 1
+                new_container.append(new_item)
+            else:
+                new_container.append(item)
+
+        return new_container
+    else:
+        return duplicate_list_of_str
+
+
+def assess_models_names(model_tuple):
+    models = [obj_name(tp[0]) for tp in model_tuple]
+    new_names = replace_duplicate_str(models)
+    new_tuple = [(new_name, value[1]) for new_name, value in zip(new_names, model_tuple)]
+    return new_tuple
 
 # def df_to_html_table(df):
 #     d = df.T.to_dict()
@@ -360,6 +388,8 @@ class ModelsView(BaseView):
         return output
 
     def _models_result_table(self, results_dataframe):
+        new_df = results_dataframe
+        new_df.index = replace_duplicate_str(results_dataframe.index.tolist())
         new_params = series_to_dict(results_dataframe[self.params_name])
 
         df = results_dataframe.drop([self.params_name], axis=1)
@@ -417,7 +447,7 @@ class ModelsViewClassification(ModelsView):
     def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom):
 
         models_plot = models_right
-        confusion_matrices = models_left_bottom
+        confusion_matrices = assess_models_names(models_left_bottom)
 
         output = super()._base_output(base_css, creation_date, hyperlinks, model_results)
 
@@ -444,7 +474,7 @@ class ModelsViewClassification(ModelsView):
                 color_class = self._other_model_class
 
             single_matrix = "<div class='{} {}'>".format(self._confusion_matrices_single_matrix, color_class)
-            title = "<div class='{}'>{}</div>".format(self._confusion_matrices_single_matrix_title, obj_name(model))
+            title = "<div class='{}'>{}</div>".format(self._confusion_matrices_single_matrix_title, model)
             table = self._single_confusion_matrix_html(matrix)
             single_matrix += title + table + "</div>"
             output += single_matrix

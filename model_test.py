@@ -1,7 +1,7 @@
 from sklearn.metrics import accuracy_score, mean_squared_error, jaccard_score
 from sklearn.model_selection import train_test_split
 from lazypredict.Supervised import LazyClassifier
-from sklearn.svm import SVC
+from sklearn.svm import SVC, SVR
 
 import os
 import pandas as pd
@@ -32,18 +32,30 @@ if __name__ == "__main__":
     # examples
 
     # X, y, descriptions = iris()
-    # X, y, descriptions = boston()
+    X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
     # X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
 
     coord = Coordinator(X, y, output_directory, None, descriptions, os.getcwd(), random_state=42)
-    model = coord.search_and_fit()
-    coord.create_dashboard()
+
     # output = coord.quick_find()
     # print("\n".join(map(lambda x: x[0] + ": " + str(x[1]), output)))
 
-    model = SVC(C=1000.0, gamma='auto', tol=0.1, kernel="rbf")
+    models = [SVC(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
+              SVC(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
+              SVC(C=10.0, kernel="linear"),
+              SVC(C=100.0)
+              ]
+
+    models = [SVR(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
+              SVR(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
+              SVR(C=10.0, kernel="linear"),
+              SVR(C=100.0)
+              ]
+
+    model = coord.search_and_fit(models=models)
+    coord.create_dashboard()
     #ml = coord.search_and_fit(mode="quick", scoring=accuracy_score)
 
     #predictions = coord.predict(test_df[features])
