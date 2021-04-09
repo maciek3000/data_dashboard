@@ -1,9 +1,9 @@
 from .views import append_description
 from bokeh.plotting import figure
-from bokeh.layouts import column, row
+from bokeh.layouts import column, row, Spacer
 from bokeh.models import ColumnDataSource, FuncTickFormatter
 from bokeh.models.widgets import Select, Div
-from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, LinearColorMapper, Panel, Tabs, HoverTool
+from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, LinearColorMapper, Panel, Tabs, HoverTool, LabelSet
 from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.palettes import Reds4, Category10
 import functools
@@ -1003,8 +1003,13 @@ class ModelsPlotRegression:
 
 class ModelsPlotMulticlass:
 
-    def __init__(self, plot_design):
+    _x = "x"
+    _y = "y"
+    _values = "values"
+
+    def __init__(self, plot_design, label_classes):
         self.plot_design = plot_design
+        self.labels = list(map(str, label_classes))
 
     def confusion_matrices_plot(self, confusion_matrices):
 
@@ -1013,47 +1018,57 @@ class ModelsPlotMulticlass:
         i = 0
         for model, array in confusion_matrices:
             if i == 0:
-                color = self.plot_design.models_color_tuple[0]
+                palette = self.plot_design.contrary_half_color_tints
                 i += 1
             else:
-                color = self.plot_design.models_color_tuple[1]
-            plot = self._single_confusion_matrix_plot(array, color)
-            _.append(Panel(child=plot, title=model))
+                palette = self.plot_design.base_half_color_tints
+            plot = self._single_confusion_matrix_plot(array, palette, model)
+            _.append(plot)
+            _.append(Spacer(width=100))
 
-        main_plot = Tabs(tabs=_)
+        main_plot = row(*_)
         return main_plot
 
     @stylize()
-    def _single_confusion_matrix_plot(self, confusion_array, color):
+    def _single_confusion_matrix_plot(self, confusion_array, palette, model_name):
+
         source = self._create_column_data_source(confusion_array)
-
-        cmap = LinearColorMapper(palette=self.plot_design.contrary_color_tints, low=0, high=max(confusion_array.ravel()))
-
-        tooltip_text = [
-            ("x", "@x"),
-            ("y", "@y"),
-            ("values", "@values")
-        ]
+        cmap = LinearColorMapper(palette=palette[::-1], low=0, high=max(confusion_array.ravel()))
 
         p = default_figure(
             {
-                "tools": "pan,wheel_zoom,box_zoom,reset",
-                "toolbar_location": "right",
-                "tooltips": tooltip_text
+                "title": model_name,
+                "height": 300,
+                "width": 300,
+                "x_range": self.labels,
+                "y_range":  self.labels[::-1]
             }
         )
 
         p.rect(
-            x="x",
-            y="y",
+            x=self._x,
+            y=self._y,
             source=source,
-            fill_color={"field": "values", "transform": cmap},
+            fill_color={"field": self._values, "transform": cmap},
             width=1,
             height=1,
             line_color=None,
         )
 
-        p.toolbar.autohide = True
+        labels = LabelSet(
+            x=self._x,
+            y=self._y,
+            text=self._values,
+            source=source,
+            render_mode="canvas",
+            x_offset=-7,
+            y_offset=-7,
+            text_color="black",
+            text_font_size="11px",
+        )
+        p.add_layout(labels)
+
+        p.xaxis.major_label_orientation = -0.5  # in radians
 
         return p
 
@@ -1061,14 +1076,14 @@ class ModelsPlotMulticlass:
 
         cds = ColumnDataSource()
         df = pd.DataFrame(confusion_array).stack()
-        x = df.index.droplevel(0).to_list()  # one of the indexes
-        y = df.index.droplevel(1).to_list()  # second of the indexes
+        x = df.index.droplevel(0).astype(str).to_list()  # one of the indexes
+        y = df.index.droplevel(1).astype(str).to_list()  # second of the indexes
         values = df.to_list()
 
         cds.data = {
-            "x": x,
-            "y": y,
-            "values": values
+            self._x: x,
+            self._y: y,
+            self._values: values
         }
 
         return cds

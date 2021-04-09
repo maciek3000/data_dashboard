@@ -3,6 +3,7 @@
     flex-direction: row;
     width: 100%;
     padding-top: 36px;
+    margin-bottom: 48px;
 }
 
 .subtitle {
@@ -98,7 +99,6 @@
     width: 100%;
     justify-content: center;
 }
-
 
 .confusion-matrix {
     width: 30%;

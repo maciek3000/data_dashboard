@@ -34,3 +34,19 @@ class PlotDesign:
 
         self.models_color_tuple = (self.contrary_color_tints[0], self.base_color_tints[4])
         self.models_dummy_color = "#ABABAB"
+
+        self.contrary_half_color_tints = [
+            "#c48075",
+            "#d09991",
+            "#dcb3ac",
+            "#e7ccc8",
+            "#f3e6e3"
+        ]
+
+        self.base_half_color_tints = [
+            "#7597c4",
+            "#91acd0",
+            "#acc1dc",
+            "#c8d5e7",
+            "#e3eaf3"
+        ]

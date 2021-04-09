@@ -259,9 +259,9 @@ class Output:
             models_left_bottom = mp.residual_plot(self.model_finder.residuals(self._view_models_model_limit))
 
         elif problem_type == self.model_finder._multiclass:
-            mp = ModelsPlotMulticlass(pd)
-            models_right = mp.confusion_matrices_plot(self.model_finder.confusion_matrices(self._view_models_model_limit))
-            models_left_bottom = None
+            mp = ModelsPlotMulticlass(pd, self.transformer.y_classes())
+            models_right = None
+            models_left_bottom = mp.confusion_matrices_plot(self.model_finder.confusion_matrices(self._view_models_model_limit))
 
         else:
             raise ValueError("Incorrect problem type provided: {problem_type}".format(problem_type=problem_type))

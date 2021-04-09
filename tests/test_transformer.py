@@ -177,3 +177,31 @@ def test_transformer_transform_X_numerical(data_classification_balanced, feature
     actual_result = tr.fit_transform(pd.DataFrame(df[feature_name]))
 
     assert np.allclose(actual_result, expected_result)
+
+
+@pytest.mark.parametrize(
+    ("y_column", "expected_result"),
+    (
+            ("Sex", ["Female", "Male", np.nan]),
+            ("AgeGroup", [18, 23, 28, 33, 38, 43, 48, 53, 58]),
+            ("Product", ["Apples", "Bananas", "Bread", "Butter", "Cheese", "Cookies", "Eggs", "Honey", "Ketchup", "Oranges", np.nan]),
+            ("Target", [0, 1])
+    )
+)
+def test_transformer_y_classes_classification(data_classification_balanced, categorical_features, numerical_features, y_column, expected_result, seed):
+    """Testing if classification transformer returns correct classes from y."""
+    df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1)
+    cat_feats = categorical_features.remove(y_column)
+    tr = Transformer(cat_feats, numerical_features, "Categorical", random_state=seed)
+    tr.fit_y(df[y_column])
+
+    actual_result = tr.y_classes().tolist()
+
+    assert actual_result == expected_result
+
+
+def test_transformer_y_classes_regression_error(categorical_features, numerical_features, seed):
+    """Testing if y_classes raises an Error when target_type is provided as Numerical."""
+    tr = Transformer(categorical_features, numerical_features, "Numerical", seed)
+    with pytest.raises(ValueError):
+        _ = tr.y_classes()

@@ -97,3 +97,9 @@ class Transformer:
             )
 
         return transformer
+
+    def y_classes(self):
+        if self.target_type == "Numerical":
+            raise ValueError("No classes present in regression problem.")
+
+        return self.preprocessor_y.classes_
