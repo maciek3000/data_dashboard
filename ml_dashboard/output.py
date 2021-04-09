@@ -2,7 +2,7 @@ import os, datetime
 from jinja2 import Environment, FileSystemLoader
 from .views import Overview, FeatureView, ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
 from .plots import PairPlot, InfoGrid, ScatterPlotGrid
-from .plots import ModelsPlotClassification, ModelsPlotRegression, ModelsPlotMulticlass
+from .plots import ModelsPlotClassification, ModelsPlotRegression, ModelsPlotMulticlass, ModelsDataTable
 from .plot_design import PlotDesign
 
 
@@ -157,6 +157,7 @@ class Output:
         )
 
         models_right, models_left_bottom = self._models_plot_output(self.model_finder.problem)
+        table = ModelsDataTable().data_table(self.features.raw_data())
 
         models_rendered = self.view_models.render(
             base_css=base_css,
@@ -165,6 +166,7 @@ class Output:
             model_results=self.model_finder.search_results(self._view_models_model_limit),
             models_right=models_right,
             models_left_bottom=models_left_bottom,
+            incorrect_predictions_table=table
         )
 
         # if problem_type == "classification":

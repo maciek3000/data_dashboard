@@ -336,6 +336,9 @@ class ModelsView(BaseView):
     _models_left_bottom = "models_left_bottom"
     _models_left_bottom_script = "bokeh_script_models_left_bottom"
 
+    _incorrect_predictions_table = "incorrect_predictions_table"
+    _incorrect_predictions_table_script = "bokeh_script_incorrect_predictions_table"
+
     # CSS
     _first_model_class = "first-model"
     _other_model_class = "other-model"
@@ -372,10 +375,10 @@ class ModelsView(BaseView):
         self.params_name = params_name
         self.model_with_description_class = model_with_description_class
 
-    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom):
+    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom, incorrect_predictions_table):
         raise NotImplementedError
 
-    def _base_output(self, base_css, creation_date, hyperlinks, model_results):
+    def _base_output(self, base_css, creation_date, hyperlinks, model_results, incorrect_predictions_table):
         output = {}
 
         # Standard variables
@@ -385,6 +388,10 @@ class ModelsView(BaseView):
         output[self._models_css] = self.css
         output[self._models_js] = self.js
         output[self._models_table] = self._models_result_table(model_results)
+
+        incorrect_predictions_script, incorrect_predictions_div = components(incorrect_predictions_table)
+        output[self._incorrect_predictions_table_script] = incorrect_predictions_script
+        output[self._incorrect_predictions_table] = incorrect_predictions_div
 
         return output
 
@@ -445,12 +452,12 @@ class ModelsViewClassification(ModelsView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom):
+    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom, incorrect_predictions_table):
 
         models_plot = models_right
         confusion_matrices = assess_models_names(models_left_bottom)
 
-        output = super()._base_output(base_css, creation_date, hyperlinks, model_results)
+        output = super()._base_output(base_css, creation_date, hyperlinks, model_results, incorrect_predictions_table)
 
         models_plot_script, models_plot_div = components(models_plot)
         output[self._models_plot_title] = self._models_plot_title_text
@@ -498,12 +505,12 @@ class ModelsViewRegression(ModelsView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom):
+    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom, incorrect_predictions_table):
 
         prediction_errors_plot = models_right
         residual_plot = models_left_bottom
 
-        output = self._base_output(base_css, creation_date, hyperlinks, model_results)
+        output = self._base_output(base_css, creation_date, hyperlinks, model_results, incorrect_predictions_table)
 
         models_right_plot_script, models_right_plot_div = components(prediction_errors_plot)
         output[self._models_plot_title] = self._prediction_errors_title
@@ -525,10 +532,10 @@ class ModelsViewMulticlass(ModelsView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom):
+    def render(self, base_css, creation_date, hyperlinks, model_results, models_right, models_left_bottom, incorrect_predictions_table):
         confusion_matrices = models_left_bottom
 
-        output = self._base_output(base_css, creation_date, hyperlinks, model_results)
+        output = self._base_output(base_css, creation_date, hyperlinks, model_results, incorrect_predictions_table)
         models_left_bottom_plot_script, models_left_bottom_plot_div = components(confusion_matrices)
         output[self._models_left_bottom_title] = self._confusion_matrices_title
         output[self._models_left_bottom_script] = models_left_bottom_plot_script

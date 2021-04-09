@@ -1,6 +1,7 @@
 import os
 import pytest
 from bokeh.models.layouts import Tabs
+from bokeh.layouts import Row
 
 from ml_dashboard.views import ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
 
@@ -84,7 +85,7 @@ def test_models_view_creator_error(output, incorrect_problem_type):
     (
             ("classification", (Tabs, list)),
             ("regression", (Tabs, Tabs)),
-            ("multiclass", (Tabs, None))
+            ("multiclass", (None, Row))
     )
 )
 def test_models_plot_output(
@@ -104,8 +105,15 @@ def test_models_plot_output(
 
     actual_result = output._models_plot_output(problem)
 
-    assert isinstance(actual_result[0], expected_result[0])
-    assert isinstance(actual_result[1], expected_result[1])
+    try:
+        assert isinstance(actual_result[0], expected_result[0])
+    except TypeError:
+        assert actual_result[0] is None and expected_result[0] is None
+
+    try:
+        assert isinstance(actual_result[1], expected_result[1])
+    except TypeError:
+        assert actual_result[1] is None and expected_result[1] is None
 
 
 @pytest.mark.parametrize(

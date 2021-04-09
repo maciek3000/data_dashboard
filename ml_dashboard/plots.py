@@ -6,6 +6,7 @@ from bokeh.models.widgets import Select, Div
 from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, LinearColorMapper, Panel, Tabs, HoverTool, LabelSet
 from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.palettes import Reds4, Category10
+from bokeh.models.widgets.tables import DataTable, TableColumn
 import functools
 import seaborn as sns
 import scipy.stats
@@ -903,7 +904,6 @@ class ModelsPlotClassification:
         plot.legend.click_policy = "mute"
         plot.toolbar.autohide = True
 
-
 class ModelsPlotRegression:
 
     # negative numbers are having a wacky formatting
@@ -1087,3 +1087,20 @@ class ModelsPlotMulticlass:
         }
 
         return cds
+
+
+class ModelsDataTable:
+
+    def __init__(self):
+        pass
+
+    def data_table(self, df):
+        source = ColumnDataSource(df)
+
+        cols = []
+        for col in df.columns:
+            cols.append(TableColumn(field=col, title=col))
+
+        dt = DataTable(source=source, columns=cols)
+
+        return dt
