@@ -414,6 +414,26 @@ def test_features_create_raw_dataframe(data_classification_balanced, feature_des
     assert actual_df.equals(expected_df)
 
 
+def test_features_create_raw_dataframe_preserving_index(data_classification_balanced, feature_descriptor):
+    """Testing if create_raw_dataframe preserves the index of the DataFrame."""
+    X, y = data_classification_balanced
+    not_expected_df = pd.concat([X, y], axis=1).drop(["Date"], axis=1)
+
+    length = X.shape[0]
+    new_ind = list(range(100, length + 100))
+    X.index = new_ind
+    y.index = new_ind
+    f = Features(X, y, feature_descriptor)
+    expected_df = pd.concat([X, y], axis=1).drop(["Date"], axis=1)
+    expected_df.index = new_ind
+
+    cols = expected_df.columns
+    actual_df = f._create_raw_dataframe()[cols]
+
+    assert not actual_df.equals(not_expected_df)
+    assert actual_df.equals(expected_df)
+
+
 def test_features_raw_data_no_target(data_classification_balanced, feature_descriptor):
     """Testing if raw_dataframe() drops Target column when drop_target=True."""
     X, y = data_classification_balanced

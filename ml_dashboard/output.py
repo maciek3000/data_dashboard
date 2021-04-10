@@ -50,12 +50,15 @@ class Output:
     # view specific properties
     _view_models_model_limit = 3
 
-    def __init__(self, root_path, output_directory, package_name, features, analyzer, transformer, model_finder):
+    def __init__(self, root_path, output_directory, package_name, features, analyzer, transformer, model_finder, X_test, y_test):
 
         self.features = features
         self.analyzer = analyzer
         self.transformer = transformer
         self.model_finder = model_finder
+
+        self.X_test = X_test
+        self.y_test = y_test
 
         # TODO:
         # this solution is sufficient right now but nowhere near satisfying
@@ -157,7 +160,9 @@ class Output:
         )
 
         models_right, models_left_bottom = self._models_plot_output(self.model_finder.problem)
-        table = ModelsDataTable().data_table(self.features.raw_data())
+
+        predicted_y = self.model_finder.predictions_X_test(self._view_models_model_limit)
+        table = ModelsDataTable(self.plot_design).data_table(self.X_test, self.y_test, predicted_y)
 
         models_rendered = self.view_models.render(
             base_css=base_css,

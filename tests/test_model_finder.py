@@ -1020,7 +1020,7 @@ def test_model_finder_test_target_proportion(model_finder_classification_fitted)
 def test_model_finder_classification_confusion_matrices(model_finder_classification_fitted, limit):
     """Testing if confusion matrices are being correctly calculated and returned (in classification)."""
     results = [
-        ("DecisionTreeClassifier", [2, 8, 2, 13]), #np.array(([2, 8], [2, 13]))),
+        ("DecisionTreeClassifier", [2, 8, 2, 13]),
         ("SVC", [0, 10, 0, 15]),
         ("LogisticRegression", [0, 10, 2, 13])
     ]
@@ -1135,3 +1135,92 @@ def test_model_finder_multiclass_confusion_matrices(model_finder_multiclass_fitt
         assert actual_result[0].__class__.__name__ == expected_result[0]
         assert actual_result[1].shape == (3, 3)
         assert actual_result[1].ravel().tolist() == expected_result[1]
+
+@pytest.mark.parametrize(
+    ("limit",),
+    (
+            (1,),
+            (2,),
+            (3,),
+    )
+)
+def test_model_finder_predict_X_test_classification(model_finder_classification_fitted, split_dataset_categorical, limit, seed):
+    """Testing if predictions of X_test split from found models are correct (in classification)."""
+    models = [
+        DecisionTreeClassifier(**{"max_depth": 10, "criterion": "entropy", "random_state": seed}),
+        SVC(**{"C": 0.1, "tol": 0.1, "random_state": seed}),
+        LogisticRegression(**{"C": 1.0, "tol": 0.1, "random_state": seed})
+    ]
+    results = []
+    X_train, X_test, y_train, y_test = split_dataset_categorical
+    for model in models:
+        new_model = model.fit(X_train, y_train)
+        results.append((model, new_model.predict(X_test)))
+
+    expected_results = results[:limit]
+
+    actual_results = model_finder_classification_fitted.predictions_X_test(limit)
+
+    for actual_result, expected_result in zip(actual_results, expected_results):
+        assert str(actual_result[0]) == str(expected_result[0])
+        assert np.array_equal(actual_result[1], expected_result[1])
+
+
+@pytest.mark.parametrize(
+    ("limit",),
+    (
+            (1,),
+            (2,),
+            (3,),
+    )
+)
+def test_model_finder_predict_X_test_regression(model_finder_regression_fitted, split_dataset_numerical, limit, seed):
+    """Testing if predictions of X_test split from found models are correct (in regression)."""
+    models = [
+        SVR(**{"C": 0.1, "tol": 1.0}),
+        Ridge(**{"alpha": 0.0001, "random_state": seed}),
+        DecisionTreeRegressor(**{"max_depth": 10, "criterion": "mae", "random_state": seed}),
+    ]
+    results = []
+    X_train, X_test, y_train, y_test = split_dataset_numerical
+    for model in models:
+        new_model = model.fit(X_train, y_train)
+        results.append((model, new_model.predict(X_test)))
+
+    expected_results = results[:limit]
+
+    actual_results = model_finder_regression_fitted.predictions_X_test(limit)
+
+    for actual_result, expected_result in zip(actual_results, expected_results):
+        assert str(actual_result[0]) == str(expected_result[0])
+        assert np.array_equal(actual_result[1], expected_result[1])
+
+
+@pytest.mark.parametrize(
+    ("limit",),
+    (
+            (1,),
+            (2,),
+            (3,),
+    )
+)
+def test_model_finder_predict_X_test_multiclass(model_finder_multiclass_fitted, split_dataset_multiclass, limit, seed):
+    """Testing if predictions of X_test split from found models are correct (in multiclass)."""
+    models = [
+        DecisionTreeClassifier(**{"max_depth": 10, "random_state": seed}),
+        LogisticRegression(**{"C": 1.0, "tol": 0.1, "random_state": seed}),
+        SVC(**{"tol": 0.1, "random_state": seed})
+    ]
+    results = []
+    X_train, X_test, y_train, y_test = split_dataset_multiclass
+    for model in models:
+        new_model = model.fit(X_train, y_train)
+        results.append((model, new_model.predict(X_test)))
+
+    expected_results = results[:limit]
+
+    actual_results = model_finder_multiclass_fitted.predictions_X_test(limit)
+
+    for actual_result, expected_result in zip(actual_results, expected_results):
+        assert str(actual_result[0]) == str(expected_result[0])
+        assert np.array_equal(actual_result[1], expected_result[1])

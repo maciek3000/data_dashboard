@@ -29,12 +29,17 @@ if __name__ == "__main__":
 
     descriptions = json.load(open(os.path.join(data_directory, "feature_descriptions.json")))
 
+    length = X.shape[0]
+    new_ind = list(range(100, length + 100))
+    X.index = new_ind
+    y.index = new_ind
+
     # examples
 
     # X, y, descriptions = iris()
     # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
-    # X, y, descriptions = wine()
+    X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
 
     coord = Coordinator(X, y, output_directory, None, descriptions, os.getcwd(), random_state=42)
@@ -54,10 +59,11 @@ if __name__ == "__main__":
     #           SVR(C=100.0)
     #           ]
     #
-    models = None
+    # models = None
 
     model = coord.search_and_fit(models=models)
     coord.create_dashboard()
+
     #ml = coord.search_and_fit(mode="quick", scoring=accuracy_score)
 
     #predictions = coord.predict(test_df[features])

@@ -34,6 +34,6 @@ def test_coordinator_assert_classification_pos_label_warning(data_multiclass, se
     Coordinator.y = y
     pos_label = 1
     with pytest.warns(Warning) as warninfo:
-        pos_label = Coordinator._assert_classification_pos_label(Coordinator, warning_label)
+        pos_label = Coordinator._check_classification_pos_label(Coordinator, warning_label)
     assert "classification_pos_label will be ignored" in warninfo[0].message.args[0]
     assert pos_label is None

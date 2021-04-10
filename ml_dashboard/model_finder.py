@@ -269,6 +269,17 @@ class ModelFinder:
 
         return _
 
+    def predictions_X_test(self, model_limit):
+        if self._search_results_dataframe is None:
+            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
+
+        models = [tp[0] for tp in self._search_results[:model_limit]]
+        _ = []
+        for model in models:
+            _.append((model, model.predict(self.X_test)))
+
+        return _
+
     # ===== # Internal functions
 
     def _set_problem(self, problem_type):

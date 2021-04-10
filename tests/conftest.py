@@ -596,7 +596,7 @@ def model_finder_multiclass_fitted(model_finder_multiclass):
 @pytest.fixture
 def output(
         analyzer_fixture, transformer_classification, fixture_features, model_finder_classification,
-        tmpdir, root_path_to_package
+        tmpdir, root_path_to_package, data_classification_balanced
 ):
     o = Output(
         root_path=root_path_to_package[0],
@@ -605,6 +605,8 @@ def output(
         features=fixture_features,
         analyzer=analyzer_fixture,
         transformer=transformer_classification,
-        model_finder=model_finder_classification
+        model_finder=model_finder_classification,
+        X_test=data_classification_balanced[0],
+        y_test=data_classification_balanced[1]
     )
     return o

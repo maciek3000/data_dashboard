@@ -157,3 +157,7 @@
     font-weight: bold;
     padding: 4px;
 }
+
+.incorrect-predictions-table {
+    width: 100%;
+}

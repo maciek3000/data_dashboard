@@ -8,7 +8,8 @@
 {% block content %}
 <div class="models-comparison">
     <div class="models-left">
-        <div class="subtitle">Search Results</div>
+        <!-- TODO: change to hidden span -->
+        <div class="subtitle">Search Results<span> - All predictions done on Evaluation Split</span></div>
         <div class="models-left-upper">{{ models_left_upper }}</div>
         <div class="subtitle">{{ models_left_bottom_title }}</div>
         <div class="models-left-bottom">{{ models_left_bottom }}</div>
@@ -20,7 +21,7 @@
 </div>
 
 
-<div class="subtitle">Incorrect Predictions Table</div>
+<div class="subtitle">Predictions Table</div>
 <div class="incorrect-predictions-table">{{ incorrect_predictions_table }}</div>
 
 <div>{{ bokeh_script_models_right }}</div>

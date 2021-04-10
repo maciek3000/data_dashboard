@@ -35,16 +35,12 @@ class Coordinator:
     def __init__(self, X, y, output_directory, scoring=None, feature_descriptions_dict=None, root_path=None, random_state=None,
                  classification_pos_label=None):
 
-        # TODO: add warning for classification_pos_label if used when n_target > 2
-
         self.random_state = random_state
 
-        # copy original dataframes to avoid changing the originals
-        self.X = X.copy()
-        self.y = y.copy()
+        self.X, self.y = self._check_provided_data(X, y)
 
         if classification_pos_label is not None:
-            classification_pos_label = self._assert_classification_pos_label(classification_pos_label)
+            classification_pos_label = self._check_classification_pos_label(classification_pos_label)
 
         self.transformed_X = None
         self.transformed_y = None
@@ -73,7 +69,10 @@ class Coordinator:
         # Just as it is important to test a predictor on data held-out from training, preprocessing
         # (such as standardization, feature selection, etc.) and similar data transformations similarly should be
         # learnt from a training set and applied to held-out data for prediction.
-        transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test = self._create_test_split()
+        X_train, X_test, y_train, y_test = self._create_test_split()
+        transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test = self._transform_splits(
+            X_train, X_test, y_train, y_test
+        )
         self._fit_transformer()
         self.transformed_X = self.transformer.transform(self.X)
         self.transformed_y = self.transformer.transform_y(self.y)
@@ -97,6 +96,8 @@ class Coordinator:
             analyzer=self.analyzer,
             transformer=self.transformer,
             model_finder=self.model_finder,
+            X_test=X_test,
+            y_test=y_test
         )
 
     def search_and_fit(self, models=None, scoring=None, mode="quick"):
@@ -125,6 +126,16 @@ class Coordinator:
 
         # TODO: implement Stratified split in case of imbalance
         X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, random_state=self.random_state)
+
+        # resetting index so it can be joined later on with test predictions
+        output = []
+        for d in [X_train, X_test, y_train, y_test]:
+            new_d = d.reset_index(drop=True)
+            output.append(new_d)
+
+        return output
+
+    def _transform_splits(self, X_train, X_test, y_train, y_test):
         # fitting only on train data
         self._fit_transformer(X_train, y_train)
         transformed = (
@@ -144,7 +155,20 @@ class Coordinator:
         self.transformer.fit(X)
         self.transformer.fit_y(y)
 
-    def _assert_classification_pos_label(self, label):
+    def _check_provided_data(self, X, y):
+
+        # TODO: check if input provided is scipy_sparse or numpy array and set flag
+
+        # resetting indexes: no use for them as of now and simple count will give the possibility to match rows
+        # between raw and transformed data
+
+        # copy: to make sure that changes won't affect the original data
+        X = X.copy().reset_index(drop=True)
+        y = y.copy().reset_index(drop=True)
+
+        return X, y
+
+    def _check_classification_pos_label(self, label):
         unique = set(np.unique(self.y))
         if label not in unique:
             raise ValueError(

@@ -2,8 +2,9 @@ from .views import append_description
 from bokeh.plotting import figure
 from bokeh.layouts import column, row, Spacer
 from bokeh.models import ColumnDataSource, FuncTickFormatter
-from bokeh.models.widgets import Select, Div
-from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, LinearColorMapper, Panel, Tabs, HoverTool, LabelSet
+from bokeh.models.widgets import Select, Div, HTMLTemplateFormatter
+from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, LinearColorMapper, Panel, Tabs, \
+    HoverTool, LabelSet
 from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.palettes import Reds4, Category10
 from bokeh.models.widgets.tables import DataTable, TableColumn
@@ -780,7 +781,6 @@ class ScatterPlotGrid(MainGrid):
 
 
 class ModelsPlotClassification:
-
     _roc_plot_name = "ROC Curve"
     _precision_recall_plot_name = "Precision Recall Plot"
     _det_plot_name = "Detection Error Tradeoff"
@@ -904,12 +904,10 @@ class ModelsPlotClassification:
         plot.legend.click_policy = "mute"
         plot.toolbar.autohide = True
 
-class ModelsPlotRegression:
 
+class ModelsPlotRegression:
     # negative numbers are having a wacky formatting
-    _formatter = FuncTickFormatter(code="""
-            return String(tick);
-        """)
+    _formatter_code = """return String(tick);"""
 
     def __init__(self, plot_design):
         self.plot_design = plot_design
@@ -952,8 +950,10 @@ class ModelsPlotRegression:
         p.xaxis.axis_label = "Actual"
         p.yaxis.axis_label = "Predicted"
 
-        p.xaxis.formatter = self._formatter
-        p.yaxis.formatter = self._formatter
+        formatter = FuncTickFormatter(code=self._formatter_code)
+        # formatters must be created independently, cannot be reused between plots
+        p.xaxis.formatter = formatter
+        p.yaxis.formatter = formatter
 
         p.toolbar.autohide = True
 
@@ -988,13 +988,16 @@ class ModelsPlotRegression:
 
         p.scatter(scatter_data[0], scatter_data[1], color=color, size=10, fill_alpha=0.8)
 
-        p.line([min(scatter_data[0]), max(scatter_data[0])], [0, 0], line_width=2, color=self.plot_design.models_dummy_color)
+        p.line([min(scatter_data[0]), max(scatter_data[0])], [0, 0], line_width=2,
+               color=self.plot_design.models_dummy_color)
 
         p.xaxis.axis_label = "Predicted"
         p.yaxis.axis_label = "Residual"
 
-        p.xaxis.formatter = self._formatter
-        p.yaxis.formatter = self._formatter
+        formatter = FuncTickFormatter(code=self._formatter_code)
+        # formatters must be created independently, cannot be reused
+        p.xaxis.formatter = formatter
+        p.yaxis.formatter = formatter
 
         p.toolbar.autohide = True
 
@@ -1002,7 +1005,6 @@ class ModelsPlotRegression:
 
 
 class ModelsPlotMulticlass:
-
     _x = "x"
     _y = "y"
     _values = "values"
@@ -1041,7 +1043,7 @@ class ModelsPlotMulticlass:
                 "height": 300,
                 "width": 300,
                 "x_range": self.labels,
-                "y_range":  self.labels[::-1]
+                "y_range": self.labels[::-1]
             }
         )
 
@@ -1090,17 +1092,59 @@ class ModelsPlotMulticlass:
 
 
 class ModelsDataTable:
+    _model_column_template = '<div style="color:{color};font-weight:bold;font-size:1.15em"><%= value %></div>'
 
-    def __init__(self):
-        pass
+    def __init__(self, plot_design):
+        self.plot_design = plot_design
 
-    def data_table(self, df):
-        source = ColumnDataSource(df)
+    def data_table(self, X, y, models_predictions):
+        models_predictions = assess_models_names(models_predictions)
+        base_color = self.plot_design.base_color_tints[0]
 
-        cols = []
-        for col in df.columns:
+        cols = [TableColumn(
+            field=y.name,
+            title=y.name,
+            formatter=HTMLTemplateFormatter(template=self._model_column_template.format(color=base_color))
+        )]
+
+        _ = []
+        i = 0
+        for model, predictions in models_predictions:
+            if i == 0:
+                color = self.plot_design.models_color_tuple[0]
+                i += 1
+            else:
+                color = self.plot_design.models_color_tuple[1]
+
+            predictions = pd.Series(predictions, name=model).round(6)
+            _.append(predictions)
+            cols.append(
+                TableColumn(
+                    field=model,
+                    title=model,
+                    formatter=HTMLTemplateFormatter(template=self._model_column_template.format(color=color)))
+            )
+
+        for col in X.columns:
             cols.append(TableColumn(field=col, title=col))
 
-        dt = DataTable(source=source, columns=cols)
+        scores = pd.DataFrame(_).T  # by default, wide table is created instead of a long one
+        df = pd.concat([y, scores, X], axis=1)
+
+        source = ColumnDataSource(df)
+        dt = DataTable(source=source, columns=cols, editable=False, sizing_mode="stretch_width")
 
         return dt
+
+    # def _single_data_table(self, X, y, single_predictions):
+    #     df = pd.concat([X, y, single_predictions], axis=1)
+    #
+    #     source = ColumnDataSource(df)
+    #
+    #     cols = []
+    #     for col in df.columns:
+    #         cols.append(TableColumn(field=col, title=col))
+    #
+    #     dt = DataTable(source=source, columns=cols, editable=False, sizing_mode="stretch_width")
+    #
+    #     return dt
