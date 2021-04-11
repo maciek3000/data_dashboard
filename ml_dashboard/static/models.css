@@ -1,3 +1,8 @@
+.elem-w-desc span {
+    left: 10px;
+}
+
+
 .models-comparison {
     display: flex;
     flex-direction: row;

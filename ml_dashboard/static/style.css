@@ -115,7 +115,7 @@ html {
     color: var(--normal-text-color);/* var(--table-text); */
     margin: 12px;
     padding: 8px;
-    right: -100px;
+
     top: -10px;
     z-index: 2;
     font-weight: normal;

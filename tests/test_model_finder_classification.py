@@ -6,6 +6,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import roc_auc_score, accuracy_score, roc_curve, det_curve
 from sklearn.dummy import DummyClassifier
+from sklearn.exceptions import NotFittedError
 
 from ml_dashboard.model_finder import ModelsNotSearchedError
 
@@ -51,6 +52,22 @@ def test_model_finder_classification_dummy_model_results(model_finder_classifica
     assert actual_df.equals(expected_df[actual_df.columns])
 
 
+def test_model_finder_set_model_classification(model_finder_classification, seed):
+    """Testing if set_model() function correctly sets chosen Model and corresponding properties (classification).
+    Additionally checks if the set Model wasn't fitted in the process."""
+    model = LogisticRegression(C=1.0, tol=0.1, random_state=seed)
+    mf = model_finder_classification
+    mf.scoring_functions = [roc_auc_score, accuracy_score]
+    mf.set_model(model)
+
+    assert mf._chosen_model == model
+    assert mf._chosen_model_params == model.get_params()
+    assert mf._chosen_model_scores == {"roc_auc_score": 0.43333333333333335, "accuracy_score": 0.52}
+
+    with pytest.raises(NotFittedError):
+        mf.predict([1])
+
+
 @pytest.mark.parametrize(
     ("mode", "expected_model"),
     (
@@ -64,6 +81,29 @@ def test_model_finder_classification_search(model_finder_classification, mode, e
     actual_model = model_finder_classification.search(models=None, scoring=roc_auc_score, mode=mode)
     expected_model.random_state = seed
     assert str(actual_model) == str(expected_model)
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected_model", "expected_scores"),
+    (
+            ("quick", SVC(tol=0.1, C=0.1), {"roc_auc_score": 0.5, "accuracy_score": 0.6}),
+            ("detailed", DecisionTreeClassifier(criterion="entropy", max_depth=10), {"roc_auc_score": 0.5333333333333333, "accuracy_score": 0.6})
+    )
+)
+def test_model_finder_search_and_fit_classification(model_finder_classification, mode, expected_model, expected_scores, seed):
+    """Testing if search_and_fit() function correctly searches for and sets and fits chosen model (classification)."""
+    prediction_array = np.array([1.34, -0.25, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0]).reshape(1, -1)
+    model_finder_classification._quicksearch_limit = 1
+    model_finder_classification.scoring_functions = [roc_auc_score, accuracy_score]
+    actual_model = model_finder_classification.search_and_fit(models=None, scoring=roc_auc_score, mode=mode)
+    expected_model.random_state = seed
+
+    assert str(actual_model) == str(expected_model)
+    assert str(model_finder_classification._chosen_model) == str(expected_model)
+    assert model_finder_classification._chosen_model_params == expected_model.get_params()
+    assert model_finder_classification._chosen_model_scores == expected_scores
+
+    assert model_finder_classification.predict(prediction_array) == [1]
 
 
 @pytest.mark.parametrize(
@@ -307,3 +347,46 @@ def test_model_finder_predict_X_test_classification(
     for actual_result, expected_result in zip(actual_results, expected_results):
         assert str(actual_result[0]) == str(expected_result[0])
         assert np.array_equal(actual_result[1], expected_result[1])
+
+
+@pytest.mark.parametrize(
+    ("test_model",),
+    (
+            (LogisticRegression(),),
+            (DecisionTreeClassifier(max_depth=5),),
+            (SVC(C=1000),)
+    )
+)
+def test_model_finder_wrap_model_classification(model_finder_classification, test_model):
+    """Testing if wrapping Model in classification doesn't change input variable."""
+    actual_model = model_finder_classification._wrap_model(test_model)
+    assert actual_model == test_model
+
+
+@pytest.mark.parametrize(
+    ("test_data",),
+    (
+            ({"A": [1, 2, 3], "B": [10, 20, 30]},),
+            ({"aa": [1, 2], "B": [1, 2], "C": [3, 3], "last": [4, 100]},)
+    )
+)
+def test_model_finder_wrap_results_dataframe_classification(model_finder_classification, test_data):
+    """Testing if wrapping DataFrame in classification doesn't change input variable."""
+    expected_df = pd.DataFrame(data=test_data)
+    actual_df = model_finder_classification._wrap_results_dataframe(expected_df)
+
+    assert actual_df.equals(expected_df)
+
+
+@pytest.mark.parametrize(
+    ("test_params",),
+    (
+            ({"A": 100, "B": "test", "C": [1, 2]},),
+            ({"uno": 1, "dos": 2, "tres": "quatro"},)
+    )
+)
+def test_model_finder_wrap_params_classification(model_finder_classification, test_params):
+    """Testing if wrapping params in classification doesn't change input variable."""
+    expected_params = test_params
+    actual_params = model_finder_classification._wrap_params(test_params)
+    assert actual_params == expected_params

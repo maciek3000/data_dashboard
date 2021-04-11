@@ -1,16 +1,18 @@
 import pytest
 import numpy as np
 import pandas as pd
+import copy
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.linear_model import Ridge
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.svm import SVR, LinearSVR
 from sklearn.metrics import mean_squared_error, r2_score
-
+from sklearn.exceptions import NotFittedError
 from sklearn.dummy import DummyRegressor
 
 from ml_dashboard.model_finder import ModelsNotSearchedError
+from ml_dashboard.model_finder import WrappedModelRegression
 
 
 @pytest.mark.parametrize(
@@ -52,6 +54,23 @@ def test_model_finder_regression_dummy_model_results(model_finder_regression):
     assert actual_df.equals(expected_df[actual_df.columns])
 
 
+def test_model_finder_set_model_regression(model_finder_regression, seed):
+    """Testing if set_model() function correctly sets chosen Model and corresponding properties (regression).
+    Additionally checks if the set Model wasn't fitted in the process."""
+    model = DecisionTreeRegressor(max_depth=10, criterion="mae", random_state=seed)
+    mf = model_finder_regression
+    mf.scoring_functions = [mean_squared_error, r2_score]
+    mf.set_model(model)
+
+    assert mf._chosen_model.clf.regressor == model
+    assert mf._chosen_model_params == model.get_params()
+    assert mf._chosen_model_scores == {"mean_squared_error": 1323.0223273506956, "r2_score": -1.7265322117249737}
+    assert type(mf._chosen_model) == WrappedModelRegression
+
+    with pytest.raises(NotFittedError):
+        mf.predict([1])
+
+
 @pytest.mark.parametrize(
     ("mode", "expected_model"),
     (
@@ -65,6 +84,37 @@ def test_model_finder_regression_search(model_finder_regression, mode, expected_
     actual_model = model_finder_regression.search(models=None, scoring=mean_squared_error, mode=mode)
     expected_model.random_state = seed
     assert str(actual_model) == str(expected_model)
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected_model", "expected_scores"),
+    (
+            ("quick", SVR(C=0.1, tol=1.0), {"mean_squared_error": 486.38607353926875, "r2_score": -0.002361993009452945}),
+            ("detailed", SVR(C=0.1, tol=1.0), {"mean_squared_error": 486.38607353926875, "r2_score": -0.002361993009452945})
+    )
+)
+def test_model_finder_search_and_fit_regression(model_finder_regression, mode, expected_model, expected_scores, seed):
+    """Testing if search_and_fit() function correctly searches for and sets and fits chosen model (regression).
+    Additionally checks if the model is correctly wrapped in TransformedTargetRegressor."""
+    prediction_array = np.array([1.34, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1]).reshape(1, -1)
+    model_finder_regression._quicksearch_limit = 1
+    model_finder_regression.scoring_functions = [mean_squared_error, r2_score]
+    actual_model = model_finder_regression.search_and_fit(models=None, scoring=mean_squared_error, mode=mode)
+    expected_model.random_state = seed
+    t_X = model_finder_regression.X
+    t_y = model_finder_regression.y
+    m = TransformedTargetRegressor(regressor=expected_model, transformer=QuantileTransformer(output_distribution="normal", random_state=seed))
+    m.fit(t_X, t_y)
+    expected_array = m.predict(prediction_array)
+
+    assert str(actual_model) == str(expected_model)
+    assert str(model_finder_regression._chosen_model) == str(expected_model)
+    assert model_finder_regression._chosen_model_params == expected_model.get_params()
+    assert model_finder_regression._chosen_model_scores == expected_scores
+    assert type(actual_model) == WrappedModelRegression
+    assert str(actual_model.clf.regressor) == str(expected_model)
+
+    assert np.array_equal(model_finder_regression.predict(prediction_array), expected_array)
 
 
 @pytest.mark.parametrize(
@@ -125,9 +175,9 @@ def test_model_finder_perform_gridsearch_regression(model_finder_regression, cho
 def test_model_finder_perform_quicksearch_regression(model_finder_regression, chosen_regressors_grid, seed):
     """Testing if quicksearch works and returns correct Models and result dict (in regression)."""
     expected_models = [
-        (DecisionTreeRegressor, 2458.2551351805055),
-        (Ridge, 1199.0610634709196),
-        (SVR, 1051.8445189635734),
+        (DecisionTreeRegressor, 1801.9747017092634),
+        (Ridge, 1530.5096036958037),
+        (SVR, 1197.791404746514),
     ]
     expected_keys = {"fit_time", "mean_squared_error", "params"}
 
@@ -310,3 +360,60 @@ def test_model_finder_predict_X_test_regression(model_finder_regression_fitted, 
     for actual_result, expected_result in zip(actual_results, expected_results):
         assert str(actual_result[0]) == str(expected_result[0])
         assert np.array_equal(actual_result[1], expected_result[1])
+
+
+@pytest.mark.parametrize(
+    ("expected_model",),
+    (
+            (Ridge(),),
+            (DecisionTreeRegressor(max_depth=5),),
+            (SVR(C=1000),)
+    )
+)
+def test_model_finder_wrap_model_regression(model_finder_regression, expected_model):
+    """Testing if wrapping a chosen model with custom TransformedTargetRegressor works correctly (regression)."""
+    actual_model = model_finder_regression._wrap_model(expected_model)
+
+    assert str(actual_model) == str(expected_model)
+    assert actual_model.get_params() == expected_model.get_params()
+    assert type(actual_model) == WrappedModelRegression
+    assert actual_model.clf.regressor == expected_model
+
+
+@pytest.mark.parametrize(
+    ("test_data",),
+    (
+            ({"A": [1, 2, 3], "B": [10, 20, 30]},),
+            ({"aa": [1, 2], "B": [1, 2], "C": [3, 3], "last": [4, 100]},)
+    )
+)
+def test_model_finder_wrap_results_dataframe_regression(model_finder_regression, test_data):
+    """Testing if adding additional column to the results dataframe works correctly (in regression)."""
+    df = pd.DataFrame(data=test_data)
+    title = model_finder_regression._transformed_target_name
+    params = str(model_finder_regression.target_transformer.get_params())
+    actual_df = model_finder_regression._wrap_results_dataframe(df.copy())
+    expected_df = df.copy()
+    expected_df[title] = params
+
+    assert actual_df.equals(expected_df)
+
+
+@pytest.mark.parametrize(
+    ("test_params",),
+    (
+            ({"A": 100, "B": "test", "C": [1, 2]},),
+            ({"uno": 1, "dos": 2, "tres": "quatro"},)
+    )
+)
+def test_model_finder_wrap_params_regression(model_finder_regression, test_params):
+    """Testing if adding params from Target Transformer to params dict works correctly (in regression)."""
+    expected_params = copy.deepcopy(test_params)
+    title = model_finder_regression._transformed_target_name
+    transformer = model_finder_regression.target_transformer
+    new_params = {title + "__" + key: item for key, item in transformer.get_params().items()}
+    new_params[title] = transformer.__class__.__name__
+
+    expected_params.update(new_params)
+    actual_params = model_finder_regression._wrap_params(copy.deepcopy(test_params))
+    assert actual_params == expected_params

@@ -6,6 +6,8 @@ from collections import defaultdict
 
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
+from sklearn.preprocessing import QuantileTransformer
+from sklearn.compose import TransformedTargetRegressor
 from sklearn.metrics import make_scorer
 from sklearn.experimental import enable_halving_search_cv
 from sklearn.model_selection import train_test_split, HalvingGridSearchCV, GridSearchCV
@@ -50,6 +52,30 @@ class ModelsNotSearchedError(ValueError):
     pass
 
 
+class WrappedModelRegression:
+
+    def __init__(self, regressor, transformer):
+        self.clf = TransformedTargetRegressor(regressor=regressor, transformer=transformer)
+        self.__name__ = self.clf.regressor.__class__.__name__
+        self.__class__ = self.clf.regressor.__class__
+
+    def fit(self, *args, **kwargs):
+        self.clf.fit(*args, **kwargs)
+        return self
+
+    def predict(self, *args, **kwargs):
+        return self.clf.predict(*args, **kwargs)
+
+    def get_params(self, *args, **kwargs):
+        return self.clf.regressor.get_params(*args, **kwargs)
+
+    def __str__(self):
+        return self.clf.regressor.__str__()
+
+    def __class__(self, *args, **kwargs):
+        return self.clf.regressor.__class__(*args, **kwargs)
+
+
 class ModelFinder:
     """Used to search for the best Models possible with a brute force approach of GridSearching.
 
@@ -82,13 +108,14 @@ class ModelFinder:
         (f1_score, {"average": "micro"}, "f1_score_micro"),
         (f1_score, {"average": "weighted"}, "f1_score_weighted"),
         (precision_score, {"average": "weighted"}, "precision_score_weighted"),
-        (recall_score, {"average": "weighted"}, "recall_score_weighted")
+        (recall_score, {"average": "weighted"}, "recall_score_weighted"),
     ]
     _scoring_multiclass = [accuracy_score, balanced_accuracy_score]
 
     _model_name = "model"
     _fit_time_name = "fit_time"
     _params_name = "params"
+    _transformed_target_name = "TransformedTargetRegressor__transformer"
 
     _mode_quick = "quick"
     _mode_detailed = "detailed"
@@ -168,7 +195,7 @@ class ModelFinder:
                 if isinstance(models, str):
                     raise TypeError
                 iter(models)
-                initiated_models = models
+                initiated_models = [self._wrap_model(single_model) for single_model in models]
             except TypeError:
                 raise ValueError("models should be Dict, List-like or None, got {models}".format(models=models))
 
@@ -186,8 +213,9 @@ class ModelFinder:
 
     def set_model(self, model):
         # TODO: Assess if the copy for train/test needs to be stored as a property
+        model = self._wrap_model(model)
         params = model.get_params()
-        copy_for_scoring = model.__class__(**params).fit(self.X_train, self.y_train)
+        copy_for_scoring = model.__class__(**params).fit(self.X_train, self.y_train) # copy.copy(model).fit(self.X_train, self.y_train)  #
         self._chosen_model = model
         self._chosen_model_params = params
         self._chosen_model_scores = self._score_model(copy_for_scoring, self.default_scoring)
@@ -303,6 +331,7 @@ class ModelFinder:
             self.scoring_functions = self._scoring_regression
             self.default_models = regressors
             self.default_scoring = mean_squared_error
+            self.target_transformer = QuantileTransformer(output_distribution="normal", random_state=self.random_state)
 
         return None
 
@@ -325,13 +354,13 @@ class ModelFinder:
                 modes=", ".join(self._modes), mode=mode
             ))
 
-        initiated_models = [model(**params) for model, params in gridsearch_models]
+        initiated_models = [self._wrap_model(model(**params)) for model, params in gridsearch_models]
 
         return initiated_models
 
     def _gridsearch(self, models_param_grid, scoring):
         chosen_models, all_results = self._perform_gridsearch(models_param_grid, scoring)
-        self._gridsearch_results = self._create_gridsearch_results_dataframe(all_results)
+        self._gridsearch_results = self._wrap_results_dataframe(self._create_gridsearch_results_dataframe(all_results))
         return chosen_models
 
     def _perform_gridsearch(self, models_param_grid, scoring, cv=5):
@@ -352,10 +381,19 @@ class ModelFinder:
             # https://scikit-learn.org/stable/modules/model_evaluation.html#defining-your-scoring-strategy-from-metric-functions
             sorting_order = reverse_sorting_order(obj_name(scoring))
 
+            # if self.problem == self._regression:
+            #     created_model = TransformedTargetRegressor(regressor=model(), transformer=self.target_transformer)
+            #     wrapped_params = {"regressor__" + key: item for key, item in params.items()}
+            # else:
+            #     created_model = model()
+            #     wrapped_params = params
+
+            created_model = self._wrap_model(model())
+
             # GridSearch will fail with NotFittedError("All estimators failed to fit") when argument provided
             # in the param grid is incorrect for a given model (even one combination will trigger it).
             clf = HalvingGridSearchCV(
-                model(),
+                created_model,
                 params,
                 scoring=make_scorer(scoring, greater_is_better=sorting_order),
                 cv=cv,
@@ -385,7 +423,7 @@ class ModelFinder:
 
     def _quicksearch(self, models, scoring):
         scored_models, all_results = self._perform_quicksearch(models, scoring)
-        self._quicksearch_results = self._create_search_results_dataframe(all_results, scoring)
+        self._quicksearch_results = self._wrap_results_dataframe(self._create_search_results_dataframe(all_results, scoring))
 
         sorting_order = reverse_sorting_order(obj_name(scoring))
         scored_models.sort(key=lambda x: x[1], reverse=sorting_order)
@@ -401,10 +439,19 @@ class ModelFinder:
                 clf = model(random_state=self.random_state)
             else:
                 clf = model()
+
+            clf = self._wrap_model(clf)
+
             start_time = time.time()
             clf.fit(X_train, y_train)
             stop_time = time.time()
-            score = scoring(y_test, clf.predict(X_test))
+            # TODO: add separate condition for roc_auc_score
+            if str(scoring) == "roc_auc_score":
+                predictions = clf.predict_proba(X_test)
+            else:
+                predictions = clf.predict(X_test)
+            score = scoring(y_test, predictions)
+            #score = scoring(y_test, clf.predict(X_test))
             params = clf.get_params()
 
             all_results[model] = {
@@ -429,12 +476,11 @@ class ModelFinder:
         fitted_and_scored = []
 
         for model in initiated_models:
-            #model_copy = copy.deepcopy(model)
             start_time = time.time()
             model.fit(self.X_train, self.y_train)
             stop_time = time.time()
 
-            model_results = {self._fit_time_name: stop_time-start_time, self._params_name: model.get_params()}
+            model_results = {self._fit_time_name: stop_time-start_time, self._params_name: self._wrap_params(model.get_params())}
             score_results = self._score_model(model, chosen_scoring)
             model_results.update(score_results)
 
@@ -449,7 +495,15 @@ class ModelFinder:
 
         scoring_results = {}
         for scoring in scorings:
-            score = scoring(self.y_test, fitted_model.predict(self.X_test))
+            if "roc_auc_score" in str(scoring):
+                try:
+                    predictions = fitted_model.predict_proba(self.X_test)[:, 1]
+                except AttributeError:
+                    predictions = fitted_model.decision_function(self.X_test)
+            else:
+                predictions = fitted_model.predict(self.X_test)
+            score = scoring(self.y_test, predictions)
+            #score = scoring(self.y_test, fitted_model.predict(self.X_test))
             scoring_results[obj_name(scoring)] = score
 
         return scoring_results
@@ -464,7 +518,6 @@ class ModelFinder:
 
         model.fit(self.X_train, self.y_train)
         results = self._score_model(model, self.default_scoring)
-        # model.fit(self.X, self.y)
         return model, results
 
     def _dummy_model_results(self):
@@ -528,3 +581,25 @@ class ModelFinder:
 
         scorings += self._scoring_multiclass
         return scorings
+
+    def _wrap_model(self, model):
+        if self.problem == self._regression and type(model) != WrappedModelRegression:
+            wrapped_model = WrappedModelRegression(regressor=model, transformer=self.target_transformer)
+            return wrapped_model
+        else:
+            return model
+
+    def _wrap_results_dataframe(self, df):
+        if self.problem == self._regression:
+            df[self._transformed_target_name] = str(self.target_transformer.get_params())
+
+        return df
+
+    def _wrap_params(self, params):
+        if self.problem == self._regression:
+            params[self._transformed_target_name] = obj_name(self.target_transformer)
+            transformer_params = self.target_transformer.get_params()
+            new_params = {self._transformed_target_name + "__" + key: item for key, item in transformer_params.items()}
+            params.update(new_params)
+
+        return params

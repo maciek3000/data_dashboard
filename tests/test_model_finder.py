@@ -5,9 +5,11 @@ from sklearn.linear_model import Ridge, PassiveAggressiveClassifier, LogisticReg
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accuracy_score
+from sklearn.preprocessing import QuantileTransformer
 from sklearn.exceptions import NotFittedError
 
 from ml_dashboard.model_finder import obj_name, reverse_sorting_order, ModelFinder, ModelNotSetError
+from ml_dashboard.model_finder import WrappedModelRegression
 from ml_dashboard.models import classifiers, regressors
 
 
@@ -49,6 +51,48 @@ def test_obj_name(obj, expected_result):
 def test_reverse_sorting_order(input_str, expected_result):
     """Testing if assessment of sorting order from reverse_sorting_order() is correct."""
     assert reverse_sorting_order(input_str) == expected_result
+
+
+@pytest.mark.parametrize(
+    ("test_model",),
+    (
+            (Ridge(),),
+            (LogisticRegression(),),
+            (SVC(),),
+            (DecisionTreeClassifier(),),
+    )
+)
+def test_wrapped_model_regression(test_model, seed):
+    """Testing if Regression Wrapper properly remaps properties and functions to those of the provided regressor."""
+    wrapped = WrappedModelRegression(
+        regressor=test_model,
+        transformer=QuantileTransformer(output_distribution="normal", random_state=seed)
+    )
+
+    assert wrapped.__class__ == test_model.__class__
+    assert wrapped.__name__ == test_model.__class__.__name__
+    assert str(wrapped) == str(test_model)
+    assert isinstance(wrapped.__class__(), test_model.__class__)
+
+    assert type(wrapped) == WrappedModelRegression
+
+
+@pytest.mark.parametrize(
+    ("test_model",),
+    (
+            (Ridge(alpha=100),),
+            (LogisticRegression(C=100, tol=0.01),),
+            (SVC(C=1000),),
+            (DecisionTreeClassifier(max_depth=10, criterion="entropy"),),
+    )
+)
+def test_wrapped_model_regression_params(test_model, seed):
+    """Testing if Regression Wrapper properly remaps get_params() function to that of the regressor."""
+    wrapped = WrappedModelRegression(
+        regressor=test_model,
+        transformer=QuantileTransformer(output_distribution="normal", random_state=seed)
+    )
+    assert wrapped.get_params() == test_model.get_params()
 
 
 @pytest.mark.parametrize(
@@ -315,22 +359,7 @@ def test_model_finder_score_model(model_finder_classification, model, expected_r
     assert actual_results == expected_results
 
 
-def test_model_finder_set_model(model_finder_classification, seed):
-    """Testing if set_model() function correctly sets chosen Model and corresponding properties.
-    Additionally checks if the set Model wasn't fitted in the process."""
-    model = LogisticRegression(C=1.0, tol=0.1, random_state=seed)
-    mf = model_finder_classification
-    mf.scoring_functions = [roc_auc_score, accuracy_score]
-    mf.set_model(model)
-
-    assert mf._chosen_model == model
-    assert mf._chosen_model_params == model.get_params()
-    assert mf._chosen_model_scores == {"roc_auc_score": 0.43333333333333335, "accuracy_score": 0.52}
-
-    with pytest.raises(NotFittedError):
-        mf.predict([1])
-
-
 def test_model_finder_test_target_proportion(model_finder_classification_fitted):
     """Testing if proportion of 1s in target (y_test) is calculated correctly (in classification)."""
     assert model_finder_classification_fitted.test_target_proportion() == 0.6
+

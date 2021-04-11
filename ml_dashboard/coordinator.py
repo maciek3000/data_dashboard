@@ -73,6 +73,7 @@ class Coordinator:
         transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test = self._transform_splits(
             X_train, X_test, y_train, y_test
         )
+
         self._fit_transformer()
         self.transformed_X = self.transformer.transform(self.X)
         self.transformed_y = self.transformer.transform_y(self.y)
