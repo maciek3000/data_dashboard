@@ -5,6 +5,8 @@ from .plots import PairPlot, InfoGrid, ScatterPlotGrid
 from .plots import ModelsPlotClassification, ModelsPlotRegression, ModelsPlotMulticlass, ModelsDataTable
 from .plot_design import PlotDesign
 
+import pandas as pd
+
 
 class Output:
     """Class for producing HTML output.
@@ -50,13 +52,17 @@ class Output:
     # view specific properties
     _view_models_model_limit = 3
 
-    def __init__(self, root_path, output_directory, package_name, features, analyzer, transformer, model_finder, X_test, y_test):
+    def __init__(self, root_path, output_directory, package_name, features, analyzer, transformer, model_finder, X, y, transformed_X, transformed_y, X_test, y_test):
 
         self.features = features
         self.analyzer = analyzer
         self.transformer = transformer
         self.model_finder = model_finder
 
+        self.X = X
+        self.y = y
+        self.transformed_X = transformed_X
+        self.transformed_y = transformed_y
         self.X_test = X_test
         self.y_test = y_test
 
@@ -156,6 +162,8 @@ class Output:
             correlations_plot=generated_infogrid_correlations,
             scatterplot=generated_scattergrid,
             feature_list=feature_list,
+            features_df=pd.concat([self.X, self.y], axis=1),
+            transformed_features_df=pd.concat([self.X, self.y], axis=1),
             first_feature=first_feature
         )
 
@@ -174,36 +182,6 @@ class Output:
             incorrect_predictions_table=table
         )
 
-        # if problem_type == "classification":
-        #     generated_models_plot = self.models_plots.models_comparison_plot(
-        #         roc_curves=self.model_finder.roc_curves(self._view_models_model_limit),
-        #         precision_recall_curves=self.model_finder.precision_recall_curves(self._view_models_model_limit),
-        #         det_curves=self.model_finder.det_curves(self._view_models_model_limit),
-        #         target_proportion=self.model_finder.test_target_proportion()
-        #     )
-        #
-        #     models_rendered = self.view_models.render(
-        #         base_css=base_css,
-        #         creation_date=created_on,
-        #         hyperlinks=hyperlinks,
-        #         model_results=self.model_finder.search_results(self._view_models_model_limit),
-        #         confusion_matrices=self.model_finder.confusion_matrices(self._view_models_model_limit),
-        #         models_plot=generated_models_plot
-        #     )
-        #
-        # elif problem_type == "regression":
-        #
-        #     generated_model_plot = self.models_plots.prediction_error_plots(
-        #         prediction_errors=self.model_finder.prediction_errors(self._view_models_model_limit)
-        #     )
-        #
-        #     models_rendered = self.view_models.render_regression(
-        #         base_css=base_css,
-        #         creation_date=created_on,
-        #         hyperlinks=hyperlinks,
-        #         model_results=self.model_finder.search_results(self._view_models_model_limit),
-        #         prediction_errors_plot=generated_model_plot
-        #     )
 
         rendered_templates = {
             self._view_overview_html: overview_rendered,

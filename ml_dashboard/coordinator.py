@@ -97,6 +97,10 @@ class Coordinator:
             analyzer=self.analyzer,
             transformer=self.transformer,
             model_finder=self.model_finder,
+            X=X,
+            y=y,
+            transformed_X=self.transformed_X,
+            transformed_y=self.transformed_y,
             X_test=X_test,
             y_test=y_test
         )

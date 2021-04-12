@@ -126,10 +126,6 @@ classifiers = {
     #         "var_smoothing": {1e-9, 1e-5}
     #     },
 
-    NearestCentroid: {
-        "metric": ["manhattan", "euclidean"],
-        "shrink_threshold": [None, 1e-5, 1e-2]
-    },
 
     MLPClassifier: {
         "solver": ["lbfgs", "sgd"],

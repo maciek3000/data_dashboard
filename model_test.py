@@ -44,24 +44,24 @@ if __name__ == "__main__":
     # X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
 
-    coord = Coordinator(X, y, output_directory, None, descriptions, os.getcwd(), random_state=42)
+    coord = Coordinator(X, y, output_directory, accuracy_score, descriptions, os.getcwd(), random_state=42)
 
     # output = coord.quick_find()
     # print("\n".join(map(lambda x: x[0] + ": " + str(x[1]), output)))
 
-    # models = [SVC(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
-    #           SVC(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
-    #           SVC(C=10.0, kernel="linear"),
-    #           SVC(C=100.0)
-    #           ]
-
-    models = [SVR(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
-              SVR(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
-              SVR(C=10.0, kernel="linear"),
-              SVR(C=100.0)
+    models = [SVC(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
+              SVC(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
+              SVC(C=10.0, kernel="linear"),
+              SVC(C=100.0)
               ]
 
-    models = None
+    # models = [SVR(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
+    #           SVR(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
+    #           SVR(C=10.0, kernel="linear"),
+    #           SVR(C=100.0)
+    #           ]
+
+    # models = None
 
     model = coord.search_and_fit(models=models)
     coord.create_dashboard()

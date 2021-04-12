@@ -13,6 +13,10 @@ from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.svm import SVC, SVR
 from sklearn.metrics import f1_score, precision_score
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, QuantileTransformer, LabelEncoder, FunctionTransformer
+from sklearn.impute import SimpleImputer
 
 
 # this package
@@ -348,7 +352,29 @@ def data_multiclass(data_classification_balanced):
 
 
 @pytest.fixture
-def transformer_classification(categorical_features, numerical_features, seed):
+def preprocessor_X(categorical_features, numerical_features, seed):
+    numeric_transformer = make_pipeline(
+        SimpleImputer(strategy="median"),
+        QuantileTransformer(output_distribution="normal", random_state=seed),
+        StandardScaler()
+    )
+
+    categorical_transformer = make_pipeline(
+        SimpleImputer(strategy="most_frequent"),
+        OneHotEncoder(handle_unknown="ignore")
+    )
+
+    col_transformer = ColumnTransformer(
+        transformers=[
+            ("numerical", numeric_transformer, numerical_features),
+            ("categorical", categorical_transformer, categorical_features)
+        ]
+    )
+    return col_transformer
+
+
+@pytest.fixture
+def transformer_classification(categorical_features, numerical_features, seed, preprocessor_X):
     categorical_features.remove("Target")
     tr = Transformer(
         categorical_features=categorical_features,
@@ -356,11 +382,15 @@ def transformer_classification(categorical_features, numerical_features, seed):
         target_type="Categorical",
         random_state=seed
     )
+
+    tr.preprocessor_X = preprocessor_X
+    tr.preprocessor_y = LabelEncoder()
+
     return tr
 
 
 @pytest.fixture
-def transformer_regression(categorical_features, numerical_features, seed):
+def transformer_regression(categorical_features, numerical_features, seed, preprocessor_X):
     numerical_features.remove("Price")
     tr = Transformer(
         categorical_features=categorical_features,
@@ -368,17 +398,25 @@ def transformer_regression(categorical_features, numerical_features, seed):
         target_type="Numerical",
         random_state=seed
     )
+
+    tr.preprocessor_X = preprocessor_X
+    tr.preprocessor_y = FunctionTransformer(lambda x: x)
+
     return tr
 
 
 @pytest.fixture
-def transformer_multiclass(categorical_features, numerical_features, seed):
+def transformer_multiclass(categorical_features, numerical_features, seed, preprocessor_X):
     tr = Transformer(
         categorical_features=categorical_features,
         numerical_features=numerical_features,
         target_type="Categorical",
         random_state=seed
     )
+
+    tr.preprocessor_X = preprocessor_X
+    tr.preprocessor_y = LabelEncoder()
+
     return tr
 
 

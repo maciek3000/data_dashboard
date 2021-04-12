@@ -222,3 +222,11 @@
     color: var(--normal-link-color);
     border-bottom: 1px solid var(--light-gray) !important;
 }
+
+.transformed-feature {
+    display: none;
+}
+
+.chosen-feature-transformed {
+    display: block;
+}

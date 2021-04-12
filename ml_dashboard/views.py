@@ -268,6 +268,11 @@ class FeatureView(BaseView):
     _scatterplot_script = "bokeh_script_scatter_plot_grid"
     _scatterplot = "scatter_plot_grid"
 
+    _transformed_feature = "transformed_feature"
+    # CSS
+    _first_feature_transformed = "chosen-feature-transformed"
+    _transformed_feature_class = "transformed-feature"
+
     _feature_menu_header = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
     _feature_menu_single_feature = "<div class='single-feature'>{:03}. {}</div>"
 
@@ -277,7 +282,7 @@ class FeatureView(BaseView):
         self.css = css_path
         self.js = js_path
 
-    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, first_feature):
+    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, features_df, transformed_features_df, first_feature):
 
         output = {}
 
@@ -308,6 +313,9 @@ class FeatureView(BaseView):
         output[self._scatterplot_script] = scatterplot_script
         output[self._scatterplot] = scatterplot_div
 
+        # Transformed Features
+        output[self._transformed_feature] = self._generate_transformed_features_divs(features_df, transformed_features_df, first_feature)
+
         return self.template.render(**output)
 
     def _create_features_menu(self, features):
@@ -319,6 +327,20 @@ class FeatureView(BaseView):
             i += 1
 
         return html
+
+    def _generate_transformed_features_divs(self, df, transformed_df, first_feature):
+        template = '<div class="{feature_class}" id="{feature_name}"><div>{title}</div><div>{content}</div></div>'
+
+        output = ""
+        for col in df.columns:
+            feature_class = self._transformed_feature_class
+            if col == first_feature:
+                feature_class += " " + self._first_feature_transformed
+
+            content = df[col].head().to_frame().to_html()
+            output += template.format(feature_class=feature_class, title=col, content=content, feature_name=col)
+
+        return output
 
 
 class ModelsView(BaseView):
@@ -342,30 +364,6 @@ class ModelsView(BaseView):
     # CSS
     _first_model_class = "first-model"
     _other_model_class = "other-model"
-
-#     # CSS
-#     _first_model_class = "first-model"
-#     _other_model_class = "other-model"
-#     _confusion_matrices_class = "confusion-matrices"
-#     _confusion_matrices_single_matrix = "confusion-matrix"
-#     _confusion_matrices_single_matrix_title = "confusion-matrix-title"
-#     _confusion_matrices_single_matrix_table = "confusion-matrix-table"
-#
-#     _models_plot_title_text = "Result Curves Comparison"
-#     _models_confusion_matrix_title_text = "Confusion Matrices"
-#
-#     # confusion matrices html
-#     _single_confusion_matrix_html_template = """
-# <table>
-# <thead>
-# <tr><th></th><th>Predicted Negative</th><th>Predicted Positive</th></tr>
-# </thead>
-# <tbody>
-# <tr><th>Actual Negative</th><td>{tn}</td><td>{fp}</td></tr>
-# <tr><th>Actual Positive</th><td>{fn}</td><td>{tp}</td></tr>
-# </tbody>
-# </table>
-# """
 
     def __init__(self, template, css_path, js_path, params_name, model_with_description_class):
         super().__init__()

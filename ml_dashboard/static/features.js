@@ -24,6 +24,17 @@ for (i=0; i < elems.length; i++) {
             }
             elem.classList.add(active);
 
+            // Hiding and showing Transformed Divs
+            var transformed_feature_class = "transformed-feature";
+            var chosen_transformed_feature = "chosen-feature-transformed";
+            var transformed_features = document.querySelectorAll(".transformed-feature");
+            var t;
+            for (t = 0; t < transformed_features.length; t++) {
+                transformed_features[t].classList.remove(chosen_transformed_feature);
+            };
+            var new_transformed_feature = document.querySelector("#" + elem_text);
+            new_transformed_feature.classList.add(chosen_transformed_feature);
+
             // Changing Title for the page
             var feature_title = document.querySelector(".chosen-feature");
             feature_title.innerText = elem_text;

@@ -2,6 +2,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, QuantileTransformer, LabelEncoder, FunctionTransformer
 from sklearn.impute import SimpleImputer
+from sklearn.experimental import enable_iterative_imputer  # noqa
+from sklearn.impute import IterativeImputer
 import numpy as np
 
 
@@ -69,15 +71,15 @@ class Transformer:
 
     def _create_numeric_transformer(self):
         transformer = make_pipeline(
-            SimpleImputer(strategy="median"),
-            QuantileTransformer(output_distribution="normal", random_state=self.random_state),
-            StandardScaler()
+            SimpleImputer(strategy="median", add_indicator=True),
+            StandardScaler(),
+            QuantileTransformer(output_distribution="normal", random_state=self.random_state)
         )
         return transformer
 
     def _create_categorical_transformer(self):
         transformer = make_pipeline(
-            SimpleImputer(strategy="most_frequent"),
+            SimpleImputer(strategy="most_frequent", add_indicator=True),
             OneHotEncoder(handle_unknown="ignore")
         )
         return transformer

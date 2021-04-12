@@ -127,7 +127,7 @@ def test_transformer_transform_y_classification_pos_label(
 
 
 @pytest.mark.parametrize(
-    ("classification_pos_label", ),
+    ("classification_pos_label",),
     (
             ("Fruits",),
             ("Sweets",),
