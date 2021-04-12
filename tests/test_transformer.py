@@ -127,6 +127,34 @@ def test_transformer_transform_y_classification_pos_label(
 
 
 @pytest.mark.parametrize(
+    ("classification_pos_label", ),
+    (
+            ("Fruits",),
+            ("Sweets",),
+            ("Dairy",),
+    )
+)
+def test_transformer_transform_y_classification_pos_label_multiclass(
+        data_multiclass, categorical_features, numerical_features, classification_pos_label,
+):
+    """Testing if transformer correctly changes mappings of y when explicit classification_pos_label is provided
+    for multiclass problem (so the mapping changes it to classification problem)."""
+    y = data_multiclass[1]
+    mapping = {
+        "Fruits": 0,
+        "Sweets": 0,
+        "Dairy": 0,
+        classification_pos_label: 1  # overwriting with test choice
+    }
+    expected_result = y.replace(mapping)
+    tr = Transformer(
+        categorical_features, numerical_features, "Categorical", classification_pos_label=classification_pos_label
+    )
+    actual_result = tr.fit_transform_y(y)
+    assert np.array_equal(actual_result, expected_result)
+
+
+@pytest.mark.parametrize(
     ("feature_name", "csr_matrix_flag"),
     (
             ("AgeGroup", True),
