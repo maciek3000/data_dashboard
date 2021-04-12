@@ -123,6 +123,7 @@ class ModelFinder:
     _target_categorical = "categorical"
     _target_numerical = "numerical"
     _target_categories = [_target_categorical, _target_numerical]
+    _probas_functions = ["roc_auc_score"]
 
     def __init__(self, X, y, X_train, X_test, y_train, y_test, target_type, random_state=None):
 
@@ -445,12 +446,8 @@ class ModelFinder:
             start_time = time.time()
             clf.fit(X_train, y_train)
             stop_time = time.time()
-            # TODO: add separate condition for roc_auc_score
-            if str(scoring) == "roc_auc_score":
-                predictions = clf.predict_proba(X_test)
-            else:
-                predictions = clf.predict(X_test)
-            score = scoring(y_test, predictions)
+
+            score = self._calculate_model_score(clf, X_test, y_test, scoring)
             #score = scoring(y_test, clf.predict(X_test))
             params = clf.get_params()
 
@@ -495,14 +492,7 @@ class ModelFinder:
 
         scoring_results = {}
         for scoring in scorings:
-            if "roc_auc_score" in str(scoring):
-                try:
-                    predictions = fitted_model.predict_proba(self.X_test)[:, 1]
-                except AttributeError:
-                    predictions = fitted_model.decision_function(self.X_test)
-            else:
-                predictions = fitted_model.predict(self.X_test)
-            score = scoring(self.y_test, predictions)
+            score = self._calculate_model_score(fitted_model, self.X_test, self.y_test, scoring)
             #score = scoring(self.y_test, fitted_model.predict(self.X_test))
             scoring_results[obj_name(scoring)] = score
 
@@ -603,3 +593,17 @@ class ModelFinder:
             params.update(new_params)
 
         return params
+
+    def _calculate_model_score(self, model, X, y_true, scoring_function):
+
+        if any((func == obj_name(scoring_function) for func in self._probas_functions)):
+            try:
+                predictions = model.predict_proba(X)  # included for multiclass, but currently not implemented
+                if self.problem == self._classification:
+                    predictions = predictions[:, 1]
+            except AttributeError:
+                predictions = model.decision_function(X)
+        else:
+            predictions = model.predict(X)
+        score = scoring_function(y_true, predictions)
+        return score

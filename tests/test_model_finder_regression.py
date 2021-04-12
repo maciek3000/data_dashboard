@@ -417,3 +417,27 @@ def test_model_finder_wrap_params_regression(model_finder_regression, test_param
     expected_params.update(new_params)
     actual_params = model_finder_regression._wrap_params(copy.deepcopy(test_params))
     assert actual_params == expected_params
+
+
+@pytest.mark.parametrize(
+    ("model",),
+    (
+            (Ridge(),),
+            (DecisionTreeRegressor(max_depth=5),),
+            (SVR(C=1000),)
+    )
+)
+def test_model_finder_calculate_model_score_multiclass_regular_scoring(model_finder_regression, split_dataset_numerical, model):
+    """Testing if calculating model score works correctly in multiclass with scoring != roc_auc_score."""
+    scoring = mean_squared_error
+    X_train = split_dataset_numerical[0]
+    X_test = split_dataset_numerical[1]
+    y_train = split_dataset_numerical[2]
+    y_test = split_dataset_numerical[3]
+
+    model.fit(X_train, y_train)
+
+    expected_result = scoring(y_test, model.predict(X_test))
+    actual_result = model_finder_regression._calculate_model_score(model, X_test, y_test, scoring)
+
+    assert actual_result == expected_result

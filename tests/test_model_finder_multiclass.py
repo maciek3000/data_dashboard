@@ -1,9 +1,10 @@
 import pytest
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression, RidgeClassifier
+from sklearn.linear_model import LogisticRegression, RidgeClassifier, PassiveAggressiveClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, roc_auc_score, precision_score
 
 from sklearn.dummy import DummyClassifier
 
@@ -305,3 +306,27 @@ def test_model_finder_predict_X_test_multiclass(model_finder_multiclass_fitted, 
     for actual_result, expected_result in zip(actual_results, expected_results):
         assert str(actual_result[0]) == str(expected_result[0])
         assert np.array_equal(actual_result[1], expected_result[1])
+
+
+@pytest.mark.parametrize(
+    ("model",),
+    (
+            (LogisticRegression(),),
+            (SVC(C=1000.0),),
+            (DecisionTreeClassifier(max_depth=10, criterion="entropy"),)
+    )
+)
+def test_model_finder_calculate_model_score_multiclass_regular_scoring(model_finder_multiclass, split_dataset_multiclass, model):
+    """Testing if calculating model score works correctly in multiclass with scoring != roc_auc_score."""
+    scoring = accuracy_score
+    X_train = split_dataset_multiclass[0]
+    X_test = split_dataset_multiclass[1]
+    y_train = split_dataset_multiclass[2]
+    y_test = split_dataset_multiclass[3]
+
+    model.fit(X_train, y_train)
+
+    expected_result = scoring(y_test, model.predict(X_test))
+    actual_result = model_finder_multiclass._calculate_model_score(model, X_test, y_test, scoring)
+
+    assert actual_result == expected_result

@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression, RidgeClassifier
+from sklearn.linear_model import LogisticRegression, RidgeClassifier, PassiveAggressiveClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import roc_auc_score, accuracy_score, roc_curve, det_curve
@@ -62,7 +62,7 @@ def test_model_finder_set_model_classification(model_finder_classification, seed
 
     assert mf._chosen_model == model
     assert mf._chosen_model_params == model.get_params()
-    assert mf._chosen_model_scores == {"roc_auc_score": 0.43333333333333335, "accuracy_score": 0.52}
+    assert mf._chosen_model_scores == {"roc_auc_score": 0.6666666666666667, "accuracy_score": 0.52}
 
     with pytest.raises(NotFittedError):
         mf.predict([1])
@@ -72,7 +72,7 @@ def test_model_finder_set_model_classification(model_finder_classification, seed
     ("mode", "expected_model"),
     (
             ("quick", SVC(tol=0.1, C=0.1)),
-            ("detailed", DecisionTreeClassifier(criterion="entropy", max_depth=10))
+            ("detailed", LogisticRegression(tol=0.1))
     )
 )
 def test_model_finder_classification_search(model_finder_classification, mode, expected_model, seed):
@@ -86,8 +86,8 @@ def test_model_finder_classification_search(model_finder_classification, mode, e
 @pytest.mark.parametrize(
     ("mode", "expected_model", "expected_scores"),
     (
-            ("quick", SVC(tol=0.1, C=0.1), {"roc_auc_score": 0.5, "accuracy_score": 0.6}),
-            ("detailed", DecisionTreeClassifier(criterion="entropy", max_depth=10), {"roc_auc_score": 0.5333333333333333, "accuracy_score": 0.6})
+            ("quick", SVC(tol=0.1, C=0.1), {"roc_auc_score": 0.6066666666666667, "accuracy_score": 0.6}),
+            ("detailed", LogisticRegression(tol=0.1), {"roc_auc_score": 0.6666666666666667, "accuracy_score": 0.52})
     )
 )
 def test_model_finder_search_and_fit_classification(model_finder_classification, mode, expected_model, expected_scores, seed):
@@ -165,8 +165,8 @@ def test_model_finder_perform_quicksearch_classification(model_finder_classifica
     """Testing if quicksearch works and returns correct Models and result dict (in classification)."""
     expected_models = [
         (DecisionTreeClassifier, 0.5773809523809523),
-        (LogisticRegression, 0.6071428571428571),
-        (SVC, 0.6309523809523809),
+        (LogisticRegression, 0.6428571428571429),
+        (SVC, 0.7261904761904763),
     ]
     expected_keys = {"fit_time", "roc_auc_score", "params"}
 
@@ -205,10 +205,10 @@ def test_model_finder_assess_models_classification(model_finder_classification, 
     """Testing if assess_model function returns correct Models and result dict (in classification)."""
     models = [
         DecisionTreeClassifier(**{"max_depth": 10, "criterion": "entropy", "random_state": seed}),
-        LogisticRegression(**{"C": 1.0, "tol": 0.1, "random_state": seed}),
+        LogisticRegression(**{"tol": 0.1, "random_state": seed}),
         SVC(**{"C": 0.1, "tol": 0.1, "random_state": seed})
     ]
-    scores = [0.5333333333333333, 0.43333333333333335, 0.5]
+    scores = [0.5333333333333333, 0.6666666666666667, 0.6066666666666667]
 
     expected_models = list(zip(models, scores))
     expected_keys = {"fit_time", "roc_auc_score", "params", "accuracy_score", "balanced_accuracy_score", "f1_score"}
@@ -232,7 +232,7 @@ def test_model_finder_assess_models_classification(model_finder_classification, 
 def test_model_finder_classification_search_results_dataframe(model_finder_classification_fitted, limit, seed):
     """Testing if search_results_dataframe is being correctly filtered out to a provided
     model_limit (in classification)"""
-    models = ["DecisionTreeClassifier", "SVC", "LogisticRegression"]
+    models = ["LogisticRegression", "SVC", "DecisionTreeClassifier"]
     dummy = ["DummyClassifier"]
     expected_index = models[:limit] + dummy
     expected_keys = {"fit_time", "params", "roc_auc_score", "accuracy_score", "balanced_accuracy_score", "f1_score"}
@@ -296,9 +296,9 @@ def test_model_finder_classification_plot_curves_error(model_finder_classificati
 def test_model_finder_classification_confusion_matrices(model_finder_classification_fitted, limit):
     """Testing if confusion matrices are being correctly calculated and returned (in classification)."""
     results = [
-        ("DecisionTreeClassifier", [2, 8, 2, 13]),
+        ("LogisticRegression", [0, 10, 2, 13]),
         ("SVC", [0, 10, 0, 15]),
-        ("LogisticRegression", [0, 10, 2, 13])
+        ("DecisionTreeClassifier", [2, 8, 2, 13])
     ]
     expected_results = results[:limit]
 
@@ -330,9 +330,9 @@ def test_model_finder_predict_X_test_classification(
 ):
     """Testing if predictions of X_test split from found models are correct (in classification)."""
     models = [
-        DecisionTreeClassifier(**{"max_depth": 10, "criterion": "entropy", "random_state": seed}),
+        LogisticRegression(**{"tol": 0.1, "random_state": seed}),
         SVC(**{"C": 0.1, "tol": 0.1, "random_state": seed}),
-        LogisticRegression(**{"C": 1.0, "tol": 0.1, "random_state": seed})
+        DecisionTreeClassifier(**{"max_depth": 10, "criterion": "entropy", "random_state": seed})
     ]
     results = []
     X_train, X_test, y_train, y_test = split_dataset_categorical
@@ -390,3 +390,74 @@ def test_model_finder_wrap_params_classification(model_finder_classification, te
     expected_params = test_params
     actual_params = model_finder_classification._wrap_params(test_params)
     assert actual_params == expected_params
+
+
+@pytest.mark.parametrize(
+    ("model",),
+    (
+            (LogisticRegression(),),
+            (SVC(C=1000.0),),
+            (DecisionTreeClassifier(max_depth=10, criterion="entropy"),)
+    )
+)
+def test_model_finder_calculate_model_score_classification_regular_scoring(model_finder_classification, split_dataset_categorical, model):
+    """Testing if calculating model score works correctly in classification with scoring != roc_auc_score."""
+    scoring = accuracy_score
+    X_train = split_dataset_categorical[0]
+    X_test = split_dataset_categorical[1]
+    y_train = split_dataset_categorical[2]
+    y_test = split_dataset_categorical[3]
+
+    model.fit(X_train, y_train)
+
+    expected_result = scoring(y_test, model.predict(X_test))
+    actual_result = model_finder_classification._calculate_model_score(model, X_test, y_test, scoring)
+
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
+    ("model",),
+    (
+            (LogisticRegression(),),
+            (DecisionTreeClassifier(max_depth=10, criterion="entropy"),),
+    )
+)
+def test_model_finder_calculate_model_score_classification_roc_auc_scoring_proba(model_finder_classification, split_dataset_categorical, model):
+    """Testing if calculating model score works correctly in classification with scoring == roc_auc_score
+    and with models exposing predict_proba() method."""
+    scoring = roc_auc_score
+    X_train = split_dataset_categorical[0]
+    X_test = split_dataset_categorical[1]
+    y_train = split_dataset_categorical[2]
+    y_test = split_dataset_categorical[3]
+
+    model.fit(X_train, y_train)
+
+    expected_result = scoring(y_test, model.predict_proba(X_test)[:, 1])
+    actual_result = model_finder_classification._calculate_model_score(model, X_test, y_test, scoring)
+
+    assert actual_result, expected_result
+
+@pytest.mark.parametrize(
+    ("model",),
+    (
+            (SVC(C=1000.0),),
+            (PassiveAggressiveClassifier(),),
+    )
+)
+def test_model_finder_calculate_model_score_classification_roc_auc_scoring_decision_func(model_finder_classification, split_dataset_categorical, model):
+    """Testing if calculating model score works correctly in classification with scoring == roc_auc_score
+    and with models exposing decision_function() method."""
+    scoring = roc_auc_score
+    X_train = split_dataset_categorical[0]
+    X_test = split_dataset_categorical[1]
+    y_train = split_dataset_categorical[2]
+    y_test = split_dataset_categorical[3]
+
+    model.fit(X_train, y_train)
+
+    expected_result = scoring(y_test, model.decision_function(X_test))
+    actual_result = model_finder_classification._calculate_model_score(model, X_test, y_test, scoring)
+
+    assert actual_result, expected_result

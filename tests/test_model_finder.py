@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.linear_model import Ridge, PassiveAggressiveClassifier, LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accuracy_score
+from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accuracy_score, log_loss
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.exceptions import NotFittedError
 
@@ -23,7 +23,11 @@ from ml_dashboard.models import classifiers, regressors
             (Ridge, "Ridge"),
             (Ridge(), "Ridge"),
             (PassiveAggressiveClassifier, "PassiveAggressiveClassifier"),
-            (PassiveAggressiveClassifier(), "PassiveAggressiveClassifier")
+            (PassiveAggressiveClassifier(), "PassiveAggressiveClassifier"),
+            (roc_auc_score, "roc_auc_score"),
+            (mean_squared_error, "mean_squared_error"),
+            (r2_score, "r2_score"),
+            (log_loss, "log_loss")
 
     )
 )
@@ -342,11 +346,11 @@ def test_model_finder_get_scorings(model_finder_classification, scoring, expecte
     ("model", "expected_results"),
     (
             (LogisticRegression(C=1.0, tol=0.1, random_state=1010),
-             {"roc_auc_score": 0.43333333333333335, "accuracy_score": 0.52}),
-            (LogisticRegression(C=10.0, tol=1, random_state=42), {"roc_auc_score": 0.4, "accuracy_score": 0.48}),
+             {"roc_auc_score": 0.6666666666666667, "accuracy_score": 0.52}),
+            (LogisticRegression(C=10.0, tol=1, random_state=42), {"roc_auc_score": 0.6466666666666666, "accuracy_score": 0.48}),
             (DecisionTreeClassifier(max_depth=100, criterion="gini", random_state=42),
              {"roc_auc_score": 0.5333333333333333, "accuracy_score": 0.6}),
-            (SVC(C=1.0, tol=0.1, random_state=1), {"roc_auc_score": 0.5166666666666667, "accuracy_score": 0.6})
+            (SVC(C=1.0, tol=0.1, random_state=1), {"roc_auc_score": 0.5999999999999999, "accuracy_score": 0.6})
     )
 )
 def test_model_finder_score_model(model_finder_classification, model, expected_results):
