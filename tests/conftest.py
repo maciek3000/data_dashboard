@@ -419,6 +419,12 @@ def transformer_multiclass(categorical_features, numerical_features, seed, prepr
 
     return tr
 
+@pytest.fixture
+def transformer_classification_fitted(transformer_classification, data_classification_balanced):
+    transformer_classification.fit(data_classification_balanced[0])
+    transformer_classification.fit_y(data_classification_balanced[1])
+    return transformer_classification
+
 
 @pytest.fixture
 def transformed_classification_data(data_classification_balanced, transformer_classification):

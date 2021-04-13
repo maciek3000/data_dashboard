@@ -1,5 +1,7 @@
 from ml_dashboard.transformer import Transformer
 from sklearn.preprocessing import LabelEncoder, FunctionTransformer, OneHotEncoder, QuantileTransformer, StandardScaler
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import make_pipeline
 import pytest
 import numpy as np
 import pandas as pd
@@ -10,7 +12,6 @@ def test_transformer_create_preprocessor_X(categorical_features, numerical_featu
     categorical_features.remove("Target")
     tr = Transformer(categorical_features, numerical_features, "Categorical")
     preprocessor = tr._create_preprocessor_X()
-
     expected_steps = [("numerical", numerical_features), ("categorical", categorical_features)]
 
     actual_steps = [(item[0], item[2]) for item in preprocessor.transformers]
@@ -103,8 +104,9 @@ def test_transformer_transform_y_numerical(
 
     assert np.allclose(actual_result, expected_result, equal_nan=True)
 
+
 @pytest.mark.parametrize(
-    ("feature", "classification_pos_label", ),
+    ("feature", "classification_pos_label",),
     (
             ("Sex", "Female"),
             ("Sex", "Male"),
@@ -199,7 +201,8 @@ def test_transformer_transform_X_numerical(data_classification_balanced, feature
     median = feature.describe()["50%"]
     feature = feature.fillna(median)
     feature = StandardScaler().fit_transform(feature.to_numpy().reshape(-1, 1))
-    expected_result = QuantileTransformer(output_distribution="normal", random_state=random_state).fit_transform(feature)
+    expected_result = QuantileTransformer(output_distribution="normal", random_state=random_state).fit_transform(
+        feature)
 
     tr = Transformer([], [feature_name], "Categorical", random_state=random_state)
     actual_result = tr.fit_transform(pd.DataFrame(df[feature_name]))
@@ -212,11 +215,14 @@ def test_transformer_transform_X_numerical(data_classification_balanced, feature
     (
             ("Sex", ["Female", "Male", np.nan]),
             ("AgeGroup", [18, 23, 28, 33, 38, 43, 48, 53, 58]),
-            ("Product", ["Apples", "Bananas", "Bread", "Butter", "Cheese", "Cookies", "Eggs", "Honey", "Ketchup", "Oranges", np.nan]),
+            ("Product",
+             ["Apples", "Bananas", "Bread", "Butter", "Cheese", "Cookies", "Eggs", "Honey", "Ketchup", "Oranges",
+              np.nan]),
             ("Target", [0, 1])
     )
 )
-def test_transformer_y_classes_classification(data_classification_balanced, categorical_features, numerical_features, y_column, expected_result, seed):
+def test_transformer_y_classes_classification(data_classification_balanced, categorical_features, numerical_features,
+                                              y_column, expected_result, seed):
     """Testing if classification transformer returns correct classes from y."""
     df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1)
     cat_feats = categorical_features.remove(y_column)
@@ -233,3 +239,176 @@ def test_transformer_y_classes_regression_error(categorical_features, numerical_
     tr = Transformer(categorical_features, numerical_features, "Numerical", seed)
     with pytest.raises(ValueError):
         _ = tr.y_classes()
+
+
+@pytest.mark.parametrize(
+    ("feature", "category"),
+    (
+            ("Sex", "Categorical"),
+            ("Product", "Categorical"),
+            ("Height", "Numerical"),
+            ("Price", "Numerical"),
+    )
+)
+def test_transformer_transformers(transformer_classification_fitted, feature, category, seed):
+    """Testing if correct transformers are returned when provided with a feature name."""
+    if category == "Categorical":
+        expected_result = ["SimpleImputer(strategy='most_frequent')", "OneHotEncoder(handle_unknown='ignore')"]
+    elif category == "Numerical":
+        expected_result = [
+            "SimpleImputer(strategy='median')",
+            "StandardScaler()",
+            "QuantileTransformer(output_distribution='normal', random_state={seed})".format(seed=seed)]
+    else:
+        raise
+
+    actual_result = list(map(str, transformer_classification_fitted.transformers(feature)))
+
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
+    ("feature",),
+    (
+            ("Date",),
+            ("Unused Feature",),
+    )
+)
+def test_transformer_transformers_untransformed_feature(transformer_classification_fitted, feature):
+    """Testing if no transformers are returned from transformations() function when unused feature is provided."""
+    expected_result = None
+    actual_result = transformer_classification_fitted.transformers(feature)
+
+    assert actual_result == expected_result
+
+
+def test_transformer_transformed_columns_names(transformer_classification_fitted):
+    """Testing if transformed_columns() returns correct combination of transformed column names."""
+    categorical_columns = [
+        "AgeGroup_18",
+        "AgeGroup_23",
+        "AgeGroup_28",
+        "AgeGroup_33",
+        "AgeGroup_38",
+        "AgeGroup_43",
+        "AgeGroup_48",
+        "AgeGroup_53",
+        "AgeGroup_58",
+        "bool_False",
+        "bool_True",
+        "Product_Apples",
+        "Product_Bananas",
+        "Product_Bread",
+        "Product_Butter",
+        "Product_Cheese",
+        "Product_Cookies",
+        "Product_Eggs",
+        "Product_Honey",
+        "Product_Ketchup",
+        "Product_Oranges",
+        "Sex_Female",
+        "Sex_Male"
+    ]
+    expected_result = ["Height", "Price"] + categorical_columns
+
+    actual_result = transformer_classification_fitted.transformed_columns()
+
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
+    ("feature",),
+    (
+            ("Sex",),
+            ("bool",),
+            ("Product",),
+            ("AgeGroup",),
+    )
+)
+def test_transformer_transformed_columns_categorical_encoding(transformer_classification_fitted, data_classification_balanced, feature):
+    """Testing if transformed_columns() returns transformed column names in correct order (OneHotEncoding)."""
+    categorical_columns = [
+        "AgeGroup_18",
+        "AgeGroup_23",
+        "AgeGroup_28",
+        "AgeGroup_33",
+        "AgeGroup_38",
+        "AgeGroup_43",
+        "AgeGroup_48",
+        "AgeGroup_53",
+        "AgeGroup_58",
+        "bool_False",
+        "bool_True",
+        "Product_Apples",
+        "Product_Bananas",
+        "Product_Bread",
+        "Product_Butter",
+        "Product_Cheese",
+        "Product_Cookies",
+        "Product_Eggs",
+        "Product_Honey",
+        "Product_Ketchup",
+        "Product_Oranges",
+        "Sex_Female",
+        "Sex_Male"
+    ]
+    col_names = ["Height", "Price"] + categorical_columns
+    df = data_classification_balanced[0]
+    # replacing for SimpleImputer which cant handle bool dtype
+    df["bool"] = df["bool"].replace({False: 0, True: 1})
+    test_feature = df[feature]
+    expected_result = make_pipeline(SimpleImputer(strategy="most_frequent"), OneHotEncoder(handle_unknown="ignore")).fit_transform(test_feature.to_numpy().reshape(-1, 1)).toarray()
+
+    expected_col_names = [col for col in col_names if feature in col]
+
+    df = pd.DataFrame(data=transformer_classification_fitted.transform(data_classification_balanced[0]).toarray(), columns=col_names)
+    actual_result = df[expected_col_names].to_numpy()
+
+    assert len(df.columns) == len(col_names)
+    assert np.array_equal(actual_result, expected_result)
+
+
+def test_transformer_transformed_columns_no_one_hot_encoder(transformer_classification_fitted, data_classification_balanced):
+    """Testing if columns from transformed_columns() are correctly calculated when there is no OneHotEncoder present
+    in the preprocessor."""
+    transformer_classification_fitted.set_custom_preprocessor_X([SimpleImputer()], [SimpleImputer(strategy="most_frequent")])
+    transformer_classification_fitted.fit(data_classification_balanced[0])
+    expected_results = ["Height", "Price", "AgeGroup", "bool", "Product", "Sex"]
+    actual_results = transformer_classification_fitted.transformed_columns()
+
+    assert actual_results == expected_results
+
+
+@pytest.mark.parametrize(
+    ("feature", "category", "expected_columns"),
+    (
+            ("AgeGroup", "Categorical", ["AgeGroup_18", "AgeGroup_23", "AgeGroup_28", "AgeGroup_33", "AgeGroup_38",
+                                         "AgeGroup_43", "AgeGroup_48", "AgeGroup_53", "AgeGroup_58",]),
+            ("bool", "Categorical", ["bool_False", "bool_True"]),
+            ("Height", "Numerical", ["Height"]),
+            ("Price", "Numerical", ["Price"]),
+            ("Product", "Categorical", ["Product_Apples", "Product_Bananas", "Product_Bread", "Product_Butter",
+                                        "Product_Cheese", "Product_Cookies", "Product_Eggs", "Product_Honey",
+                                        "Product_Ketchup", "Product_Oranges",]),
+            ("Sex", "Categorical", ["Sex_Female", "Sex_Male"])
+    )
+)
+def test_transformer_transformations(transformer_classification_fitted, feature, category, expected_columns, seed):
+    if category == "Categorical":
+        expected_transformers = [SimpleImputer(strategy="most_frequent"), OneHotEncoder(handle_unknown="ignore")]
+    elif category == "Numerical":
+        expected_transformers = [
+            SimpleImputer(strategy="median"),
+            StandardScaler(),
+            QuantileTransformer(output_distribution="normal", random_state=seed)
+        ]
+    else:
+        raise
+
+    results = transformer_classification_fitted.transformations()
+    actual_results = results[feature]
+
+    assert len(results) == 6
+    assert str(actual_results[0]) == str(expected_transformers)
+    assert actual_results[1] == expected_columns
+
