@@ -269,6 +269,11 @@ class FeatureView(BaseView):
     _scatterplot = "scatter_plot_grid"
 
     _transformed_feature = "transformed_feature"
+    _transformed_feature_template = '<div class="{feature_class}" id="{feature_name}">{content}</div>'
+    # _transformed_feature_transformers_template = "<div class='{single_transformer_class}'>{transformer}</div>"
+    # _transformed_feature_transformers_tables = "<div class='{transformer_tables}'>{raw_feature}"
+
+
     # CSS
     _first_feature_transformed = "chosen-feature-transformed"
     _transformed_feature_class = "transformed-feature"
@@ -276,13 +281,14 @@ class FeatureView(BaseView):
     _feature_menu_header = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
     _feature_menu_single_feature = "<div class='single-feature'>{:03}. {}</div>"
 
-    def __init__(self, template, css_path, js_path):
+    def __init__(self, template, css_path, js_path, target_name):
         super().__init__()
         self.template = template
         self.css = css_path
         self.js = js_path
+        self.target_name = target_name
 
-    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, features_df, transformed_features_df, first_feature):
+    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, features_df, transformed_features_df, X_transformations, y_transformations, first_feature):
 
         output = {}
 
@@ -314,7 +320,9 @@ class FeatureView(BaseView):
         output[self._scatterplot] = scatterplot_div
 
         # Transformed Features
-        output[self._transformed_feature] = self._generate_transformed_features_divs(features_df, transformed_features_df, first_feature)
+        transformations = X_transformations
+        transformations[self.target_name] = (y_transformations, self.target_name)
+        output[self._transformed_feature] = self._generate_transformed_features_divs(features_df, transformed_features_df, transformations, first_feature)
 
         return self.template.render(**output)
 
@@ -328,8 +336,7 @@ class FeatureView(BaseView):
 
         return html
 
-    def _generate_transformed_features_divs(self, df, transformed_df, first_feature):
-        template = '<div class="{feature_class}" id="{feature_name}"><div>{title}</div><div>{content}</div></div>'
+    def _generate_transformed_features_divs(self, df, transformed_df, transformations, first_feature):
 
         output = ""
         for col in df.columns:
@@ -337,9 +344,37 @@ class FeatureView(BaseView):
             if col == first_feature:
                 feature_class += " " + self._first_feature_transformed
 
-            content = df[col].head().to_frame().to_html()
-            output += template.format(feature_class=feature_class, title=col, content=content, feature_name=col)
+            new_cols = transformations[col][1]
+            content = self._single_transformed_feature(df[col], transformed_df[new_cols], transformations[col])
+            output += self._transformed_feature_template.format(feature_class=feature_class, title=col, content=content, feature_name=col)
 
+        return output
+
+    def _single_transformed_feature(self, srs, transformed_srs, transformations):
+        transformers_html = self._transformers_html(transformations[0])
+        srs_html = srs.to_frame().to_html()
+        # transformed_srs_html = transformed_srs.to_html()
+
+        # TODO:
+        try:
+            transformed_srs_html = transformed_srs.to_frame().to_html()
+        except AttributeError:
+            transformed_srs_html = transformed_srs.to_html()
+
+        template = "<div class='transformed-grid'><div>{transformers_html}</div><div>{srs_html}</div><div>{transformed_srs_html}</div></div>"
+
+        output = template.format(transformers_html=transformers_html, srs_html=srs_html, transformed_srs_html=transformed_srs_html)
+        return output
+
+    def _transformers_html(self, transformers):
+        template = "<div class='transformer-list'>{transformers}</div>"
+
+        single_template = "<div class='single-transformer'>{transformer}</div>"
+        _ = []
+        for transformer in transformers:
+            _.append(single_template.format(transformer=str(transformer)))
+
+        output = template.format(transformers="".join(_))
         return output
 
 

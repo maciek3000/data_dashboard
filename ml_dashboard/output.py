@@ -87,6 +87,7 @@ class Output:
                     template=self.env.get_template(self._view_features_html),
                     css_path=os.path.join(self.static_path, self._view_features_css),
                     js_path=os.path.join(self.static_path, self._view_features_js),
+                    target_name=self.features.target
                 )
 
         self.view_models = self._models_view_creator(self.model_finder.problem)
@@ -143,6 +144,10 @@ class Output:
 
         generated_scattergrid = self.scattergrid.scattergrid(self.analyzer.scatter_data(), first_feature)
 
+        # TODO: transformed is sometimes csrmatrix, sometimes array
+        transformed_df = pd.DataFrame(data=self.X_transformed.toarray(), columns=self.transformer.transformed_columns())
+        transformed_df = pd.concat([transformed_df, pd.Series(self.y_transformed, name=self.features.target)], axis=1)
+
         overview_rendered = self.view_overview.render(
             base_css=base_css,
             creation_date=created_on,
@@ -164,8 +169,10 @@ class Output:
             correlations_plot=generated_correlation_plot,
             scatterplot=generated_scattergrid,
             feature_list=feature_list,
-            features_df=self.features.raw_data(),
-            transformed_features_df=self.features.raw_data(),
+            features_df=self.features.raw_data().head(),
+            transformed_features_df=transformed_df.head(),
+            X_transformations=self.transformer.transformations(),
+            y_transformations=self.transformer.y_transformers(),
             first_feature=first_feature
         )
 
@@ -183,7 +190,6 @@ class Output:
             models_left_bottom=models_left_bottom,
             incorrect_predictions_table=table
         )
-
 
         rendered_templates = {
             self._view_overview_html: overview_rendered,

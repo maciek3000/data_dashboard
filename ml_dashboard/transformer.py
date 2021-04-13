@@ -78,6 +78,11 @@ class Transformer:
 
         return output
 
+    def y_transformers(self):
+        transformer = self.preprocessor_y
+        return [transformer]
+
+
     def transformers(self, feature):
         if feature in self.categorical_features:
             return self.categorical_transformers
@@ -88,11 +93,14 @@ class Transformer:
 
     def transformed_columns(self):
         # TODO: check if transformer is fitted
-        cat_transformers = self.preprocessor_X.named_transformers_[self._categorical_pipeline]
-        try:
-            categorical_cols = cat_transformers[self._one_hot_encoder_tr_name].get_feature_names(self.categorical_features).tolist()
-        except KeyError:
-            categorical_cols = self.categorical_features
+        if len(self.categorical_features) > 0:
+            cat_transformers = self.preprocessor_X.named_transformers_[self._categorical_pipeline]
+            try:
+                categorical_cols = cat_transformers[self._one_hot_encoder_tr_name].get_feature_names(self.categorical_features).tolist()
+            except KeyError:
+                categorical_cols = self.categorical_features
+        else:
+            categorical_cols = []
         output = self.numerical_features + categorical_cols
         return output
 
