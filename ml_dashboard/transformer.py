@@ -71,7 +71,7 @@ class Transformer:
 
     def _create_numeric_transformer(self):
         transformer = make_pipeline(
-            SimpleImputer(strategy="median", add_indicator=True),
+            SimpleImputer(strategy="median"),
             StandardScaler(),
             QuantileTransformer(output_distribution="normal", random_state=self.random_state)
         )
@@ -79,7 +79,7 @@ class Transformer:
 
     def _create_categorical_transformer(self):
         transformer = make_pipeline(
-            SimpleImputer(strategy="most_frequent", add_indicator=True),
+            SimpleImputer(strategy="most_frequent"),
             OneHotEncoder(handle_unknown="ignore")
         )
         return transformer

@@ -198,8 +198,8 @@ def test_transformer_transform_X_numerical(data_classification_balanced, feature
     feature = df[feature_name]
     median = feature.describe()["50%"]
     feature = feature.fillna(median)
-    feature = QuantileTransformer(output_distribution="normal", random_state=random_state ).fit_transform(feature.to_numpy().reshape(-1, 1))
-    expected_result = StandardScaler().fit_transform(feature)
+    feature = StandardScaler().fit_transform(feature.to_numpy().reshape(-1, 1))
+    expected_result = QuantileTransformer(output_distribution="normal", random_state=random_state).fit_transform(feature)
 
     tr = Transformer([], [feature_name], "Categorical", random_state=random_state)
     actual_result = tr.fit_transform(pd.DataFrame(df[feature_name]))

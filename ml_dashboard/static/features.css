@@ -101,8 +101,11 @@
     width: 100%;
 }
 
+.submenu-content-wrapper {
+    margin-bottom: 36px;
+}
+
 .infogrid-stats {
-    margin-right: 192px;
     margin-bottom: 56px !important;
 }
 
@@ -134,10 +137,6 @@
         margin-right: 0px;
     }
 
-    .infogrid-correlations {
-        width: 90%;
-    }
-
 }
 
 .info-div-content div {
@@ -151,7 +150,6 @@
     padding-top: 12px;
 }
 
-
 .info-div-content div > span {
     float: right;
     color: var(--contrary-color);
@@ -162,10 +160,6 @@
     color: var(--normal-link-color);
     font-size: 1.75em;
     cursor: help;
-}
-
-.bk.histogram-plot {
-    margin-top: 32px !important;
 }
 
 /* ScatterGrid */

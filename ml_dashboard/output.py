@@ -1,7 +1,7 @@
 import os, datetime
 from jinja2 import Environment, FileSystemLoader
 from .views import Overview, FeatureView, ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
-from .plots import PairPlot, InfoGrid, ScatterPlotGrid
+from .plots import PairPlot, InfoGrid, ScatterPlotGrid, CorrelationPlot
 from .plots import ModelsPlotClassification, ModelsPlotRegression, ModelsPlotMulticlass, ModelsDataTable
 from .plot_design import PlotDesign
 
@@ -52,17 +52,15 @@ class Output:
     # view specific properties
     _view_models_model_limit = 3
 
-    def __init__(self, root_path, output_directory, package_name, features, analyzer, transformer, model_finder, X, y, transformed_X, transformed_y, X_test, y_test):
+    def __init__(self, root_path, output_directory, package_name, features, analyzer, transformer, model_finder, X_transformed, y_transformed, X_test, y_test):
 
         self.features = features
         self.analyzer = analyzer
         self.transformer = transformer
         self.model_finder = model_finder
 
-        self.X = X
-        self.y = y
-        self.transformed_X = transformed_X
-        self.transformed_y = transformed_y
+        self.X_transformed = X_transformed
+        self.y_transformed = y_transformed
         self.X_test = X_test
         self.y_test = y_test
 
@@ -100,6 +98,9 @@ class Output:
             features=self.features.features(),
             plot_design=self.plot_design,
             feature_description_class=self._element_with_description_class,
+        )
+        self.correlation_plot = CorrelationPlot(
+            plot_design=self.plot_design,
             target_name=self.features.target
         )
 
@@ -134,7 +135,8 @@ class Output:
             histogram_data=self.analyzer.histogram_data(),
             initial_feature=first_feature
         )
-        generated_infogrid_correlations = self.infogrid.correlation_plot(
+
+        generated_correlation_plot = self.correlation_plot.correlation_plot(
             correlation_data_normalized=self.analyzer.correlation_data_normalized(),
             correlation_data_raw=self.analyzer.correlation_data_raw()
         )
@@ -159,11 +161,11 @@ class Output:
             creation_date=created_on,
             hyperlinks=hyperlinks,
             summary_grid=generated_infogrid_summary,
-            correlations_plot=generated_infogrid_correlations,
+            correlations_plot=generated_correlation_plot,
             scatterplot=generated_scattergrid,
             feature_list=feature_list,
-            features_df=pd.concat([self.X, self.y], axis=1),
-            transformed_features_df=pd.concat([self.X, self.y], axis=1),
+            features_df=self.features.raw_data(),
+            transformed_features_df=self.features.raw_data(),
             first_feature=first_feature
         )
 

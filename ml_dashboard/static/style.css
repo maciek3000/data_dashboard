@@ -159,6 +159,11 @@ html {
     overflow: auto;
     max-height: 0;
     transition: max-height 0.2s ease-out;
+    margin-left: 18px;
+}
+
+.active-submenu {
+    margin-bottom: 18px;
 }
 
 
