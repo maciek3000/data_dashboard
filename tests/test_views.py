@@ -246,11 +246,11 @@ def test_overview_unused_features_html(input_list, expected_string):
             (["Feature3", "Feature1", "Feature2", "Feature5", "Feature8"],)
     )
 )
-def test_feature_view_create_features_menu(input_features):
+def test_features_view_create_features_menu(input_features):
     """Testing if Features menu is created properly given the input features."""
     title = "<div>Title</div>"
     single_feature = "<span>{}. {}</span>"
-    fv = FeatureView("test_template", "test_css", "test_html")
+    fv = FeatureView("test_template", "test_css", "test_html", "test-target")
     fv._feature_menu_header = title
     fv._feature_menu_single_feature = single_feature
     actual_result = fv._create_features_menu(input_features)
@@ -262,6 +262,147 @@ def test_feature_view_create_features_menu(input_features):
         i += 1
 
     assert actual_result == expected_result
+
+@pytest.mark.parametrize(
+    ("input_series", "input_df", "expected_result"),
+    (
+            (
+                pd.Series([1, 2, 3], name="test1"),
+                pd.DataFrame(data={"a": ["a", "b", "c"], "b": ["d", "e", "f"]}),
+                """<div class='test-subtitle-class'>test-title</div><table border='1' class='dataframe'>
+                <thead>
+                <trstyle='text-align:right;'><th>test_prefix-test1</th><th>a</th><th>b</th></tr></thead>
+                <tbody>
+                <tr><td>1</td><td>a</td><td>d</td></tr>
+                <tr><td>2</td><td>b</td><td>e</td></tr>
+                <tr><td>3</td><td>c</td><td>f</td></tr>
+                </tbody>
+                </table>              
+                """
+            ),
+            (
+                pd.Series([1, 2, 3, 4], name="test2"),
+                pd.DataFrame(data={"e": ["z", "y", "x", "w"]}),
+                """<div class='test-subtitle-class'>test-title</div><table border='1' class='dataframe'>
+                <thead>
+                <trstyle='text-align:right;'><th>test_prefix-test2</th><th>e</th></tr></thead>
+                <tbody>
+                <tr><td>1</td><td>z</td></tr>
+                <tr><td>2</td><td>y</td></tr>
+                <tr><td>3</td><td>x</td></tr>
+                <tr><td>4</td><td>w</td></tr>
+                </tbody></table>"""
+            )
+    )
+)
+def test_features_view_transformed_dataframe_html(input_series, input_df, expected_result):
+    """Testing if transformed_dataframe_html() method creates correct HTML output."""
+    test_subtitle = "test-subtitle-class"
+    test_title = "test-title"
+    prefix = "test_prefix-"
+
+    fv = FeatureView("test_template", "test_css", "test_html", "test-target")
+    fv._transformed_feature_subtitle_div = test_subtitle
+    fv._transformed_feature_transformed_df_title = test_title
+    fv._transformed_feature_original_prefix = prefix
+    actual_result = fv._transformed_dataframe_html(input_series, input_df)
+
+    actual_result = actual_result.replace(" ", "").replace("\n", "").replace('"', "'")
+    expected_result = expected_result.replace(" ", "").replace("\n", "")
+
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
+    ("input_transformers", "expected_result"),
+    (
+            (
+                ["Transformer1(test='test')", "Transformer2(random_state=1)"],
+                """<div class='test-transformer-list'>
+                    <div class='test-subtitle'>Test Title For Transformers</div>
+                    <div>
+                        <div class='test-single-tr'>Transformer1(test='test')</div>
+                        <div class='test-single-tr'>Transformer2(random_state=1)</div>
+                    </div>
+                    </div>"""
+            ),
+            (
+                ["TestTransformer", "TestTransformer", "TestTransformer", "TestTransformer"],
+                """<div class='test-transformer-list'>
+                    <div class='test-subtitle'>Test Title For Transformers</div>
+                    <div>
+                        <div class='test-single-tr'>TestTransformer</div>
+                        <div class='test-single-tr'>TestTransformer</div>
+                        <div class='test-single-tr'>TestTransformer</div>
+                        <div class='test-single-tr'>TestTransformer</div>
+                    </div>
+                    </div>"""
+            ),
+            (
+                ["Test(test='test')"],
+                """<div class='test-transformer-list'>
+                    <div class='test-subtitle'>Test Title For Transformers</div>
+                    <div>
+                        <div class='test-single-tr'>Test(test='test')</div>
+                    </div>
+                    </div>"""
+            )
+    )
+)
+def test_features_view_transformers_html(input_transformers, expected_result):
+    """Testing if transformers_html() method returns correct HTML output based on provided list of transformers."""
+    fv = FeatureView("test_template", "test_css", "test_html", "test-target")
+    fv._transformed_feature_single_transformer = "test-single-tr"
+    fv._transformed_feature_transformer_list = "test-transformer-list"
+    fv._transformed_feature_transformers_title = "Test Title For Transformers"
+    fv._transformed_feature_subtitle_div = "test-subtitle"
+
+    actual_result = fv._transformers_html(input_transformers)
+
+    actual_result = actual_result.replace(" ", "").replace("\n", "").replace('"', "'")
+    expected_result = expected_result.replace(" ", "").replace("\n", "")
+
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
+    ("input_feature",),
+    (
+            ("AgeGroup",),
+            ("bool",),
+            ("Height",),
+            ("Price",),
+            ("Product",),
+            ("Sex",),
+            ("Target",)
+    )
+)
+def test_features_view_transformed_features_divs(data_classification_balanced, transformed_classification_data, transformer_classification_fitted, numerical_features, input_feature):
+    """Testing if transformed_features_divs() method creates correct HTML output with appropriate classes set
+    to their respective divs."""
+    # setting up necessary objects
+    df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1).drop(["Date"], axis=1)
+    tr_X = pd.DataFrame(transformed_classification_data[0].toarray(), columns=transformer_classification_fitted.transformed_columns())
+    tr_y = pd.Series(transformed_classification_data[1], name="Target")
+    transformed_df = pd.concat([tr_X, tr_y], axis=1)
+    transformations = transformer_classification_fitted.transformations()
+    transformations["Target"] = (transformer_classification_fitted.y_transformers(), ["Target"])
+    numerical_features = transformer_classification_fitted.numerical_features
+
+    fv = FeatureView("test_template", "test_css", "test_html", "Target")
+    fv._first_feature_transformed = "test-chosen-feature"
+    fv._transformed_feature_div = "test-div"
+    fv._transformed_feature_plots_grid = "test-grid"
+    actual_result = fv._transformed_features_divs(df.head(), transformed_df.head(), transformations, numerical_features, input_feature)
+
+    expected_str = """<div class="test-div test-chosen-feature" id="{feature}">""".format(feature=input_feature)
+
+    assert expected_str in actual_result
+    assert actual_result.count("test-chosen-feature") == 1
+
+    if input_feature in numerical_features:
+        assert "test-grid" in actual_result
+        assert actual_result.count("test-grid") == len(numerical_features)
 
 
 @pytest.mark.parametrize(

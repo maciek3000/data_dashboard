@@ -285,6 +285,7 @@ class FeatureView(BaseView):
     _transformed_feature_subtitle_div = "transformed-feature-subtitle"
     _transformed_feature_transformer_list = "transformer-list"
     _transformed_feature_single_transformer = "single-transformer"
+    _transformed_feature_plots_grid = "transformed-feature-plots"
 
     _feature_menu_header = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
     _feature_menu_single_feature = "<div class='single-feature'>{:03}. {}</div>"
@@ -330,7 +331,7 @@ class FeatureView(BaseView):
         # Transformed Features
         transformations = X_transformations
         transformations[self.target_name] = (y_transformations, self.target_name)
-        output[self._transformed_feature] = self._transformed_features_divs(features_df, transformed_features_df, transformations, numerical_features, first_feature)
+        output[self._transformed_feature] = self._transformed_features_divs(features_df.head(), transformed_features_df.head(), transformations, numerical_features, first_feature)
 
         return self.template.render(**output)
 
@@ -356,7 +357,7 @@ class FeatureView(BaseView):
             new_cols = transformations[col][1]
             content = self._single_transformed_feature(df[col], transformed_df[new_cols], transformers)
             if col in numerical_features:
-                content += "<div>PLOTS PLACEHOLDER</div>"
+                content += "<div class='{plots_class}'>PLOTS PLACEHOLDER</div>".format(plots_class=self._transformed_feature_plots_grid)
 
             output += self._transformed_feature_template.format(feature_class=feature_class, title=col, content=content, feature_name=col)
 
@@ -364,7 +365,7 @@ class FeatureView(BaseView):
 
     def _single_transformed_feature(self, series, transformed_output, transformers):
         transformers_html = self._transformers_html(transformers)
-        df_html = self._transformed_datarame_html(series, transformed_output)
+        df_html = self._transformed_dataframe_html(series, transformed_output)
 
         template = """
         <div class='{transformed_feature_grid_class}'>
@@ -408,7 +409,7 @@ class FeatureView(BaseView):
         )
         return output
 
-    def _transformed_datarame_html(self, series, transformed_df):
+    def _transformed_dataframe_html(self, series, transformed_df):
         series.name = self._transformed_feature_original_prefix + series.name
         df = pd.concat([series, transformed_df], axis=1)
 

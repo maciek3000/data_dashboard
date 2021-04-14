@@ -172,8 +172,8 @@ class Output:
             scatterplot=generated_scattergrid,
             feature_list=feature_list,
             numerical_features=self.features.numerical_features(),
-            features_df=self.features.raw_data().head(),
-            transformed_features_df=transformed_df.head(),
+            features_df=self.features.raw_data(),
+            transformed_features_df=transformed_df,
             X_transformations=self.transformer.transformations(),
             y_transformations=self.transformer.y_transformers(),
             first_feature=first_feature
