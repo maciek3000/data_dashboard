@@ -269,12 +269,15 @@ class FeatureView(BaseView):
     _scatterplot_script = "bokeh_script_scatter_plot_grid"
     _scatterplot = "scatter_plot_grid"
 
+    _transformed_feature_normal_transformations_plots_script = "bokeh_script_normal_transformations_plots"
+
     _transformed_feature = "transformed_feature"
     _transformed_feature_template = '<div class="{feature_class}" id="{feature_name}">{content}</div>'
 
     _transformed_feature_original_prefix = "Original_"
     _transformed_feature_transformed_df_title = "Applied Transformations (First 5 Rows)"
     _transformed_feature_transformers_title = "Transformers"
+    _transformed_feature_normal_transformations_title = "Normal Transformations applied on a Feature"
 
 
     # CSS
@@ -282,7 +285,7 @@ class FeatureView(BaseView):
     _transformed_feature_div = "transformed-feature"
     _transformed_feature_grid = "transformed-grid"
     _transformed_feature_transformations_table = "transformations-table"
-    _transformed_feature_subtitle_div = "transformed-feature-subtitle"
+    _transformed_feature_subtitle_div = "subtitle"  # "transformed-feature-subtitle"
     _transformed_feature_transformer_list = "transformer-list"
     _transformed_feature_single_transformer = "single-transformer"
     _transformed_feature_plots_grid = "transformed-feature-plots"
@@ -297,7 +300,7 @@ class FeatureView(BaseView):
         self.js = js_path
         self.target_name = target_name
 
-    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, numerical_features, test_features_df, test_transformed_features_df, X_transformations, y_transformations, first_feature):
+    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, numerical_features, test_features_df, test_transformed_features_df, X_transformations, y_transformations, normal_transformations_plots, first_feature):
 
         output = {}
 
@@ -329,9 +332,25 @@ class FeatureView(BaseView):
         output[self._scatterplot] = scatterplot_div
 
         # Transformed Features
+
+        # adding target transformation to all transformations
         transformations = X_transformations
         transformations[self.target_name] = (y_transformations, self.target_name)
-        output[self._transformed_feature] = self._transformed_features_divs(test_features_df.head(), test_transformed_features_df.head(), transformations, numerical_features, first_feature)
+
+        # only first 5 rows are going to be shown
+        df = test_features_df.head()
+        transformed_df = test_transformed_features_df.head()
+
+        # adding scripts from bokeh plots at the end so they dont break other JS
+        normal_plots_scripts = []
+        normal_plots_divs = {}
+        for feature, plots in normal_transformations_plots.items():
+            script, div = components(plots)
+            normal_plots_scripts.append(script)
+            normal_plots_divs[feature] = div
+
+        output[self._transformed_feature] = self._transformed_features_divs(df, transformed_df, transformations, numerical_features, normal_plots_divs, first_feature)
+        output[self._transformed_feature_normal_transformations_plots_script] = "".join(normal_plots_scripts)
 
         return self.template.render(**output)
 
@@ -345,7 +364,7 @@ class FeatureView(BaseView):
 
         return html
 
-    def _transformed_features_divs(self, df, transformed_df, transformations, numerical_features, first_feature):
+    def _transformed_features_divs(self, df, transformed_df, transformations, numerical_features, normal_plots, first_feature):
 
         output = ""
         for col in df.columns:
@@ -357,7 +376,13 @@ class FeatureView(BaseView):
             new_cols = transformations[col][1]
             content = self._single_transformed_feature(df[col], transformed_df[new_cols], transformers)
             if col in numerical_features:
-                content += "<div class='{plots_class}'>PLOTS PLACEHOLDER</div>".format(plots_class=self._transformed_feature_plots_grid)
+                plot_row = normal_plots[col]
+                content += """<div class='{plots_class}'><div class='{subtitle_div}'>{title}</div><div>{plot_row}</div></div>""".format(
+                    title=self._transformed_feature_normal_transformations_title,
+                    subtitle_div=self._transformed_feature_subtitle_div,
+                    plots_class=self._transformed_feature_plots_grid,
+                    plot_row=plot_row
+                )
 
             output += self._transformed_feature_template.format(feature_class=feature_class, title=col, content=content, feature_name=col)
 

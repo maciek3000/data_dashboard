@@ -1,11 +1,12 @@
 import os, datetime
 from jinja2 import Environment, FileSystemLoader
 from .views import Overview, FeatureView, ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
-from .plots import PairPlot, InfoGrid, ScatterPlotGrid, CorrelationPlot
+from .plots import PairPlot, InfoGrid, ScatterPlotGrid, CorrelationPlot, NormalTransformationsPlots
 from .plots import ModelsPlotClassification, ModelsPlotRegression, ModelsPlotMulticlass, ModelsDataTable
 from .plot_design import PlotDesign
 
 import pandas as pd
+import numpy as np
 
 
 class Output:
@@ -124,6 +125,8 @@ class Output:
             feature_description_class=self._element_with_description_class
         )
 
+        self.normal_transformations_plot = NormalTransformationsPlots(self.plot_design)
+
     def create_html(self):
 
         # TODO: output .js and .css and create dynamic hrefs to them when creating output
@@ -156,8 +159,13 @@ class Output:
 
         generated_scattergrid = self.scattergrid.scattergrid(self.analyzer.scatter_data(), first_feature)
 
-        # TODO: transformed is sometimes csrmatrix, sometimes array, this should be delegated to Coordinator
-        transformed_df = pd.DataFrame(data=self.transformed_X_test.toarray(), columns=self.transformer.transformed_columns())
+        train_data = pd.concat([self.X_train, self.y_train], axis=1)[self.features.numerical_features()]
+        test_data = pd.concat([self.X_test, self.y_test], axis=1)[self.features.numerical_features()]
+
+        normal_transformations_hist_data = self.transformer.normal_transformations_histograms(train_data, test_data)
+        generated_normal_transformations_plots = self.normal_transformations_plot.plots(normal_transformations_hist_data)
+
+        transformed_df = pd.DataFrame(data=self.transformed_X_test, columns=self.transformer.transformed_columns())
         transformed_df = pd.concat([transformed_df, pd.Series(self.transformed_y_test, name=self.features.target)], axis=1)
 
         overview_rendered = self.view_overview.render(
@@ -186,6 +194,7 @@ class Output:
             test_transformed_features_df=transformed_df,
             X_transformations=self.transformer.transformations(),
             y_transformations=self.transformer.y_transformers(),
+            normal_transformations_plots=generated_normal_transformations_plots,
             first_feature=first_feature
         )
 

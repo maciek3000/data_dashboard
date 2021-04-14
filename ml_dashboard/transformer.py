@@ -7,6 +7,9 @@ from sklearn.impute import SimpleImputer
 from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer
 import numpy as np
+import pandas as pd
+
+from .analyzer import calculate_numerical_bins, modify_histogram_edges
 
 
 class Transformer:
@@ -107,6 +110,26 @@ class Transformer:
         output = self.numerical_features + categorical_cols
         return output
 
+    def normal_transformations_histograms(self, feature_train_data, feature_test_data):
+        output = {}
+        for feature in feature_train_data.columns:
+            train_series = feature_train_data[feature].to_numpy().reshape(-1, 1)
+            test_series = feature_test_data[feature].to_numpy().reshape(-1, 1)
+            transformations = self.normal_transformations(train_series, test_series)
+
+            histogram_data = []
+            for transformer, transformed_series in transformations:
+                series = pd.Series(transformed_series.reshape(1, -1)[0])
+                bins = calculate_numerical_bins(series)
+                hist, edges = np.histogram(series, density=True, bins=bins)
+                left_edges, right_edges = modify_histogram_edges(edges)
+                result = (transformer, (hist, left_edges, right_edges))
+                histogram_data.append(result)
+
+            output[feature] = histogram_data
+
+        return output
+
     def normal_transformations(self, feature_train_data, feature_test_data):
 
         normal_transformers = [
@@ -114,8 +137,10 @@ class Transformer:
             PowerTransformer(method="yeo-johnson")
         ]
 
-        if min(feature_train_data) > 0:
-            normal_transformers.append(PowerTransformer(method="box-cox"))  # box-cox works only with positive values
+        # box-cox works only with positive values, 0s excluded
+        nmin = np.nanmin
+        if nmin(feature_train_data) > 0 and nmin(feature_test_data.min()) > 0:
+            normal_transformers.append(PowerTransformer(method="box-cox"))
 
         output = []
         for transformer in normal_transformers:

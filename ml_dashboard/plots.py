@@ -242,6 +242,68 @@ class CorrelationPlot:
         return cmap
 
 
+class NormalTransformationsPlots:
+
+    _box_cox_title = "Box-Cox"
+    _yeo_johnson_title = "Yeo-Johnson"
+    _quantile_transformer_title = "QuantileTransformer"
+
+    def __init__(self, plot_design):
+        self.plot_design = plot_design
+
+    def plots(self, histogram_data):
+
+        output = {}
+        for feature, transformer_data in histogram_data.items():
+            plot_row = self._plot_row(transformer_data)
+            output[feature] = plot_row
+
+        return output
+
+    def _plot_row(self, transformer_data):
+
+        plots = []
+        for transformer, histogram_data in transformer_data:
+            tr_name = str(transformer)
+            if "box-cox" in tr_name:
+                plot_name = "Box-Cox"
+            elif "PowerTransformer" in tr_name:
+                plot_name = "Yeo-Johnson"  # PlotTransformer() as yeo-johnson is default
+            elif "QuantileTransformer" in tr_name:
+                plot_name = "QuantileTransformer"
+            else:
+                plot_name = "Undefined"
+            plot = self._single_histogram(plot_name, histogram_data)
+            plots.append(plot)
+            plots.append(Spacer(width=50))
+
+        output = row(*plots)
+        return output
+
+    @stylize()
+    def _single_histogram(self, plot_name, histogram_data):
+
+        hist, left_edges, right_edges = histogram_data
+
+        kwargs = {
+            "plot_height": 250,
+            "height_policy": "fit",
+            "plot_width": 250,
+            "title": plot_name,
+        }
+
+        fcolor = self.plot_design.base_color_tints[-3]
+        p = default_figure(kwargs)
+        p.quad(top=hist, bottom=0, left=left_edges, right=right_edges, fill_color=fcolor, line_color=fcolor)
+
+        p.y_range.start = 0
+
+        code = """return String(tick);"""
+        p.xaxis.formatter = FuncTickFormatter(code=code)
+
+        return p
+
+
 class MainGrid:
     """Parent class for Grid Plots.
 

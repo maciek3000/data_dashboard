@@ -441,16 +441,41 @@ def test_transformer_normal_transformations(transformer_classification_fitted, d
         assert not np.array_equal(results, X_test.to_numpy())
 
 
-def test_transformer_normal_transformations_negative_input(transformer_classification_fitted, seed):
+@pytest.mark.parametrize(
+    ("input_train_array", "input_test_array", "expected_transformers_len"),
+    (
+            ([1, 1, 1, 1, 2, 3, 4], [2, 3, 4], 3),
+            ([-1, 1, 2, 3, 4, 5], [2, 3, 4], 2),
+            ([1, 1, 2, 3, 4, 5], [-2, 3, 4], 2),
+            ([np.nan, 0.1, 1, 2, 3, 4], [2, 3, 4], 3),
+            ([2, 2, 3, 4, 5, 6, 7], [np.nan, -3, 4], 2),
+            ([0, 1, 22, 3, 5, 6], [1, 2, 3], 2),
+            ([1, 1, 2, 3, 4, 6, 5], [0, 1, 2], 2)
+    )
+)
+def test_transformer_normal_transformations_negative_input(transformer_classification_fitted, input_train_array, input_test_array, expected_transformers_len, seed):
     """Testing if normal_transformations are returned correctly when input has negative values."""
     expected_transformers = {
         "QuantileTransformer(output_distribution='normal', random_state={seed})".format(seed=seed),
         "PowerTransformer()"  # yeo-johnson is default
     }
-    X_train = np.array([1, 1, -1, 0, 0, 0, 0]).reshape(-1, 1)
-    X_test = np.array([1, 1, -1]).reshape(-1, 1)
+    X_train = np.array(input_train_array).reshape(-1, 1)
+    X_test = np.array(input_test_array).reshape(-1, 1)
     actual_results = transformer_classification_fitted.normal_transformations(X_train, X_test)
 
-    assert len(actual_results) == 2
-    for transformer, result in actual_results:
-        assert str(transformer) in expected_transformers
+    assert len(actual_results) == expected_transformers_len
+    if expected_transformers_len == 2:
+        for transformer, result in actual_results:
+            assert str(transformer) in expected_transformers
+
+
+def test_transformer_normal_transformations_histogram(transformer_classification_fitted, data_classification_balanced, seed):
+    """Testing if histogram data is calculated for expected features and normal transformers."""
+    expected_keys = {"Price", "Height"}
+    X, y = data_classification_balanced
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, random_state=seed)
+    actual_results = transformer_classification_fitted.normal_transformations_histograms(X_train, X_test)
+
+    assert set(actual_results.keys()) == expected_keys
+    for key, item in actual_results.items():
+        assert len(item) == 3

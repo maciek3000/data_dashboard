@@ -19,13 +19,13 @@
             <div class="subtitle">Summary Statistics</div>
             <div class="infogrid-stats-content">{{ infogrid_summary }}</div>
         </div>
- <!--       <div class="infogrid-correlations">
-            <div class="subtitle">Feature Correlations</div>
-            <div class="infogrid-correlations-content"></div>
-        </div> -->
-
+    </div>
+</div>
+<div class="submenu">Transformed Feature Information</div>
+<div class="submenu-content">
+    <div class="submenu-content-wrapper">
         <div class="transformed-feature-grid">
-            <div class="subtitle">Transformed Feature - Fitted to train but showing test split</div>
+            <!-- <div class="subtitle">Transformed Feature - Fitted to train but showing test split</div> -->
             <div>{{ transformed_feature }}</div>
         </div>
     </div>
@@ -33,7 +33,9 @@
 
 <div class="submenu">Feature Correlations</div>
 <div class="submenu-content">
-    <div class="submenu-content-wrapper">{{ infogrid_correlations }}</div>
+    <div class="submenu-content-wrapper">
+        <div class="subtitle">Correlations Between Features (Original/QuantileTransformed)</div>
+        <div{{ infogrid_correlations }}</div>
 </div>
 
 <div class="submenu">Hued Scatter Plots</div>
@@ -46,6 +48,7 @@
 <div>{{ bokeh_script_infogrid_summary }}</div>
 <div>{{ bokeh_script_scatter_plot_grid }}</div>
 <div>{{ bokeh_script_infogrid_correlations }}</div>
+<div>{{ bokeh_script_normal_transformations_plots }}</div>
 <script src="{{ features_js }}"></script>
 {% endblock %}
 

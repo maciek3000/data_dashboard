@@ -150,13 +150,23 @@ class Coordinator:
         # TODO: move transformer_eval somewhere? another function?
         self.transformer_eval.fit(X_train)
         self.transformer_eval.fit_y(y_train)
+
         transformed = (
             self.transformer_eval.transform(X_train),
             self.transformer_eval.transform(X_test),
             self.transformer_eval.transform_y(y_train),
             self.transformer_eval.transform_y(y_test)
         )
-        return transformed
+
+        new_transformed = []
+        for split in transformed:
+            try:
+                split_arr = split.toarray()
+            except AttributeError:
+                split_arr = split
+            new_transformed.append(split_arr)
+
+        return new_transformed
 
     def _fit_transformer(self, X=None, y=None):
         if X is None:
