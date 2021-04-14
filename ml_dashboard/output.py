@@ -116,6 +116,8 @@ class Output:
 
     def create_html(self):
 
+        # TODO: output .js and .css and create dynamic hrefs to them when creating output
+
         base_css = os.path.join(self.static_path, self._base_css)
 
         current_time = datetime.datetime.now().strftime(self._time_format)
@@ -144,7 +146,7 @@ class Output:
 
         generated_scattergrid = self.scattergrid.scattergrid(self.analyzer.scatter_data(), first_feature)
 
-        # TODO: transformed is sometimes csrmatrix, sometimes array
+        # TODO: transformed is sometimes csrmatrix, sometimes array, this should be delegated to Coordinator
         transformed_df = pd.DataFrame(data=self.X_transformed.toarray(), columns=self.transformer.transformed_columns())
         transformed_df = pd.concat([transformed_df, pd.Series(self.y_transformed, name=self.features.target)], axis=1)
 
@@ -169,6 +171,7 @@ class Output:
             correlations_plot=generated_correlation_plot,
             scatterplot=generated_scattergrid,
             feature_list=feature_list,
+            numerical_features=self.features.numerical_features(),
             features_df=self.features.raw_data().head(),
             transformed_features_df=transformed_df.head(),
             X_transformations=self.transformer.transformations(),
