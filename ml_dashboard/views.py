@@ -297,7 +297,7 @@ class FeatureView(BaseView):
         self.js = js_path
         self.target_name = target_name
 
-    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, numerical_features, features_df, transformed_features_df, X_transformations, y_transformations, first_feature):
+    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, numerical_features, test_features_df, test_transformed_features_df, X_transformations, y_transformations, first_feature):
 
         output = {}
 
@@ -331,7 +331,7 @@ class FeatureView(BaseView):
         # Transformed Features
         transformations = X_transformations
         transformations[self.target_name] = (y_transformations, self.target_name)
-        output[self._transformed_feature] = self._transformed_features_divs(features_df.head(), transformed_features_df.head(), transformations, numerical_features, first_feature)
+        output[self._transformed_feature] = self._transformed_features_divs(test_features_df.head(), test_transformed_features_df.head(), transformations, numerical_features, first_feature)
 
         return self.template.render(**output)
 

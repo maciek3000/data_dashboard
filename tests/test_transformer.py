@@ -1,5 +1,7 @@
 from ml_dashboard.transformer import Transformer
 from sklearn.preprocessing import LabelEncoder, FunctionTransformer, OneHotEncoder, QuantileTransformer, StandardScaler
+from sklearn.preprocessing import PowerTransformer
+from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 import pytest
@@ -199,10 +201,11 @@ def test_transformer_transform_X_numerical(data_classification_balanced, feature
     df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1)
     feature = df[feature_name]
     median = feature.describe()["50%"]
-    feature = feature.fillna(median)
-    feature = StandardScaler().fit_transform(feature.to_numpy().reshape(-1, 1))
-    expected_result = QuantileTransformer(output_distribution="normal", random_state=random_state).fit_transform(
+    feature = feature.fillna(median).to_numpy().reshape(-1, 1)
+    feature = QuantileTransformer(output_distribution="normal", random_state=random_state).fit_transform(
         feature)
+    feature = StandardScaler().fit_transform(feature)
+    expected_result = feature
 
     tr = Transformer([], [feature_name], "Categorical", random_state=random_state)
     actual_result = tr.fit_transform(pd.DataFrame(df[feature_name]))
@@ -257,8 +260,9 @@ def test_transformer_transformers(transformer_classification_fitted, feature, ca
     elif category == "Numerical":
         expected_result = [
             "SimpleImputer(strategy='median')",
-            "StandardScaler()",
-            "QuantileTransformer(output_distribution='normal', random_state={seed})".format(seed=seed)]
+            "QuantileTransformer(output_distribution='normal', random_state={seed})".format(seed=seed),
+            "StandardScaler()"
+        ]
     else:
         raise
 
@@ -399,8 +403,8 @@ def test_transformer_transformations(transformer_classification_fitted, feature,
     elif category == "Numerical":
         expected_transformers = [
             SimpleImputer(strategy="median"),
-            StandardScaler(),
-            QuantileTransformer(output_distribution="normal", random_state=seed)
+            QuantileTransformer(output_distribution="normal", random_state=seed),
+            StandardScaler()
         ]
     else:
         raise
@@ -412,3 +416,41 @@ def test_transformer_transformations(transformer_classification_fitted, feature,
     assert str(actual_results[0]) == str(expected_transformers)
     assert actual_results[1] == expected_columns
 
+
+@pytest.mark.parametrize(
+    ("feature",),
+    (
+            ("Height",),
+            ("Price",),
+    )
+)
+def test_transformer_normal_transformations(transformer_classification_fitted, data_classification_balanced, feature, seed):
+    """Testing if normal_transformations() method returns correct 'normal' transformations for a given feature."""
+    expected_transformers = [QuantileTransformer, PowerTransformer]
+    X = data_classification_balanced[0][feature]
+    X_train, X_test = train_test_split(X, random_state=seed)
+    actual_results = transformer_classification_fitted.normal_transformations(
+        X_train.to_numpy().reshape(-1, 1),
+        X_test.to_numpy().reshape(-1, 1)
+    )
+
+    assert len(actual_results) == 3
+    for transformer, results in actual_results:
+        assert transformer.__class__ in expected_transformers
+        assert results.shape[0] == X_test.shape[0]
+        assert not np.array_equal(results, X_test.to_numpy())
+
+
+def test_transformer_normal_transformations_negative_input(transformer_classification_fitted, seed):
+    """Testing if normal_transformations are returned correctly when input has negative values."""
+    expected_transformers = {
+        "QuantileTransformer(output_distribution='normal', random_state={seed})".format(seed=seed),
+        "PowerTransformer()"  # yeo-johnson is default
+    }
+    X_train = np.array([1, 1, -1, 0, 0, 0, 0]).reshape(-1, 1)
+    X_test = np.array([1, 1, -1]).reshape(-1, 1)
+    actual_results = transformer_classification_fitted.normal_transformations(X_train, X_test)
+
+    assert len(actual_results) == 2
+    for transformer, result in actual_results:
+        assert str(transformer) in expected_transformers

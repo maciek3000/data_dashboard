@@ -640,8 +640,12 @@ def model_finder_multiclass_fitted(model_finder_multiclass):
 @pytest.fixture
 def output(
         analyzer_fixture, transformer_classification, fixture_features, model_finder_classification,
-        tmpdir, root_path_to_package, data_classification_balanced, transformed_classification_data,
+        tmpdir, root_path_to_package, data_classification_balanced, split_dataset_categorical, seed
 ):
+    X, y = data_classification_balanced
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, random_state=seed)
+    transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test = split_dataset_categorical
+
     o = Output(
         root_path=root_path_to_package[0],
         output_directory=tmpdir,
@@ -650,9 +654,13 @@ def output(
         analyzer=analyzer_fixture,
         transformer=transformer_classification,
         model_finder=model_finder_classification,
-        X_transformed=transformed_classification_data[0],
-        y_transformed=transformed_classification_data[1],
-        X_test=data_classification_balanced[0],
-        y_test=data_classification_balanced[1]
+        X_train=X_train,
+        X_test=X_test,
+        y_train=y_train,
+        y_test=y_test,
+        transformed_X_train=transformed_X_train,
+        transformed_X_test=transformed_X_test,
+        transformed_y_train=transformed_y_train,
+        transformed_y_test=transformed_y_test
     )
     return o

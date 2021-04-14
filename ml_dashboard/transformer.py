@@ -1,6 +1,8 @@
+from sklearn import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, QuantileTransformer, LabelEncoder, FunctionTransformer
+from sklearn.preprocessing import PowerTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer
@@ -15,8 +17,8 @@ class Transformer:
     ]
     _default_numerical_transformers = [
         SimpleImputer(strategy="median"),
-        StandardScaler(),
-        QuantileTransformer(output_distribution="normal")
+        QuantileTransformer(output_distribution="normal"),
+        StandardScaler()
     ]
 
     _default_transformers_random_state = [QuantileTransformer]
@@ -24,6 +26,7 @@ class Transformer:
     _categorical_pipeline = "categorical"
     _numerical_pipeline = "numerical"
     _one_hot_encoder_tr_name = "onehotencoder"
+    _normal_transformers = [QuantileTransformer, PowerTransformer]
 
     def __init__(self, categorical_features, numerical_features, target_type, random_state=None, classification_pos_label=None):
 
@@ -82,7 +85,6 @@ class Transformer:
         transformer = self.preprocessor_y
         return [transformer]
 
-
     def transformers(self, feature):
         if feature in self.categorical_features:
             return self.categorical_transformers
@@ -93,6 +95,7 @@ class Transformer:
 
     def transformed_columns(self):
         # TODO: check if transformer is fitted
+        # checking if there are any categorical_features at all
         if len(self.categorical_features) > 0:
             cat_transformers = self.preprocessor_X.named_transformers_[self._categorical_pipeline]
             try:
@@ -102,6 +105,27 @@ class Transformer:
         else:
             categorical_cols = []
         output = self.numerical_features + categorical_cols
+        return output
+
+    def normal_transformations(self, feature_train_data, feature_test_data):
+
+        normal_transformers = [
+            QuantileTransformer(output_distribution="normal", random_state=self.random_state),
+            PowerTransformer(method="yeo-johnson")
+        ]
+
+        if min(feature_train_data) > 0:
+            normal_transformers.append(PowerTransformer(method="box-cox"))  # box-cox works only with positive values
+
+        output = []
+        for transformer in normal_transformers:
+            pipe = make_pipeline(
+                SimpleImputer(strategy="median"),
+                transformer
+            )
+            pipe.fit(feature_train_data)
+            output.append((transformer, pipe.transform(feature_test_data)))
+
         return output
 
     def set_custom_preprocessor_X(self, numerical_transformers, categorical_transformers):

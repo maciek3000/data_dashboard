@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import random
 import warnings
+import copy
 
 
 class Coordinator:
@@ -65,6 +66,8 @@ class Coordinator:
             classification_pos_label=classification_pos_label
         )
 
+        self.transformer_eval = copy.deepcopy(self.transformer)  # provided to Output as it creates dashboard with splits
+
         # https://scikit-learn.org/stable/modules/cross_validation.html#computing-cross-validated-metrics
         # Just as it is important to test a predictor on data held-out from training, preprocessing
         # (such as standardization, feature selection, etc.) and similar data transformations similarly should be
@@ -95,12 +98,16 @@ class Coordinator:
             package_name=self._name,
             features=self.features,
             analyzer=self.analyzer,
-            transformer=self.transformer,
+            transformer=self.transformer_eval,
             model_finder=self.model_finder,
-            X_transformed=self.transformed_X,
-            y_transformed=self.transformed_y,
+            X_train=X_train,
             X_test=X_test,
-            y_test=y_test
+            y_train=y_train,
+            y_test=y_test,
+            transformed_X_train=transformed_X_train,
+            transformed_X_test=transformed_X_test,
+            transformed_y_train=transformed_y_train,
+            transformed_y_test=transformed_y_test
         )
 
     def search_and_fit(self, models=None, scoring=None, mode="quick"):
@@ -140,12 +147,14 @@ class Coordinator:
 
     def _transform_splits(self, X_train, X_test, y_train, y_test):
         # fitting only on train data
-        self._fit_transformer(X_train, y_train)
+        # TODO: move transformer_eval somewhere? another function?
+        self.transformer_eval.fit(X_train)
+        self.transformer_eval.fit_y(y_train)
         transformed = (
-            self.transformer.transform(X_train),
-            self.transformer.transform(X_test),
-            self.transformer.transform_y(y_train),
-            self.transformer.transform_y(y_test)
+            self.transformer_eval.transform(X_train),
+            self.transformer_eval.transform(X_test),
+            self.transformer_eval.transform_y(y_train),
+            self.transformer_eval.transform_y(y_test)
         )
         return transformed
 

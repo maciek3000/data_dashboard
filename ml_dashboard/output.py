@@ -52,17 +52,27 @@ class Output:
     # view specific properties
     _view_models_model_limit = 3
 
-    def __init__(self, root_path, output_directory, package_name, features, analyzer, transformer, model_finder, X_transformed, y_transformed, X_test, y_test):
+    def __init__(self,
+                 root_path, output_directory, package_name,
+                 features, analyzer, transformer, model_finder,
+                 X_train, X_test, y_train, y_test,
+                 transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test
+                 ):
 
         self.features = features
         self.analyzer = analyzer
         self.transformer = transformer
         self.model_finder = model_finder
 
-        self.X_transformed = X_transformed
-        self.y_transformed = y_transformed
+        self.X_train = X_train
         self.X_test = X_test
+        self.y_train = y_train
         self.y_test = y_test
+        self.transformed_X_train = transformed_X_train
+        self.transformed_X_test = transformed_X_test
+        self.transformed_y_train = transformed_y_train
+        self.transformed_y_test = transformed_y_test
+
 
         # TODO:
         # this solution is sufficient right now but nowhere near satisfying
@@ -147,8 +157,8 @@ class Output:
         generated_scattergrid = self.scattergrid.scattergrid(self.analyzer.scatter_data(), first_feature)
 
         # TODO: transformed is sometimes csrmatrix, sometimes array, this should be delegated to Coordinator
-        transformed_df = pd.DataFrame(data=self.X_transformed.toarray(), columns=self.transformer.transformed_columns())
-        transformed_df = pd.concat([transformed_df, pd.Series(self.y_transformed, name=self.features.target)], axis=1)
+        transformed_df = pd.DataFrame(data=self.transformed_X_test.toarray(), columns=self.transformer.transformed_columns())
+        transformed_df = pd.concat([transformed_df, pd.Series(self.transformed_y_test, name=self.features.target)], axis=1)
 
         overview_rendered = self.view_overview.render(
             base_css=base_css,
@@ -172,8 +182,8 @@ class Output:
             scatterplot=generated_scattergrid,
             feature_list=feature_list,
             numerical_features=self.features.numerical_features(),
-            features_df=self.features.raw_data(),
-            transformed_features_df=transformed_df,
+            test_features_df=pd.concat([self.X_test, self.y_test], axis=1),
+            test_transformed_features_df=transformed_df,
             X_transformations=self.transformer.transformations(),
             y_transformations=self.transformer.y_transformers(),
             first_feature=first_feature
