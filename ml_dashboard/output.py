@@ -177,7 +177,7 @@ class Output:
         generated_pairplot = self.pairplot.pairplot(
             dataframe=self.analyzer.features_pairplot_df()
         )
-        pairplot_path = os.path.join(self.assets_path(), (self._pairplot_name))
+        pairplot_path = os.path.join(self.assets_path(), self._pairplot_name)
 
         # InfoGrid
         generated_infogrid_summary = self.infogrid.summary_grid(
@@ -205,7 +205,9 @@ class Output:
 
         # histogram data for "normal" transformations of numerical features
         normal_transformations_hist_data = self.transformer.normal_transformations_histograms(train_data, test_data)
-        generated_normal_transformations_plots = self.normal_transformations_plot.plots(normal_transformations_hist_data)
+        generated_normal_transformations_plots = self.normal_transformations_plot.plots(
+            normal_transformations_hist_data
+        )
 
         # test split of original data
         original_test_df = pd.concat([self.X_test, self.y_test], axis=1)
@@ -318,6 +320,7 @@ class Output:
             "model_with_description_class": self._element_with_description_class,
         }
 
+        # Creating ModelsView based on the type of the ML problem
         if problem_type == self.model_finder._classification:
             mv = ModelsViewClassification
 
@@ -333,7 +336,7 @@ class Output:
         return mv(**kwargs)
 
     def _models_plot_output(self, problem_type):
-
+        # Creating Plots based on type of ML problem
         plot_design = self.plot_design
 
         if problem_type == self.model_finder._classification:
@@ -354,7 +357,9 @@ class Output:
         elif problem_type == self.model_finder._multiclass:
             mp = ModelsPlotMulticlass(plot_design, self.transformer.y_classes())
             models_right = None
-            models_left_bottom = mp.confusion_matrices_plot(self.model_finder.confusion_matrices(self._view_models_model_limit))
+            models_left_bottom = mp.confusion_matrices_plot(
+                self.model_finder.confusion_matrices(self._view_models_model_limit)
+            )
 
         else:
             raise ValueError("Incorrect problem type provided: {problem_type}".format(problem_type=problem_type))

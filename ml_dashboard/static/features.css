@@ -249,11 +249,13 @@
     margin-bottom: 4px;
 }
 
+/*
 .transformed-feature-subtitle {
     font-size: 1.2em;
     color: var(--gray-title);
     border-bottom: 1px solid var(--light-gray);
 }
+*/
 
 .single-transformer {
     font-size: 1.2em;

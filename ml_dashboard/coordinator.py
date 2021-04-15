@@ -14,6 +14,11 @@ import warnings
 import copy
 
 
+def sanitize_input(input):
+    new_input = [x.replace() for x in input]
+    return new_input
+
+
 class Coordinator:
     """Main object of the package.
 
@@ -187,6 +192,9 @@ class Coordinator:
         # copy: to make sure that changes won't affect the original data
         X = X.copy().reset_index(drop=True)
         y = y.copy().reset_index(drop=True)
+
+        X.columns = sanitize_input(X.columns)
+        y.columns = sanitize_input(y.columns)
 
         return X, y
 

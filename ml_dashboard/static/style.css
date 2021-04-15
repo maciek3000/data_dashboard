@@ -104,6 +104,7 @@ html {
 .elem-w-desc {
     position: relative;
     display: inline;
+    cursor: default;
 }
 
 .elem-w-desc span {

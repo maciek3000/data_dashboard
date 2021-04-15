@@ -1,4 +1,3 @@
-import os
 from bs4 import BeautifulSoup
 from bokeh.embed import components
 from .model_finder import obj_name
@@ -55,22 +54,6 @@ def assess_models_names(model_tuple):
     new_names = replace_duplicate_str(models)
     new_tuple = [(new_name, value[1]) for new_name, value in zip(new_names, model_tuple)]
     return new_tuple
-
-# def df_to_html_table(df):
-#     d = df.T.to_dict()
-#
-#     output_template = '<table><thead><tr><th></th>{columns}</tr></thead><tbody>{rows}</tbody></table>'
-#     columns = ["<th>{col}</th>".format(col=col) for col in df.columns]
-#     rows = ""
-#     for row, content in d.items():
-#         html = "<tr><th>{row}</th>".format(row=row)
-#         for value in content.values():
-#             html += "<td>{value}</td>".format(value=value)
-#         html += "</tr>"
-#         rows += html
-#
-#     output = output_template.format(columns="".join(columns), rows=rows)
-#     return output
 
 
 class BaseView:
@@ -275,10 +258,9 @@ class FeatureView(BaseView):
     _transformed_feature_template = '<div class="{feature_class}" id="{feature_name}">{content}</div>'
 
     _transformed_feature_original_prefix = "Original_"
-    _transformed_feature_transformed_df_title = "Applied Transformations (First 5 Rows)"
-    _transformed_feature_transformers_title = "Transformers"
+    _transformed_feature_transformed_df_title = "Applied Transformations (First 5 Rows) - Test Data"
+    _transformed_feature_transformers_title = "Transformers (fitted on Train Data)"
     _transformed_feature_normal_transformations_title = "Normal Transformations applied on a Feature"
-
 
     # CSS
     _menu_single_feature_class = "single-feature"
@@ -302,7 +284,23 @@ class FeatureView(BaseView):
         self.js = js_path
         self.target_name = target_name
 
-    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, numerical_features, test_features_df, test_transformed_features_df, X_transformations, y_transformations, normal_transformations_plots, initial_feature):
+    def render(
+            self,
+            base_css,
+            creation_date,
+            hyperlinks,
+            summary_grid,
+            correlations_plot,
+            scatterplot,
+            feature_list,
+            numerical_features,
+            test_features_df,
+            test_transformed_features_df,
+            X_transformations,
+            y_transformations,
+            normal_transformations_plots,
+            initial_feature
+    ):
 
         output = {}
 
@@ -351,7 +349,14 @@ class FeatureView(BaseView):
             normal_plots_scripts.append(script)
             normal_plots_divs[feature] = div
 
-        output[self._transformed_feature] = self._transformed_features_divs(df, transformed_df, transformations, numerical_features, normal_plots_divs, initial_feature)
+        output[self._transformed_feature] = self._transformed_features_divs(
+            df=df,
+            transformed_df=transformed_df,
+            transformations=transformations,
+            numerical_features=numerical_features,
+            normal_plots=normal_plots_divs,
+            initial_feature=initial_feature
+        )
         output[self._transformed_feature_normal_transformations_plots_script] = "".join(normal_plots_scripts)
 
         return self.template.render(**output)
@@ -370,12 +375,12 @@ class FeatureView(BaseView):
 
         return html
 
-    def _transformed_features_divs(self, df, transformed_df, transformations, numerical_features, normal_plots, first_feature):
+    def _transformed_features_divs(self, df, transformed_df, transformations, numerical_features, normal_plots, initial_feature):
 
         output = ""
         for col in df.columns:
             feature_class = self._transformed_feature_div
-            if col == first_feature:
+            if col == initial_feature:
                 feature_class += " " + self._first_feature_transformed
 
             transformers = transformations[col][0]
