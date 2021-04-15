@@ -739,8 +739,11 @@ class ScatterPlotGrid(MainGrid):
         p.xaxis.ticker = BasicTicker(desired_num_ticks=4)
         p.yaxis.ticker = BasicTicker(desired_num_ticks=4)
 
-        p.xaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
-        p.yaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
+        # p.xaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
+        # p.yaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
+
+        p.xaxis.formatter = NumeralTickFormatter(format="0.[0]")
+        p.yaxis.formatter = NumeralTickFormatter(format="0.[0]")
 
         return p
 

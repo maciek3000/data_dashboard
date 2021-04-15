@@ -1,8 +1,13 @@
 from collections import Counter, defaultdict
+import numpy as np
+import re
+from scipy.sparse import csr_matrix
+import pandas as pd
 
 
-def sanitize_input(input):
-    new_input = [x.replace() for x in input]
+def sanitize_input(input_str_list):
+    p = r'["/\\.,?!:;\n\t\r\a\f\v\b]'
+    new_input = [re.sub(p, "_", x) for x in input_str_list]
     return new_input
 
 
@@ -12,13 +17,16 @@ def calculate_numerical_bins(series):
     n = series.size
     iqr = series.quantile(0.75) - series.quantile(0.25)
     bins = (series.max() - series.min()) / ((2*iqr)*pow(n, (-1/3)))
-    # TODO: OverflowError: cannot convert float infinity to integer
 
     # if the number of bins is greater than n, n is returned
     # this can be the case for small, skewed series
-    if bins > n:
+    if bins > n or np.isnan(bins):
         bins = n
-    bins = int(round(bins, 0))  # converted here for cases when calculated bins == infinity
+
+    if bins <= 0:
+        bins = 1
+
+    bins = int(round(bins, 0))
     return bins
 
 
@@ -107,3 +115,25 @@ def assess_models_names(model_tuple):
     new_names = replace_duplicate_str(models)
     new_tuple = [(new_name, value[1]) for new_name, value in zip(new_names, model_tuple)]
     return new_tuple
+
+
+def make_pandas_data(data, desired_pandas_obj):
+    if isinstance(data, csr_matrix):
+        X_arr = data.toarray()
+        if desired_pandas_obj == pd.Series:
+            X_arr = X_arr[0]
+        new_data = desired_pandas_obj(X_arr)
+    elif isinstance(data, np.ndarray):
+        new_data = desired_pandas_obj(data)
+    elif isinstance(data, desired_pandas_obj):
+        # resetting indexes: no use for them as of now and simple count will give the possibility to match rows
+        # between raw and transformed data
+        # copy: to make sure that changes won't affect the original data
+        new_data = data.copy().reset_index(drop=True)
+    else:
+        try:
+            new_data = desired_pandas_obj(data)
+        except:
+            raise
+
+    return new_data

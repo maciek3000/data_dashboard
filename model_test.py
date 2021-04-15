@@ -38,10 +38,10 @@ if __name__ == "__main__":
 
     # examples
 
-    X, y, descriptions = iris()
+    # X, y, descriptions = iris()
     # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
-    # X, y, descriptions = wine()
+    X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
 
     coord = Coordinator(X, y, output_directory, None, descriptions, os.getcwd(), random_state=42)
