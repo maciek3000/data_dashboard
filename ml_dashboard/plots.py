@@ -4,7 +4,7 @@ from bokeh.layouts import column, row, Spacer
 from bokeh.models import ColumnDataSource, FuncTickFormatter
 from bokeh.models.widgets import Select, Div, HTMLTemplateFormatter
 from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, LinearColorMapper, Panel, Tabs, \
-    HoverTool, LabelSet
+    HoverTool, LabelSet, NumeralTickFormatter
 from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.palettes import Reds4, Category10
 from bokeh.models.widgets.tables import DataTable, TableColumn
@@ -351,12 +351,6 @@ class InfoGrid(MainGrid):
     <div># of Missing: <span id="info_div_missing">{missing:.4f}</span></div>
     """
 
-    # _correlation_tooltip_text = """<div>
-    # <div>Normalized data correlation: @{normalized}</div>
-    # <div>Raw data correlation: @{raw}</div>
-    # </div>
-    # """
-
     # CSS elements
     _infogrid_dropdown = "info_grid_dropdown"
     _feature_name = "feature_name"
@@ -366,7 +360,6 @@ class InfoGrid(MainGrid):
     _infogrid_row = "infogrid-row"
     _infogrid_all = "infogrid"
     _histogram = "histogram-plot"
-    # _correlation = "correlation-plot"
 
     # JS callbacks
     _info_div_callback = """
@@ -413,14 +406,6 @@ class InfoGrid(MainGrid):
 
     # plot elements
     _histogram_title = "Feature Distribution"
-    # _correlation_x = "x"
-    # _correlation_y = "correlation_y"
-    # _correlation_values_normalized = "correlation_values_normalized"
-    # _correlation_values_normalized_abs = "correlation_values_normalized_abs"
-    # _correlation_values_normalized_title = "Normalized Data Correlation"
-    # _correlation_values_raw = "correlation_values_raw"
-    # _correlation_values_raw_abs = "correlation_values_raw_abs"
-    # _correlation_values_raw_title = "Raw Data Correlation"
 
     def __init__(self, features, plot_design, feature_description_class, ):
         super().__init__(features, plot_design, feature_description_class)
@@ -450,13 +435,6 @@ class InfoGrid(MainGrid):
         )
 
         return output
-
-    # def correlation_plot(self, correlation_data_normalized, correlation_data_raw):
-    #     # correlation source is left in case it is decided later on that the callback is needed
-    #     correlation_source, correlation_plot = self._create_correlation(correlation_data_normalized,
-    #                                                                     correlation_data_raw)
-    #
-    #     return correlation_plot
 
     def _create_features_dropdown_callbacks(self, summary_statistics, histogram_data, histogram_source):
         callbacks = []
@@ -548,103 +526,10 @@ class InfoGrid(MainGrid):
 
         p.y_range.start = 0
         p.yaxis.visible = False
-        return p
 
-    # def _create_correlation(self, data_normalized, data_raw):
-    #     # Creating identical plots but with different coloring depending on the values
-    #
-    #     source, cols_in_order = self._create_correlation_source(data_normalized, data_raw)
-    #     mapper = self._create_correlation_color_mapper()
-    #     plots = []
-    #     for name, value in [
-    #         (self._correlation_values_normalized_title, self._correlation_values_normalized_abs),
-    #         (self._correlation_values_raw_title, self._correlation_values_raw_abs)
-    #     ]:
-    #         plot = self._create_correlation_plot(source, cols_in_order, mapper, value)
-    #         plots.append(Panel(child=plot, title=name))
-    #
-    #     main_plot = Tabs(tabs=plots)
-    #
-    #     return source, main_plot
-    #
-    # def _create_correlation_source(self, data_normalized, data_raw):
-    #     # absolute value is needed for coloring - -1.0 and 1.0 is a strong correlation regardless of direction
-    #     source = ColumnDataSource()
-    #     cols = sorted(data_normalized.columns.to_list())
-    #     cols.remove(self.target_name)
-    #     cols.insert(0, self.target_name)  # cols are needed for x_range and y_range in the plot
-    #
-    #     # stacking to get 1d array
-    #     stacked_normalized = data_normalized.stack()
-    #     stacked_raw = data_raw.stack()
-    #
-    #     features_x = stacked_normalized.index.droplevel(0).to_list()  # one of the indexes
-    #     features_y = stacked_normalized.index.droplevel(1).to_list()  # second of the indexes
-    #
-    #     values_normalized = stacked_normalized.to_list()
-    #     values_normalized_abs = stacked_normalized.apply(lambda x: abs(x)).to_list()
-    #     values_raw = stacked_raw.to_list()
-    #     values_raw_abs = stacked_raw.apply(lambda x: abs(x)).to_list()
-    #
-    #     source.data = {
-    #         self._correlation_x: features_x,
-    #         self._correlation_y: features_y,
-    #         self._correlation_values_normalized: values_normalized,
-    #         self._correlation_values_normalized_abs: values_normalized_abs,
-    #         self._correlation_values_raw: values_raw,
-    #         self._correlation_values_raw_abs: values_raw_abs
-    #     }
-    #
-    #     return source, cols
-    #
-    # @stylize()
-    # def _create_correlation_plot(self, source, cols_for_range, color_mapper, value_to_color):
-    #
-    #     tooltip_text = [
-    #         (self._correlation_values_normalized_title, "@" + self._correlation_values_normalized),
-    #         (self._correlation_values_raw_title, "@" + self._correlation_values_raw)
-    #     ]
-    #
-    #     kwargs = {
-    #         "css_classes": [self._correlation],
-    #         "x_range": cols_for_range,
-    #         "y_range": cols_for_range[::-1],  # first value to be at the top of the axis
-    #         "tooltips": tooltip_text,
-    #     }
-    #
-    #     p = default_figure(kwargs)
-    #
-    #     p.rect(
-    #         x=self._correlation_x,
-    #         y=self._correlation_y,
-    #         source=source,
-    #         fill_color={"field": value_to_color, "transform": color_mapper},
-    #         width=1,
-    #         height=1,
-    #         line_color=None,
-    #     )
-    #
-    #     p.xaxis.major_label_orientation = -1  # in radians
-    #     p.add_layout(ColorBar(color_mapper=color_mapper, width=40), "right")
-    #
-    #     return p
-    #
-    # def _create_correlation_color_mapper(self):
-    #
-    #     # palette
-    #     tints = self.plot_design.contrary_color_tints
-    #     linear_correlation = tints[0]
-    #     no_correlation = [tints[9]]
-    #     small_correlation = [tints[7]] * 2
-    #     medium_correlation = [tints[6]] * 2
-    #     high_correlation = [tints[4]] * 4
-    #     very_high_correlation = [tints[2]] * 1
-    #     palette = no_correlation + small_correlation + medium_correlation + high_correlation + very_high_correlation
-    #
-    #     cmap = LinearColorMapper(palette=palette, low=0, high=0.9999,
-    #                              high_color=linear_correlation)  # contrary_color_palette
-    #
-    #     return cmap
+        p.xaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
+
+        return p
 
 
 class ScatterPlotGrid(MainGrid):
@@ -854,6 +739,10 @@ class ScatterPlotGrid(MainGrid):
         p.scatter(**kwargs)
         p.yaxis.axis_label = y
 
+        # TODO: move formatter to the main level?
+        p.xaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
+        p.yaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
+
         return p
 
     def _create_color_map(self, hue, data):
@@ -921,7 +810,7 @@ class ScatterPlotGrid(MainGrid):
 
             else:
                 colorbar = ColorBar(color_mapper=cmap["transform"], ticker=BasicTicker(desired_num_ticks=4),
-                                    formatter=PrintfTickFormatter(), label_standoff=7, border_line_color=None,
+                                    formatter=NumeralTickFormatter(format="0.[0000]"), label_standoff=7, border_line_color=None,
                                     bar_line_color=self.plot_design.text_color,
                                     major_label_text_font_size="14px", location=(-100, 0),
                                     major_label_text_color=self.plot_design.text_color, width=30,
