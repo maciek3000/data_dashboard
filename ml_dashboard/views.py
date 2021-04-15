@@ -134,17 +134,17 @@ class Overview(BaseView):
     _mapping_format = "{mapped} - {original}"
     _too_many_categories = "(...) Showing only first {} categories"
 
-    def __init__(self, template, css_path, output_directory, max_categories, feature_description_class):
+    def __init__(self, template, css_path, max_categories, feature_description_class):
         super().__init__()
         self.template = template
         self.css = css_path
-        self.output_directory = output_directory
+        # self.output_directory = output_directory
         self.max_categories = max_categories
         self.feature_name_with_description_class = feature_description_class
 
     def render(self,
                base_css, creation_date, hyperlinks,  # base template params
-               numerical_df, categorical_df, unused_features, head_df, pairplot,  # main elements of the View
+               numerical_df, categorical_df, unused_features, head_df, pairplot_path,  # main elements of the View
                mapping, descriptions  # auxilliary dictionaries
                ):
         # TODO: add placeholders in case there are no categorical/numerical columns
@@ -164,8 +164,8 @@ class Overview(BaseView):
         unused_features_list = self._unused_features_html(unused_features)
         output[self._unused_columns] = unused_features_list
 
-        pairplot_img = self._pairplot(pairplot)
-        output[self._pairplot_id] = pairplot_img
+        # pairplot_img = self._pairplot(pairplot)
+        output[self._pairplot_id] = self._pairplot(pairplot_path)
 
         return self.template.render(**output)
 
@@ -231,12 +231,12 @@ class Overview(BaseView):
         html += "</ul>"
         return html
 
-    def _pairplot(self, pairplot):
+    def _pairplot(self, pairplot_path):
         template = "<a href={path}><img src={path} title='Click to open larger version'></img></a>"
 
-        path = os.path.join(self.output_directory, self._assets, (self._pairplot_filename + ".png"))
-        pairplot.savefig(path)
-        html = template.format(path=path)
+        # path = os.path.join(self.output_directory, self._assets, (self._pairplot_filename + ".png"))
+        # pairplot.savefig(path)
+        html = template.format(path=pairplot_path)
         return html
 
 
@@ -302,7 +302,7 @@ class FeatureView(BaseView):
         self.js = js_path
         self.target_name = target_name
 
-    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, numerical_features, test_features_df, test_transformed_features_df, X_transformations, y_transformations, normal_transformations_plots, first_feature):
+    def render(self, base_css, creation_date, hyperlinks, summary_grid, correlations_plot, scatterplot, feature_list, numerical_features, test_features_df, test_transformed_features_df, X_transformations, y_transformations, normal_transformations_plots, initial_feature):
 
         output = {}
 
@@ -315,7 +315,7 @@ class FeatureView(BaseView):
         output[self._features_js] = self.js
 
         # First Feature
-        output[self._first_feature] = first_feature
+        output[self._first_feature] = initial_feature
         output[self._features_menu] = self._create_features_menu(feature_list)
 
         # Histogram
@@ -351,7 +351,7 @@ class FeatureView(BaseView):
             normal_plots_scripts.append(script)
             normal_plots_divs[feature] = div
 
-        output[self._transformed_feature] = self._transformed_features_divs(df, transformed_df, transformations, numerical_features, normal_plots_divs, first_feature)
+        output[self._transformed_feature] = self._transformed_features_divs(df, transformed_df, transformations, numerical_features, normal_plots_divs, initial_feature)
         output[self._transformed_feature_normal_transformations_plots_script] = "".join(normal_plots_scripts)
 
         return self.template.render(**output)

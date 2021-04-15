@@ -617,14 +617,11 @@ class ScatterPlotGrid(MainGrid):
 
     def __init__(self, features, plot_design, categorical_features, feature_descriptions, feature_mapping,
                  feature_description_class, categorical_suffix="_categorical"):
-        # TODO: round numbers in legend ColorBar
         self.categorical_columns = categorical_features
         self.feature_descriptions = feature_descriptions
         self.feature_mapping = feature_mapping
         self.categorical_suffix = categorical_suffix
         super().__init__(features, plot_design, feature_description_class)
-
-        # self._linear_palette = self.plot_design.contrary_color_tints[::-2][:4]
 
     def scattergrid(self, scatter_data, initial_feature):
 
@@ -722,7 +719,7 @@ class ScatterPlotGrid(MainGrid):
             "y": self._scatter_y_axis,
             "source": source,
             "size": 10,
-            "fill_color": self.plot_design.fill_color
+            "fill_color": self.plot_design.fill_color,
         }
 
         if cmap:  # overriding plain fill color
@@ -733,13 +730,17 @@ class ScatterPlotGrid(MainGrid):
             )
 
         # TODO: No X axis label as no axis are being updated in the js callback - decide if needed somehow?
-        p = default_figure()
-        p.plot_width = 200
-        p.plot_height = 200
+        p = default_figure({"width": 200, "height": 200})
+        # p.plot_width = 200
+        # p.plot_height = 200
         p.scatter(**kwargs)
         p.yaxis.axis_label = y
+        p.xaxis.major_label_orientation = -0.75  # in radians
 
         # TODO: move formatter to the main level?
+        p.xaxis.ticker = BasicTicker(desired_num_ticks=4)
+        p.yaxis.ticker = BasicTicker(desired_num_ticks=4)
+
         p.xaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
         p.yaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
 

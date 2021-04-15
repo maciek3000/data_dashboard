@@ -72,7 +72,7 @@ def test_overview_append_mappings(html_test_table, header_index, fixture_feature
     html_table = BeautifulSoup(html_test_table, "html.parser")
     headers = html_table.table.select("table tbody tr th")
     mapping = fixture_features.mapping()[headers[header_index].string]
-    o = Overview("test_template", "test_css", "test_output_directory", 10, "test-description")
+    o = Overview("test_template", "test_css", 10, "test-description")
     o._append_mapping(headers[header_index], mapping, html_table)
 
     header = o._mapping_title
@@ -99,7 +99,7 @@ def test_overview_append_mappings_more_than_limit(html_test_table, fixture_featu
     mapping = fixture_features.mapping()[headers[header_index].string]
     mapping[10] = "Test Value"
     mapping[11] = "Test Value"
-    o = Overview("test_template", "test_css", "test_output_directory", 10, "test-description")
+    o = Overview("test_template", "test_css", 10, "test-description")
     o._append_mapping(headers[header_index], mapping, html_table)
 
     header = o._mapping_title
@@ -132,7 +132,7 @@ def test_stylize_html_table(html_test_table, expected_mapping, fixture_features)
     test_description = "test-description"
     expected_html = expected_html.format(header=header, footer=footer, test_description=test_description)
 
-    o = Overview("test_template", "test_css", "test_output_directory", 5, test_description)  # max_categories == 5
+    o = Overview("test_template", "test_css", 5, test_description)  # max_categories == 5
 
     expected_mapping["Price"] = None
     expected_mapping["Height"] = None
@@ -196,7 +196,7 @@ def test_assess_model_names(input_tuple_list, expected_names):
 )
 def test_overview_unused_features_html(input_list, expected_string):
     """Testing if creating HTML output of unused features works properly."""
-    o = Overview("test_template", "test_css", "test_output_directory", 5, "test-description")
+    o = Overview("test_template", "test_css", 5, "test-description")
     actual_html = o._unused_features_html(input_list)
 
     assert actual_html == expected_string
