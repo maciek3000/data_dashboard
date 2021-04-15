@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression, SGDClassifier, SGDRegressor, Lasso
+from bokeh.plotting import figure
 
 from ml_dashboard.views import Overview, FeatureView,  append_description, series_to_dict, replace_duplicate_str
 from ml_dashboard.views import assess_models_names, ModelsView, ModelsViewClassification
@@ -184,43 +185,6 @@ def test_assess_model_names(input_tuple_list, expected_names):
     actual_results = assess_models_names(input_tuple_list)
     assert actual_results == expected_results
 
-# @pytest.mark.parametrize(
-#     ("input_df", "expected_result"),
-#     (
-#             (
-#                     pd.DataFrame(data={"test1": [1, 2, 3, 4], "test2": ["a", "b", "c", "d"]},
-#                                  index=["ind1", "ind2", "ind3", "ind4"]),
-#                     '<table><thead><tr><th></th><th>test1</th><th>test2</th></tr></thead>'
-#                     '<tbody>'
-#                     '<tr><th>ind1</th><td>1</td><td>a</td></tr>'
-#                     '<tr><th>ind2</th><td>2</td><td>b</td></tr>'
-#                     '<tr><th>ind3</th><td>3</td><td>c</td></tr>'
-#                     '<tr><th>ind4</th><td>4</td><td>d</td></tr>'
-#                     '</tbody></table>'
-#             ),
-#             (
-#                 pd.DataFrame(data={
-#                     "model1": [1, "test"],
-#                     "model2": [2, True],
-#                     "model3": [3, "None"],
-#                     "model4": [4, "aaa"]
-#                     },
-#                     index=["index1", "index2"]
-#                 ),
-#                 '<table><thead><tr><th></th>'
-#                 '<th>model1</th><th>model2</th><th>model3</th><th>model4</th>'
-#                 '</tr></thead>'
-#                 '<tbody>'
-#                 '<tr><th>index1</th><td>1</td><td>2</td><td>3</td><td>4</td></tr>'
-#                 '<tr><th>index2</th><td>test</td><td>True</td><td>None</td><td>aaa</td></tr>'
-#                 '</tbody></table>'
-#             )
-#     )
-# )
-# def test_df_to_html_table(input_df, expected_result):
-#     actual_result = df_to_html_table(input_df)
-#     assert actual_result == expected_result
-
 
 @pytest.mark.parametrize(
     ("input_list", "expected_string"),
@@ -248,20 +212,42 @@ def test_overview_unused_features_html(input_list, expected_string):
 )
 def test_features_view_create_features_menu(input_features):
     """Testing if Features menu is created properly given the input features."""
-    title = "<div>Title</div>"
-    single_feature = "<span>{}. {}</span>"
+
     fv = FeatureView("test_template", "test_css", "test_html", "test-target")
-    fv._feature_menu_header = title
-    fv._feature_menu_single_feature = single_feature
+    title_template = fv._feature_menu_header
+    fv._menu_single_feature_class = "test-class"
     actual_result = fv._create_features_menu(input_features)
 
-    expected_result = title
+    expected_result = title_template
     i = 0
     for feat in input_features:
-        expected_result += single_feature.format(i, feat)
+        expected_result += "<div class='test-class'><span>{:03}. {}</span></div>".format(i, feat)
         i += 1
 
     assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
+    ("target_name", "expected_feature_text"),
+    (
+            ("Feature0", "000. Feature0"),
+            ("Feature1", "001. Feature1"),
+            ("Feature2", "002. Feature2"),
+            ("Feature3", "003. Feature3"),
+    )
+)
+def test_features_view_create_features_menu_target_name(target_name, expected_feature_text):
+    """Testing if target-class is being added to the output of features_menu HTML where feature name is a target at
+    the same time."""
+    features = ["Feature0", "Feature1", "Feature2", "Feature3"]
+    fv = FeatureView("test_template", "test_css", "test_html", target_name)
+    fv._menu_single_feature_class = "test-class"
+    fv._menu_target_feature_class = "test-target-class"
+    actual_result = fv._create_features_menu(features)
+    expected_text = "<div class='test-class test-target-class'><span>{text}</span></div>".format(text=expected_feature_text)
+    assert expected_text in actual_result
+    assert actual_result.count("test-target-class") == 1
+
 
 @pytest.mark.parametrize(
     ("input_series", "input_df", "expected_result"),
@@ -393,7 +379,8 @@ def test_features_view_transformed_features_divs(data_classification_balanced, t
     fv._first_feature_transformed = "test-chosen-feature"
     fv._transformed_feature_div = "test-div"
     fv._transformed_feature_plots_grid = "test-grid"
-    actual_result = fv._transformed_features_divs(df.head(), transformed_df.head(), transformations, numerical_features, input_feature)
+    mock_plots = {feature: figure() for feature in numerical_features}
+    actual_result = fv._transformed_features_divs(df.head(), transformed_df.head(), transformations, numerical_features, mock_plots, input_feature)
 
     expected_str = """<div class="test-div test-chosen-feature" id="{feature}">""".format(feature=input_feature)
 

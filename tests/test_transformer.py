@@ -469,12 +469,15 @@ def test_transformer_normal_transformations_negative_input(transformer_classific
             assert str(transformer) in expected_transformers
 
 
-def test_transformer_normal_transformations_histogram(transformer_classification_fitted, data_classification_balanced, seed):
+def test_transformer_normal_transformations_histogram(transformer_classification_fitted, data_classification_balanced, numerical_features, seed):
     """Testing if histogram data is calculated for expected features and normal transformers."""
     expected_keys = {"Price", "Height"}
     X, y = data_classification_balanced
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, random_state=seed)
-    actual_results = transformer_classification_fitted.normal_transformations_histograms(X_train, X_test)
+    train = pd.concat([X_train, y_train], axis=1)[numerical_features]
+    test = pd.concat([X_test, y_test], axis=1)[numerical_features]
+
+    actual_results = transformer_classification_fitted.normal_transformations_histograms(train, test)
 
     assert set(actual_results.keys()) == expected_keys
     for key, item in actual_results.items():

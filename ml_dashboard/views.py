@@ -281,6 +281,8 @@ class FeatureView(BaseView):
 
 
     # CSS
+    _menu_single_feature_class = "single-feature"
+    _menu_target_feature_class = "target-feature"
     _first_feature_transformed = "chosen-feature-transformed"
     _transformed_feature_div = "transformed-feature"
     _transformed_feature_grid = "transformed-grid"
@@ -291,7 +293,7 @@ class FeatureView(BaseView):
     _transformed_feature_plots_grid = "transformed-feature-plots"
 
     _feature_menu_header = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
-    _feature_menu_single_feature = "<div class='single-feature'>{:03}. {}</div>"
+    _feature_menu_single_feature = "<div class='{}'><span>{:03}. {}</span></div>"
 
     def __init__(self, template, css_path, js_path, target_name):
         super().__init__()
@@ -359,7 +361,11 @@ class FeatureView(BaseView):
         template = self._feature_menu_single_feature
         i = 0
         for feat in features:
-            html += template.format(i, feat)
+            cls = self._menu_single_feature_class
+            if feat == self.target_name:
+                cls += " " + self._menu_target_feature_class
+
+            html += template.format(cls, i, feat)
             i += 1
 
         return html
