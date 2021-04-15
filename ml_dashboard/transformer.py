@@ -9,7 +9,7 @@ from sklearn.impute import IterativeImputer
 import numpy as np
 import pandas as pd
 
-from .analyzer import calculate_numerical_bins, modify_histogram_edges
+from .functions import calculate_numerical_bins, modify_histogram_edges
 
 
 class Transformer:

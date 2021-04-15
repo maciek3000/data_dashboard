@@ -1,4 +1,3 @@
-from .views import append_description
 from bokeh.plotting import figure
 from bokeh.layouts import column, row, Spacer
 from bokeh.models import ColumnDataSource, FuncTickFormatter
@@ -17,8 +16,7 @@ import numpy as np
 
 from bokeh.core.validation.check import silence
 
-from .model_finder import obj_name
-from .views import assess_models_names
+from .functions import append_description, assess_models_names
 
 contrary_color_palette = ["#FFF7F3", "#FFB695", "#EB6F54", "#9C2B19"]
 

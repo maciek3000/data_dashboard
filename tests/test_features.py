@@ -1,22 +1,7 @@
-from ml_dashboard.features import NumericalFeature, CategoricalFeature, Features, sort_strings
+from ml_dashboard.features import NumericalFeature, CategoricalFeature, Features
 from ml_dashboard.descriptor import FeatureDescriptor
 import pandas as pd
 import pytest
-
-
-@pytest.mark.parametrize(
-    ("input_string", "expected_output"),
-    (
-            (["string1", "String2", "STRING3"], ["string1", "String2", "STRING3"]),
-            (["bool", "Bool", "abcd"], ["abcd", "bool", "Bool"]),
-            (["zzz", "ZZA", "bbb", "bbc", "Aaa", "aab"], ["Aaa", "aab", "bbb", "bbc", "ZZA", "zzz"])
-    )
-)
-def test_sort_strings(input_string, expected_output):
-    """Testing if sort_strings sorting works correctly."""
-    assert sorted(input_string) != expected_output
-    actual_output = sort_strings(input_string)
-    assert actual_output == expected_output
 
 
 @pytest.mark.parametrize(

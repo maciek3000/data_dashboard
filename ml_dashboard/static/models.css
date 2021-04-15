@@ -18,19 +18,6 @@
     font-weight: bold;
 }
 
-#subtitle-hoverable {
-    cursor: help;
-}
-
-.subtitle-info {
-    display: None
-}
-
-.subtitle:hover .subtitle-info {
-    display: inline-block;
-    cursor: help;
-}
-
 .models-left {
     width: 50%;
     height: auto;

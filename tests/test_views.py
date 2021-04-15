@@ -2,54 +2,9 @@ import pytest
 from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression, SGDClassifier, SGDRegressor, Lasso
 from bokeh.plotting import figure
 
-from ml_dashboard.views import Overview, FeatureView,  append_description, series_to_dict, replace_duplicate_str
-from ml_dashboard.views import assess_models_names, ModelsView, ModelsViewClassification
-
-
-@pytest.mark.parametrize(
-    ("header_index", "description", "expected_html"),
-    (
-            (0, "Sex of the Participant", "<span>Sex of the Participant</span>"),
-            (1, "Was the Transaction satisfactory?\nTarget Feature", "<span>Was the Transaction "
-                                                                     "satisfactory?<br/>Target Feature</span>"),
-            (2, "Price of the Product", "<span>Price of the Product</span>"),
-            (3, "Description not\n Available", "<span>Description not<br/> Available</span>"),
-            (4, "Height of the Participant", "<span>Height of the Participant</span>"),
-            (5, "Product bought within the Transaction", "<span>Product bought within the Transaction</span>"),
-            (6, "Random Flag", "<span>Random Flag</span>")
-    )
-)
-def test_append_descriptions(html_test_table, header_index, description, expected_html):
-    """Testing if appending description (wrapped in HTML tags) to the element works properly."""
-    html_table = BeautifulSoup(html_test_table, "html.parser")
-    actual_html = str(append_description(description, html_table))
-
-    assert actual_html == expected_html
-
-
-@pytest.mark.parametrize(
-    ("param_series", "expected_result"),
-    (
-            (pd.Series({"1": {'C': 1.0, 'alpha': 0.001}, "2": {'max_depth': 10.0, 'criterion': 'gini'}}),
-             {"1": "'C': 1.0\n'alpha': 0.001", "2": "'max_depth': 10.0\n'criterion': 'gini'"}),
-            (pd.Series({
-                "test1": {"C": 1.0, "alpha": 0.001, "depth": "10"},
-                "test2": {"aa": 1.0, "bb": "cc", "test": "test"},
-                "test3": {"test1": 10.0, "C": 0.001, "alpha": 1000.0}
-            }),
-             {
-                 "test1": "'C': 1.0\n'alpha': 0.001\n'depth': '10'",
-                 "test2": "'aa': 1.0\n'bb': 'cc'\n'test': 'test'",
-                 "test3": "'test1': 10.0\n'C': 0.001\n'alpha': 1000.0"
-             })
-    )
-)
-def test_series_to_dict(param_series, expected_result):
-    actual_result = series_to_dict(param_series)
-    assert actual_result == expected_result
+from ml_dashboard.views import Overview, FeatureView, ModelsView, ModelsViewClassification
 
 
 @pytest.mark.parametrize(
@@ -139,51 +94,6 @@ def test_stylize_html_table(html_test_table, expected_mapping, fixture_features)
     actual_html = o._stylize_html_table(html_test_table, expected_mapping, descriptions)
 
     assert actual_html == expected_html
-
-@pytest.mark.parametrize(
-    ("input_list", "expected_result"),
-    (
-            (["test", "not-test", "test", "another-test"], ["test #1", "not-test", "test #2", "another-test"]),
-            (["a", "a", "A", "b", "b", "c", "c", "c"], ["a #1", "a #2", "A", "b #1", "b #2", "c #1", "c #2", "c #3"]),
-            (["a", "a", "a", "a"], ["a #1", "a #2", "a #3", "a #4"]),
-            (["a", "b", "c", "d"], ["a", "b", "c", "d"]),
-            (["a", "b", "b", "b", "c"], ["a", "b #1", "b #2", "b #3", "c"])
-    )
-)
-def test_replace_duplicate_str(input_list, expected_result):
-    """Testing if replacing duplicate entries in a list works correctly."""
-    actual_result = replace_duplicate_str(input_list)
-    assert actual_result == expected_result
-
-
-@pytest.mark.parametrize(
-    ("input_tuple_list", "expected_names"),
-    (
-            ([(SGDRegressor, ("1", "2")), (SGDRegressor, ("3", "4"), SGDClassifier, "test")],
-             ["SGDRegressor #1", "SGDRegressor #2", "SGDClassifier"]),
-            ([
-                (SGDRegressor, "test"),
-                (SGDClassifier, "test2"),
-                (Lasso, "test3"),
-                (SGDClassifier, "test4"),
-                (SGDRegressor, "test4"),
-                (LinearRegression, "test5"),
-                 (SGDClassifier, "test6")
-            ],
-                ["SGDRegressor #1", "SGDClassifier #1", "Lasso", "SGDClassifier #2",
-                 "SGDRegressor #2", "LinearRegression", "SGDClassifier #3"]
-            )
-
-    )
-)
-def test_assess_model_names(input_tuple_list, expected_names):
-    """Testing if replacing duplicate model names in a tuple of (model, values) works correctly."""
-    expected_results = []
-    for name, tp in zip(expected_names, input_tuple_list):
-        expected_results.append((name, tp[1]))
-
-    actual_results = assess_models_names(input_tuple_list)
-    assert actual_results == expected_results
 
 
 @pytest.mark.parametrize(

@@ -1,10 +1,10 @@
 import pytest
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression, RidgeClassifier, PassiveAggressiveClassifier
+from sklearn.linear_model import LogisticRegression, RidgeClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, roc_auc_score, precision_score
+from sklearn.metrics import accuracy_score
 
 from sklearn.dummy import DummyClassifier
 

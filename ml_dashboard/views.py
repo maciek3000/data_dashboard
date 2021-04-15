@@ -1,59 +1,9 @@
 from bs4 import BeautifulSoup
 from bokeh.embed import components
-from .model_finder import obj_name
-from collections import Counter, defaultdict
 import pandas as pd
 
 
-def info_symbol_html():
-    # TODO: check if used anywhere
-    return "<span class='info-symbol'>&#x1F6C8;</span>"
-
-
-def append_description(description, parsed_html):
-    # adding <span> that will hold description of a feature
-    # every \n is replaced with <br> tag
-    new_tag = parsed_html.new_tag("span")
-    lines = description.split("\n")
-    new_tag.string = lines[0]
-    if len(lines) > 1:
-        for line in lines[1:]:
-            new_tag.append(parsed_html.new_tag("br"))
-            new_tag.append(parsed_html.new_string("{}".format(line)))
-    return new_tag
-
-
-def series_to_dict(srs):
-    params = srs.to_dict()
-    dict_str = {model: str(params_str)[1:-1].replace(", ", "\n") for model, params_str in params.items()}
-    return dict_str
-
-
-def replace_duplicate_str(duplicate_list_of_str):
-
-    if len(set(duplicate_list_of_str)) != len(duplicate_list_of_str):
-        base_cnt = Counter(duplicate_list_of_str)
-        item_cnt = defaultdict(int)
-        new_container = []
-
-        for item in duplicate_list_of_str:
-            if base_cnt[item] > 1:
-                new_item = item + " #" + str(item_cnt[item] + 1)
-                item_cnt[item] += 1
-                new_container.append(new_item)
-            else:
-                new_container.append(item)
-
-        return new_container
-    else:
-        return duplicate_list_of_str
-
-
-def assess_models_names(model_tuple):
-    models = [obj_name(tp[0]) for tp in model_tuple]
-    new_names = replace_duplicate_str(models)
-    new_tuple = [(new_name, value[1]) for new_name, value in zip(new_names, model_tuple)]
-    return new_tuple
+from .functions import append_description, series_to_dict, replace_duplicate_str, assess_models_names
 
 
 class BaseView:

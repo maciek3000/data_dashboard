@@ -18,30 +18,7 @@ from sklearn.metrics import roc_curve, precision_recall_curve, det_curve
 from sklearn.exceptions import NotFittedError
 
 from .models import classifiers, regressors
-
-
-def reverse_sorting_order(str_name):
-    """If str_name ends with err_strings defined in functions, returns False. Otherwise, returns True.
-
-        Negation was introduced as the function is used to determine the order of the sorting depending on scoring
-        function name: if scoring ends with "_error" or "_loss", it means that lower score is better. If it doesn't,
-        then it means that higher score is better. As default sorting is ascending, reverse=True needs to be explicitly
-        provided for the object (e.g. list) to be sorted in a descending fashion.
-    """
-    # functions ending with _error or _loss return a value to minimize, the lower the better.
-    err_strings = ("_error", "_loss")
-    # boolean output will get fed to "reversed" argument of sorted function: True -> descending; False -> ascending
-    # if str ends with one of those, then it means that lower is better -> ascending sort.
-    return not str_name.endswith(err_strings)
-
-
-def obj_name(obj):
-    """Checks if obj defines __name__ property and if not, gets it from it's Parent Class."""
-    try:
-        obj_str = obj.__name__
-    except AttributeError:
-        obj_str = type(obj).__name__
-    return obj_str
+from .functions import reverse_sorting_order, obj_name
 
 
 class ModelNotSetError(ValueError):

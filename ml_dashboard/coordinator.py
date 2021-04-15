@@ -5,6 +5,7 @@ from .transformer import Transformer
 from .model_finder import ModelFinder
 from .descriptor import FeatureDescriptor
 from .plot_design import PlotDesign
+from .functions import sanitize_input
 import os
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -12,11 +13,6 @@ import pandas as pd
 import random
 import warnings
 import copy
-
-
-def sanitize_input(input):
-    new_input = [x.replace() for x in input]
-    return new_input
 
 
 class Coordinator:
@@ -193,8 +189,8 @@ class Coordinator:
         X = X.copy().reset_index(drop=True)
         y = y.copy().reset_index(drop=True)
 
-        X.columns = sanitize_input(X.columns)
-        y.columns = sanitize_input(y.columns)
+        # X.columns = sanitize_input(X.columns)
+        # y.columns = sanitize_input(y.columns)
 
         return X, y
 

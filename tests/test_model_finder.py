@@ -1,60 +1,17 @@
 import pytest
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import Ridge, PassiveAggressiveClassifier, LogisticRegression
+from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accuracy_score, log_loss
+from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accuracy_score
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.exceptions import NotFittedError
 
-from ml_dashboard.model_finder import obj_name, reverse_sorting_order, ModelFinder, ModelNotSetError
+from ml_dashboard.model_finder import ModelFinder, ModelNotSetError
 from ml_dashboard.model_finder import WrappedModelRegression
 from ml_dashboard.models import classifiers, regressors
 
-
-@pytest.mark.parametrize(
-    ("obj", "expected_result"),
-    (
-            (dict(), "dict"),
-            (dict, "dict"),
-            (None, "NoneType"),
-            (lambda x: x, "<lambda>"),
-            (Ridge, "Ridge"),
-            (Ridge(), "Ridge"),
-            (PassiveAggressiveClassifier, "PassiveAggressiveClassifier"),
-            (PassiveAggressiveClassifier(), "PassiveAggressiveClassifier"),
-            (roc_auc_score, "roc_auc_score"),
-            (mean_squared_error, "mean_squared_error"),
-            (r2_score, "r2_score"),
-            (log_loss, "log_loss")
-
-    )
-)
-def test_obj_name(obj, expected_result):
-    """Testing if returned string representation of object from obj_name() function is correct."""
-    actual_result = obj_name(obj)
-    assert actual_result == expected_result
-
-
-@pytest.mark.parametrize(
-    ("input_str", "expected_result"),
-    (
-            ("roc_auc_score", True),
-            ("mean_squared_error", False),
-            ("mean_negative_loss", False),
-            ("loss_score", True),
-            ("error", True),
-            ("loss", True),
-            ("error_loss", False),
-            ("loss_error", False),
-            ("test_string", True),
-            ("qualityloss", True)
-    )
-)
-def test_reverse_sorting_order(input_str, expected_result):
-    """Testing if assessment of sorting order from reverse_sorting_order() is correct."""
-    assert reverse_sorting_order(input_str) == expected_result
 
 
 @pytest.mark.parametrize(
