@@ -212,6 +212,12 @@ class ModelFinder:
             )
         return self._chosen_model.predict(X)
 
+    def quicksearch_results(self):
+        return self._quicksearch_results
+
+    def gridsearch_results(self):
+        return self._gridsearch_results
+
     # ===== # Visualization Data for View functions
 
     def search_results(self, model_limit):

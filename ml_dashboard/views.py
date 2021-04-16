@@ -77,7 +77,7 @@ class Overview(BaseView):
 
     def render(self,
                base_css, creation_date, hyperlinks,  # base template params
-               numerical_df, categorical_df, unused_features, head_df, pairplot_path,  # main elements of the View
+               numerical_df, categorical_df, unused_features, head_df, do_pairplot_flag, pairplot_path,  # main elements of the View
                mapping, descriptions  # auxilliary dictionaries
                ):
         # TODO: add placeholders in case there are no categorical/numerical columns
@@ -98,7 +98,10 @@ class Overview(BaseView):
         output[self._unused_columns] = unused_features_list
 
         # pairplot_img = self._pairplot(pairplot)
-        output[self._pairplot_id] = self._pairplot(pairplot_path)
+        if do_pairplot_flag:
+            output[self._pairplot_id] = self._pairplot(pairplot_path)
+        else:
+            output[self._pairplot_id] = "<div>Too many Features</div>"
 
         return self.template.render(**output)
 
@@ -241,6 +244,7 @@ class FeatureView(BaseView):
             hyperlinks,
             summary_grid,
             correlations_plot,
+            do_scatterplot_flag,
             scatterplot,
             feature_list,
             numerical_features,
@@ -277,9 +281,12 @@ class FeatureView(BaseView):
         output[self._infogrid_correlations] = corr_div
 
         # Scatter Plot
-        scatterplot_script, scatterplot_div = components(scatterplot)
-        output[self._scatterplot_script] = scatterplot_script
-        output[self._scatterplot] = scatterplot_div
+        if do_scatterplot_flag:
+            scatterplot_script, scatterplot_div = components(scatterplot)
+            output[self._scatterplot_script] = scatterplot_script
+            output[self._scatterplot] = scatterplot_div
+        else:
+            output[self._scatterplot] = "<div>Too many features</div>"
 
         # Transformed Features
 

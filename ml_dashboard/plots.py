@@ -264,11 +264,11 @@ class NormalTransformationsPlots:
         for transformer, histogram_data in transformer_data:
             tr_name = str(transformer)
             if "box-cox" in tr_name:
-                plot_name = "Box-Cox"
+                plot_name = self._box_cox_title
             elif "PowerTransformer" in tr_name:
-                plot_name = "Yeo-Johnson"  # PlotTransformer() as yeo-johnson is default
+                plot_name = self._yeo_johnson_title  # PlotTransformer() as yeo-johnson is default
             elif "QuantileTransformer" in tr_name:
-                plot_name = "QuantileTransformer"
+                plot_name = self._quantile_transformer_title
             else:
                 plot_name = "Undefined"
             plot = self._single_histogram(plot_name, histogram_data)
@@ -296,8 +296,8 @@ class NormalTransformationsPlots:
 
         p.y_range.start = 0
 
-        code = """return String(tick);"""
-        p.xaxis.formatter = FuncTickFormatter(code=code)
+        p.xaxis.ticker = BasicTicker(desired_num_ticks=5)
+        p.xaxis.formatter = NumeralTickFormatter(format="0.[0]")
 
         return p
 
@@ -525,7 +525,9 @@ class InfoGrid(MainGrid):
         p.y_range.start = 0
         p.yaxis.visible = False
 
-        p.xaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
+        p.xaxis.ticker = BasicTicker(desired_num_ticks=5)
+        p.xaxis.formatter = NumeralTickFormatter(format="0.[0]")
+        # p.xaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
 
         return p
 
@@ -710,7 +712,7 @@ class ScatterPlotGrid(MainGrid):
 
     @stylize()
     def _create_scatter_plot(self, source, x, y, cmap):
-        # x is left in case it is needed for any styling of the plot later in the development
+        # x is left in case it is needed for any styling of the plot in the future
 
         kwargs = {
             "x": self._scatter_x_axis,
@@ -728,12 +730,14 @@ class ScatterPlotGrid(MainGrid):
             )
 
         # TODO: No X axis label as no axis are being updated in the js callback - decide if needed somehow?
-        p = default_figure({"width": 200, "height": 200})
-        # p.plot_width = 200
-        # p.plot_height = 200
+        p = default_figure()
+        p.plot_width = 200
+        p.plot_height = 200
         p.scatter(**kwargs)
         p.yaxis.axis_label = y
-        p.xaxis.major_label_orientation = -0.75  # in radians
+
+        # apparently it clogs up plots and JS interactions
+        # p.xaxis.major_label_orientation = -0.75  # in radians
 
         # TODO: move formatter to the main level?
         p.xaxis.ticker = BasicTicker(desired_num_ticks=4)
