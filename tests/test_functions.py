@@ -105,11 +105,6 @@ def test_calculate_numerical_bins(input_series, expected_result):
                 pd.DataFrame(data={"a": [1, 2, 3], "b": [2, 3, 4]})
             ),
             (
-                csr_matrix([0, 0, 1]),
-                pd.Series,
-                pd.Series([0, 0, 1], dtype="int32")
-            ),
-            (
                 np.array([4, 5, 6]),
                 pd.Series,
                 pd.Series([4, 5, 6], dtype="int32")

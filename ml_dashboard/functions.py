@@ -129,7 +129,7 @@ def make_pandas_data(data, desired_pandas_obj):
         # resetting indexes: no use for them as of now and simple count will give the possibility to match rows
         # between raw and transformed data
         # copy: to make sure that changes won't affect the original data
-        new_data = data.copy().reset_index(drop=True)
+        new_data = data.reset_index(drop=True)
     else:
         try:
             new_data = desired_pandas_obj(data)
