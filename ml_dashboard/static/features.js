@@ -13,7 +13,9 @@ for (i=0; i < elems.length; i++) {
             // var dropdowns = Bokeh.documents[0].select({"name": "features_dropdown"});
             for (j=0; j < dropdowns.length; j++) {
                 var dropdown = Bokeh.documents[j].get_model_by_name(dropdowns[j]);
+                if ( dropdown ) {
                 dropdown.value = elem_text;
+                    };
             };
 
             // Changing the style for active feature

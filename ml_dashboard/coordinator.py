@@ -5,7 +5,7 @@ from .transformer import Transformer
 from .model_finder import ModelFinder
 from .descriptor import FeatureDescriptor
 from .plot_design import PlotDesign
-from .functions import sanitize_input, make_pandas_data
+from .functions import sanitize_input, make_pandas_data, obj_name
 import os
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -36,18 +36,23 @@ class Coordinator:
     _output_created_text = "Created output at {directory}"
     _model_found_text = "Model: {name}\nScore: {score}\nParams: {params}"
 
-    def __init__(self, X, y, output_directory, scoring=None, feature_descriptions_dict=None, root_path=None, random_state=None,
+    _n_features_pairplots_limit = 15
+
+    def __init__(self, X, y, output_directory, feature_descriptions_dict=None, root_path=None, random_state=None,
                  classification_pos_label=None):
+
+        # TODO: transformed_features, disable_pairplots, only model?
+
+        self._set_default_flags()
 
         self.random_state = random_state
         self.output_directory = output_directory
 
         self.X, self.y = self._check_provided_data(X, y)
+        self._assess_n_features(self.X)
 
         if classification_pos_label is not None:
             classification_pos_label = self._check_classification_pos_label(classification_pos_label)
-
-        self.scoring = scoring
 
         if root_path is None:
             self.root_path = os.getcwd()
@@ -79,22 +84,13 @@ class Coordinator:
         # (such as standardization, feature selection, etc.) and similar data transformations similarly should be
         # learnt from a training set and applied to held-out data for prediction.
 
-        self._create_test_split()
-        self._transform_test_splits()
-        # X_train, X_test, y_train, y_test = self._create_test_split()
-        # transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test = self._transform_splits(
-        #     X_train, X_test, y_train, y_test
-        # )
-
-        self._fit_transformer()
-        self.transformed_X = self.transformer.transform(self.X)
-        self.transformed_y = self.transformer.transform_y(self.y)
-
+        self._create_test_splits()
+        self._do_transformations()
         self._initialize_model_and_output()
 
     def search_and_fit(self, models=None, scoring=None, mode="quick"):
         if scoring is None:
-            scoring = self.scoring
+            scoring = self.model_finder.default_scoring
         clf = self.model_finder.search_and_fit(models, scoring, mode)
         return clf
 
@@ -106,17 +102,60 @@ class Coordinator:
         output = self.model_finder.predict(transformed)
         return output
 
-    def create_dashboard(self):
-        self.output.create_html()
+    def create_dashboard(self, models=None, scoring=None, mode="quick", logging=True, disable_pairplots=False, force_pairplot=False):
+        # force_pairplot - useful only when n of features > limit
+        # disable_pairplots - disables pairplots in the dashboard, takes precedence over force_pairplot
+
+        if scoring is None:
+            scoring = self.model_finder.default_scoring
+        clf = self.model_finder.search_and_fit(models, scoring, mode)
+        print("Found model: {clf}".format(clf=obj_name(clf)))
+        print("Creating Dashboard...")
+
+        if disable_pairplots:
+            do_pairplots = False
+        else:
+            do_pairplots = self._create_pairplots_flag
+            if not do_pairplots and force_pairplot:
+                do_pairplots = True
+
+        # do_transformations = not self._custom_transformer_flag
+        do_logging = logging
+
+        self.output.create_html(
+            do_pairplots=do_pairplots,
+            do_logging=do_logging
+        )
         print(self._output_created_text.format(directory=self.output.output_directory))
 
-    def set_custom_transformers(self, numerical_transformers, categorical_transformers, y_transformer):
-        # TODO: set flag about custom transformer
-        pass
+    def set_custom_transformers(self, numerical_transformers, categorical_transformers, y_transformer=None):
+        for tr in [self.transformer, self.transformer_eval]:
+            tr.set_custom_preprocessor_X(
+                numerical_transformers=numerical_transformers,
+                categorical_transformers=categorical_transformers
+            )
+            if y_transformer:
+                tr.set_custom_preprocessor_y(y_transformer)
 
-    # exposed method in case only transformation is needed
-    def transform(self, X):
-        return self.transformer.transform(X)
+        self._do_transformations()
+        self._initialize_model_and_output()
+        self._custom_transformer_flag = True
+
+    # # exposed method in case only transformation is needed
+    # def transform(self, X):
+    #     return self.transformer.transform(X)
+
+    def _set_default_flags(self):
+        self._custom_transformer_flag = False
+        self._create_pairplots_flag = True
+
+    def _do_transformations(self):
+        self._fit_transform_test_splits()
+        self._fit_transformer()
+        self.transformed_X = self.transformer.transform(self.X)
+        self.transformed_y = self.transformer.transform_y(self.y)
+
+
 
     def _initialize_model_and_output(self):
         self.model_finder = ModelFinder(
@@ -148,7 +187,7 @@ class Coordinator:
             transformed_y_test=self.transformed_y_test
         )
 
-    def _create_test_split(self):
+    def _create_test_splits(self):
 
         # TODO: implement Stratified split in case of imbalance
         X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, random_state=self.random_state)
@@ -161,9 +200,8 @@ class Coordinator:
 
         self.X_train, self.X_test, self.y_train, self.y_test = output
 
-    def _transform_test_splits(self):
+    def _fit_transform_test_splits(self):
         # fitting only on train data
-        # TODO: move transformer_eval somewhere? another function?
         self.transformer_eval.fit(self.X_train)
         self.transformer_eval.fit_y(self.y_train)
 
@@ -174,16 +212,7 @@ class Coordinator:
             self.transformer_eval.transform_y(self.y_test)
         )
 
-        # TODO: rethink, as csr_matrix should stay as it for fitting
-        new_tr = []
-        for split in transformed:
-            try:
-                split_arr = split.toarray()
-            except AttributeError:
-                split_arr = split
-            new_tr.append(split_arr)
-
-        self.transformed_X_train, self.transformed_X_test, self.transformed_y_train, self.transformed_y_test = new_tr
+        self.transformed_X_train, self.transformed_X_test, self.transformed_y_train, self.transformed_y_test = transformed
 
     def _fit_transformer(self, X=None, y=None):
         if X is None:
@@ -218,3 +247,9 @@ class Coordinator:
             return None
         else:
             return label
+
+    def _assess_n_features(self, df):
+        n = df.shape[1]
+        if n > self._n_features_pairplots_limit:
+            self._create_pairplots_flag = False
+            print("N Features > limit")
