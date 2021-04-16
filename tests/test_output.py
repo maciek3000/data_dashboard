@@ -2,8 +2,11 @@ import os
 import pytest
 from bokeh.models.layouts import Tabs
 from bokeh.layouts import Row
+import datetime
+import pandas as pd
 
 from ml_dashboard.views import ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
+
 
 @pytest.mark.parametrize(
     ("output_directory", "filename"),
@@ -132,3 +135,110 @@ def test_models_plot_output_error(output, incorrect_problem_type):
     with pytest.raises(ValueError) as excinfo:
         _ = output._models_plot_output(incorrect_problem_type)
     assert str(incorrect_problem_type) in str(excinfo.value)
+
+
+def test_output_static_path(output, tmpdir):
+    """Testing if static directory is created in the provided output_directory."""
+    assert output.static_path() == os.path.join(tmpdir, "static")
+
+
+def test_output_assets_path(output, tmpdir):
+    """Testing if assets directory is created in the provided output_directory."""
+    assert output.assets_path() == os.path.join(tmpdir, "assets")
+
+
+def test_output_logs_path(output, tmpdir):
+    """Testing if logs directory is created in the provided output_directory."""
+    assert output.logs_path() == os.path.join(tmpdir, "logs")
+
+
+@pytest.mark.parametrize(
+    ("input_time", "expected_directory_name"),
+    (
+            (datetime.datetime(2020, 12, 1, 15, 34, 59), "01122020153459"),
+            (datetime.datetime(1990, 1, 13, 23, 59, 00), "13011990235900"),
+            (datetime.datetime(2056, 9, 23, 1, 1, 34), "23092056010134")
+    )
+)
+def test_output_create_logs_directory(output, tmpdir, input_time, expected_directory_name):
+    """Testing if subdirectory in logs is created correctly and with a correct name based on a provided time."""
+    expected_result = os.path.join(tmpdir, "logs", expected_directory_name)
+    actual_result = output._create_logs_directory(input_time)
+    assert actual_result == expected_result
+    assert os.path.isdir(expected_result)
+
+
+def test_output_write_logs_files_created(output, tmpdir):
+    """Testing if writing log csv log files works correctly."""
+    test_date = datetime.datetime(2020, 3, 1, 14, 0, 34)
+    log_dir = "01032020140034"
+    filenames = [output._search_results_csv, output._quicksearch_results_csv, output._gridsearch_results_csv]
+    expected_filepaths = [os.path.join(tmpdir, "logs", log_dir, filename) for filename in filenames]
+
+    for f in expected_filepaths:
+        assert not os.path.exists(f)
+
+    output._write_logs(test_date)
+
+    for f in expected_filepaths:
+        assert os.path.exists(f)
+
+
+def test_output_write_logs_csv_content(output, tmpdir, model_finder_classification_fitted):
+    """Testing if csv files written as logs are the same as those in model_finder properties."""
+    test_date = datetime.datetime(2020, 3, 1, 14, 0, 34)
+    log_dir = "01032020140034"
+    filenames = [output._search_results_csv, output._quicksearch_results_csv, output._gridsearch_results_csv]
+    expected_filepaths = [os.path.join(tmpdir, "logs", log_dir, filename) for filename in filenames]
+    mf = model_finder_classification_fitted
+    expected_dfs = [mf.search_results(None), mf.quicksearch_results(), mf.gridsearch_results()]
+
+    output._write_logs(test_date)
+
+    for f, df in zip(expected_filepaths, expected_dfs):
+        actual_df = pd.read_csv(f, index_col=0)
+        expected_df = df
+        assert actual_df.shape == expected_df.shape  # checking only shape because of round differences/nans
+
+
+def test_output_write_logs_one_df_missing(output, tmpdir, model_finder_classification_fitted):
+    """Testing that csv files are not created when appropriate result df is None."""
+    test_date = datetime.datetime(2020, 3, 1, 14, 0, 34)
+    log_dir = "01032020140034"
+    filenames = [output._search_results_csv, output._gridsearch_results_csv]
+    expected_filepaths = [os.path.join(tmpdir, "logs", log_dir, filename) for filename in filenames]
+    mf = model_finder_classification_fitted
+    mf._quicksearch_results = None
+
+    output._write_logs(test_date)
+
+    assert len([n for n in os.listdir(os.path.join(tmpdir, "logs", log_dir))]) == len(filenames)
+    for f in expected_filepaths:
+        assert os.path.exists(f)
+
+
+def test_output_create_subdirectories(output, tmpdir):
+    """Testing if static and assets subdirectories are created correctly."""
+    directories = ["static", "assets"]
+    expected_directories = [os.path.join(tmpdir, d) for d in directories]
+
+    for d in expected_directories:
+        assert not os.path.isdir(d)
+
+    output._create_subdirectories()
+
+    for d in expected_directories:
+        assert os.path.isdir(d)
+
+
+def test_output_copy_static(output, tmpdir):
+    """Testing if static files are copied correctly to the output_directory folder."""
+    base_files = [os.path.join(output._static_template_path, f) for f in output._static_files_names]
+    expected_filepaths = [os.path.join(tmpdir, "static", f) for f in output._static_files_names]
+
+    output._create_subdirectories()
+    output._copy_static()
+
+    for actual_file, expected_file in zip(expected_filepaths, base_files):
+        assert os.path.exists(actual_file)
+        assert open(actual_file, "r").readlines() == open(expected_file, "r").readlines()

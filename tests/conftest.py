@@ -639,7 +639,7 @@ def model_finder_multiclass_fitted(model_finder_multiclass):
 
 @pytest.fixture
 def output(
-        analyzer_fixture, transformer_classification, fixture_features, model_finder_classification,
+        analyzer_fixture, transformer_classification, fixture_features, model_finder_classification_fitted,
         tmpdir, root_path_to_package, data_classification_balanced, split_dataset_categorical, seed
 ):
     X, y = data_classification_balanced
@@ -653,7 +653,7 @@ def output(
         features=fixture_features,
         analyzer=analyzer_fixture,
         transformer=transformer_classification,
-        model_finder=model_finder_classification,
+        model_finder=model_finder_classification_fitted,
         X_train=X_train,
         X_test=X_test,
         y_train=y_train,

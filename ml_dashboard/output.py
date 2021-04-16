@@ -31,13 +31,13 @@ class Output:
     # base template
     _base_css = "style.css"
     _time_format = "%d-%b-%Y %H:%M:%S"
-    _logging_time_format ="%d%m%Y%H%M%S"
+    _logs_time_format ="%d%m%Y%H%M%S"
     _footer_note = "Created on {time}"
 
     # output structure
     _created_assets_directory = "assets"
     _created_static_directory = "static"
-    _created_logging_directory = "logs"
+    _created_logs_directory = "logs"
 
     # views
     _view_overview = "overview"
@@ -55,6 +55,11 @@ class Output:
     # directories
     _static_directory_name = "static"
     _templates_directory_name = "templates"
+
+    # logs
+    _search_results_csv = "search.csv"
+    _quicksearch_results_csv = "quicksearch.csv"
+    _gridsearch_results_csv = "gridsearch.csv"
 
     # CSS elements
     _element_with_description_class = "elem-w-desc"
@@ -160,7 +165,7 @@ class Output:
             plot_design=self.plot_design
         )
 
-    def create_html(self, do_pairplots, do_logging):
+    def create_html(self, do_pairplots, do_logs):
 
         # base variables needed by every view
         base_css = os.path.join(self.static_path(), self._base_css)  # path to output_directory
@@ -309,9 +314,8 @@ class Output:
             generated_pairplot.savefig(pairplot_path)
 
         # Logging
-        if do_logging:
+        if do_logs:
             self._write_logs(time_started)
-
 
     def static_path(self):
         return os.path.join(self.output_directory, self._created_static_directory)
@@ -319,8 +323,8 @@ class Output:
     def assets_path(self):
         return os.path.join(self.output_directory, self._created_assets_directory)
 
-    def logging_path(self):
-        return os.path.join(self.output_directory, self._created_logging_directory)
+    def logs_path(self):
+        return os.path.join(self.output_directory, self._created_logs_directory)
 
     def _write_html(self, template_filename, template):
         template_filepath = self._path_to_file(template_filename)
@@ -328,24 +332,24 @@ class Output:
             f.write(template)
 
     def _write_logs(self, time_started):
-        directory = self._create_logging_directory(time_started)
-        names = ["search.csv", "quicksearch.csv", "gridsearch.csv"]
+        directory = self._create_logs_directory(time_started)
         mf = self.model_finder
         dfs = [mf.search_results(model_limit=None), mf.quicksearch_results(), mf.gridsearch_results()]
+        names = [self._search_results_csv, self._quicksearch_results_csv, self._gridsearch_results_csv]
 
         for filename, df in zip(names, dfs):
             if df is not None:
                 df.to_csv(os.path.join(directory, filename))
 
-    def _create_logging_directory(self, time_started):
-        directory = time_started.strftime(self._logging_time_format)
-        logging_directory = os.path.join(self.logging_path(), directory)
-        pathlib.Path(logging_directory).mkdir(parents=True, exist_ok=True)
-        return logging_directory
+    def _create_logs_directory(self, time_started):
+        directory = time_started.strftime(self._logs_time_format)
+        logs_directory = os.path.join(self.logs_path(), directory)
+        pathlib.Path(logs_directory).mkdir(parents=True, exist_ok=True)
+        return logs_directory
 
     def _create_subdirectories(self):
         # creating directories for static and assets files
-        for directory_path in [self.static_path(), self.assets_path(), self.logging_path()]:
+        for directory_path in [self.static_path(), self.assets_path()]:
             pathlib.Path(directory_path).mkdir(exist_ok=True)
 
     def _copy_static(self):
