@@ -1,7 +1,8 @@
 from bs4 import BeautifulSoup
 from bokeh.embed import components
 import pandas as pd
-
+from bokeh.core.validation.warnings import MISSING_RENDERERS
+from bokeh.core.validation import silence
 
 from .functions import append_description, series_to_dict, replace_duplicate_str, assess_models_names
 
@@ -282,9 +283,12 @@ class FeatureView(BaseView):
 
         # Scatter Plot
         if do_scatterplot_flag:
+            # silencing warning from attaching legend colorbars to empty plots
+            silence(MISSING_RENDERERS, True)
             scatterplot_script, scatterplot_div = components(scatterplot)
             output[self._scatterplot_script] = scatterplot_script
             output[self._scatterplot] = scatterplot_div
+            silence(MISSING_RENDERERS, False)
         else:
             output[self._scatterplot] = "<div>Too many features</div>"
 

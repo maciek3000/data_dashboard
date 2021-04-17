@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import time
 import copy
+import warnings
 from collections import defaultdict
 
 from sklearn.dummy import DummyClassifier, DummyRegressor
@@ -324,15 +325,19 @@ class ModelFinder:
             gridsearch_models = self._gridsearch(models, scoring)
 
         elif models is None:
-            if mode == self._mode_quick:
-                chosen_models = self._quicksearch(self.default_models.keys(), scoring)
-                param_grid = {clf: self.default_models[clf] for clf in chosen_models}
-                gridsearch_models = self._gridsearch(param_grid, scoring)
-            elif mode == self._mode_detailed:
-                gridsearch_models = self._gridsearch(self.default_models, scoring)
-            else:
-                # this branch shouldn't be possible without explicit class/object properties manipulation
-                raise ValueError("models should be Dict or None, got {models}".format(models=models))
+            # filtering warnings from gridsearch/quicksearch (e.g. models not converging)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+
+                if mode == self._mode_quick:
+                    chosen_models = self._quicksearch(self.default_models.keys(), scoring)
+                    param_grid = {clf: self.default_models[clf] for clf in chosen_models}
+                    gridsearch_models = self._gridsearch(param_grid, scoring)
+                elif mode == self._mode_detailed:
+                    gridsearch_models = self._gridsearch(self.default_models, scoring)
+                else:
+                    # this branch shouldn't be possible without explicit class/object properties manipulation
+                    raise ValueError("models should be Dict or None, got {models}".format(models=models))
         else:
             raise ValueError("Expected one of the modes: {modes}; got {mode}".format(
                 modes=", ".join(self._modes), mode=mode
@@ -358,19 +363,8 @@ class ModelFinder:
             if "random_state" in model().get_params().keys():
                 params["random_state"] = [self.random_state]
 
-            # # TODO: make it work
-            # with warnings.catch_warnings():
-            #     warnings.simplefilter("ignore")
-
             # https://scikit-learn.org/stable/modules/model_evaluation.html#defining-your-scoring-strategy-from-metric-functions
             sorting_order = reverse_sorting_order(obj_name(scoring))
-
-            # if self.problem == self._regression:
-            #     created_model = TransformedTargetRegressor(regressor=model(), transformer=self.target_transformer)
-            #     wrapped_params = {"regressor__" + key: item for key, item in params.items()}
-            # else:
-            #     created_model = model()
-            #     wrapped_params = params
 
             created_model = self._wrap_model(model())
 
@@ -387,7 +381,10 @@ class ModelFinder:
             try:
                 clf.fit(self.X_train, self.y_train)
             except NotFittedError:
-                # TODO: issue warning or print message that there might be incorrect arguments in param grid
+                # printing out warning for user as the NotFittedError might be misleading in this case
+                params_str = ["{}: {}".format(key, item) for key, item in params.items()]
+                warn_msg = "WARNING: {} might potentially have had incorrect params provided: {}".format(model, params_str)
+                warnings.warn(warn_msg)
                 raise
 
             all_results[model] = clf.cv_results_

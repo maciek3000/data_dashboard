@@ -7,14 +7,17 @@ from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, L
 from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.palettes import Reds4, Category10
 from bokeh.models.widgets.tables import DataTable, TableColumn
+
+
 import functools
 import seaborn as sns
 import scipy.stats
 from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
+import warnings
 
-from bokeh.core.validation.check import silence
+# from bokeh.core.validation.check import silence
 
 from .functions import append_description, assess_models_names
 
@@ -642,7 +645,6 @@ class ScatterPlotGrid(MainGrid):
             Div(text=initial_feature, css_classes=[self._chosen_feature_scatter_title]),
             *scatter_rows,
         )
-
         return grid
 
     def _create_features_dropdown_callbacks(self, scatter_source):
@@ -788,7 +790,6 @@ class ScatterPlotGrid(MainGrid):
         legend = self._create_legend(hue, cmap)
 
         d = Div(**kwargs)
-
         c = column(
             d,
             legend,
@@ -815,6 +816,7 @@ class ScatterPlotGrid(MainGrid):
                 legend = Div(text=text, css_classes=[self._legend, self._legend_categorical])
 
             else:
+
                 colorbar = ColorBar(color_mapper=cmap["transform"], ticker=BasicTicker(desired_num_ticks=4),
                                     formatter=NumeralTickFormatter(format="0.[0000]"), label_standoff=7, border_line_color=None,
                                     bar_line_color=self.plot_design.text_color,
@@ -824,6 +826,7 @@ class ScatterPlotGrid(MainGrid):
                 legend = default_figure({"height": 120, "width": 120, "css_classes": [self._legend]})
                 # TODO: supress warning
                 legend.add_layout(colorbar, "right")
+
         else:
             legend = Div(text=self._legend_no_hue_html, css_classes=[self._legend])
 

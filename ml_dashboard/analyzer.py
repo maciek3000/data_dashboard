@@ -5,6 +5,8 @@ from .features import NumericalFeature, CategoricalFeature
 from .plot_design import PlotDesign
 from .functions import calculate_numerical_bins, modify_histogram_edges
 
+import warnings
+
 
 class Analyzer:
     """Analyzes Features present in the data.
@@ -82,7 +84,9 @@ class Analyzer:
         # when using Pearson coefficient data should follow Normal Distribution
         df = self.features.data()
         qt = QuantileTransformer(output_distribution="normal", random_state=random_state)
-        new_df = qt.fit_transform(df)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            new_df = qt.fit_transform(df)
         normalized_corr = pd.DataFrame(new_df, columns=df.columns).corr(method="pearson")
         return normalized_corr
 

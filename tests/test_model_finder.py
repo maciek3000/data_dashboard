@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge, LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.svm import SVC
 from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accuracy_score
 from sklearn.preprocessing import QuantileTransformer
@@ -191,6 +191,28 @@ def test_model_finder_predict_no_model(model_finder_classification):
     """Testing if predict() function raises an error when no Model is set."""
     with pytest.raises(ModelNotSetError):
         model_finder_classification.predict(["test_input"])
+
+
+@pytest.mark.parametrize(
+    ("incorrect_grid",),
+    (
+            ({DecisionTreeClassifier: {"criterion": ["mae"], "max_depth": [10, 20, None]}},),
+            ({DecisionTreeRegressor: {"criterion": ["gini"], "max_depth": [10]}},)
+    )
+)
+def test_model_finder_gridsearch_not_fitted_warning(model_finder_classification, incorrect_grid):
+    """Testing if warning is raised when NotFittedError happens in gridsearch."""
+    model = list(incorrect_grid.keys())[0]
+    params = list(incorrect_grid.values())[0]
+    expected_params = {"{}: {}".format(key, item) for key, item in params.items()}
+
+    with pytest.raises(NotFittedError):
+        with pytest.warns(Warning) as warninfo:
+            actual_models, actual_results = model_finder_classification._perform_gridsearch(
+                incorrect_grid, roc_auc_score, cv=5
+            )
+        assert str(model) in warninfo[0].message.args[0]
+        assert expected_params in warninfo[0].message.args[0]
 
 
 @pytest.mark.parametrize(

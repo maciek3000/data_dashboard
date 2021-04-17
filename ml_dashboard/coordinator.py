@@ -242,9 +242,8 @@ class Coordinator:
             )
 
         if len(unique) > 2 and not self._force_classification_pos_label_multiclass_flag:
-            # TODO: I dont understand why warnings arent showing up in the console
-            warnings.warn("n of unique values in y is > 2, classification_pos_label will be ignored")
-            print("WARNING: n of unique values in y is > 2, classification_pos_label will be ignored")
+            warnings.warn("n of unique values in y is > 2, classification_pos_label will be ignored. "
+                          "Provide force_classification_pos_label_multiclass=True to force classification_pos_label.")
             return None
         else:
             return label

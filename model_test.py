@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     # examples
 
-    X, y, descriptions = iris()
+    # X, y, descriptions = iris()
     # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
     # X, y, descriptions = wine()
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     models = None
 
-    coord.create_dashboard(models=models, logging=False)
+    coord.create_dashboard(models=models, logging=False, mode="quick")
 
 
 

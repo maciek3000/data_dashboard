@@ -8,6 +8,7 @@ from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer
 import numpy as np
 import pandas as pd
+import warnings
 
 from .model_finder import WrappedModelRegression
 from .functions import calculate_numerical_bins, modify_histogram_edges
@@ -121,7 +122,6 @@ class Transformer:
 
     def y_transformers(self):
         transformer = self.preprocessor_y
-        print(transformer)
         return [transformer]
 
     def transformers(self, feature):
@@ -184,7 +184,10 @@ class Transformer:
                 SimpleImputer(strategy="median"),
                 transformer
             )
-            pipe.fit(feature_train_data)
+            # Catching warnings, mostly from QuantileTransformer
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                pipe.fit(feature_train_data)
             output.append((transformer, pipe.transform(feature_test_data)))
 
         return output
@@ -230,7 +233,6 @@ class Transformer:
             func_transformer = FunctionTransformer(func=None)  # identity function, x = x
             text = self._func_trans_regression_wrapper_text
             transformer = WrapperFunctionTransformer(text, func_transformer)
-            print(transformer)
         else:
             raise ValueError(
                 "Target type set as {target_type}, should be Categorical or Numerical".format(target_type=self.target_type)
