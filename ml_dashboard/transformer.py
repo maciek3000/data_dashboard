@@ -9,11 +9,43 @@ from sklearn.impute import IterativeImputer
 import numpy as np
 import pandas as pd
 
+from .model_finder import WrappedModelRegression
 from .functions import calculate_numerical_bins, modify_histogram_edges
+
+
+class WrapperFunctionTransformer:
+
+    def __init__(self, str_repr, func_transformer):
+        self.transformer = func_transformer
+        self.str_repr = str_repr
+
+    def fit(self, *args, **kwargs):
+        self.transformer.fit(*args, **kwargs)
+        return self
+
+    def fit_transform(self, *args, **kwargs):
+        return self.transformer.fit_transform(*args, **kwargs)
+
+    def get_params(self, *args, **kwargs):
+        return self.transformer.get_params(*args, **kwargs)
+
+    def inverse_transform(self, *args, **kwargs):
+        return self.transformer.inverse_transform(*args, **kwargs)
+
+    def set_params(self, *args, **kwargs):
+        self.transformer.set_params(*args, **kwargs)
+        return self
+
+    def transform(self, *args, **kwargs):
+        return self.transformer.transform(*args, **kwargs)
+
+    def __str__(self):
+        return str(self.str_repr)
 
 
 class Transformer:
     """Wrapper for pipeline for transformations of input and output data."""
+
     _default_categorical_transformers = [
         SimpleImputer(strategy="most_frequent"),
         OneHotEncoder(handle_unknown="ignore")
@@ -30,6 +62,9 @@ class Transformer:
     _numerical_pipeline = "numerical"
     _one_hot_encoder_tr_name = "onehotencoder"
     _normal_transformers = [QuantileTransformer, PowerTransformer]
+
+    _func_trans_classification_pos_label_text = "FunctionTransformer(classification_pos_label='{}')"
+    _func_trans_regression_wrapper_text = "TransformedTargetRegressor(transformer=QuantileTransformer(output_distribution='normal'))"
 
     def __init__(self, categorical_features, numerical_features, target_type, random_state=None, classification_pos_label=None):
 
@@ -86,6 +121,7 @@ class Transformer:
 
     def y_transformers(self):
         transformer = self.preprocessor_y
+        print(transformer)
         return [transformer]
 
     def transformers(self, feature):
@@ -139,7 +175,7 @@ class Transformer:
 
         # box-cox works only with positive values, 0s excluded
         nmin = np.nanmin
-        if nmin(feature_train_data) > 0 and nmin(feature_test_data.min()) > 0:
+        if nmin(feature_train_data) > 0 and nmin(feature_test_data) > 0:
             normal_transformers.append(PowerTransformer(method="box-cox"))
 
         output = []
@@ -184,12 +220,17 @@ class Transformer:
     def _create_preprocessor_y(self):
         if self.target_type == "Categorical":
             if self.classification_pos_label is not None:
-                transformer = FunctionTransformer(lambda x: np.where(x == self.classification_pos_label, 1, 0))
+                func_transformer = FunctionTransformer(lambda x: np.where(x == self.classification_pos_label, 1, 0))
+                text = self._func_trans_classification_pos_label_text.format(self.classification_pos_label)
+                transformer = WrapperFunctionTransformer(text, func_transformer)
             else:
                 transformer = LabelEncoder()
         elif self.target_type == "Numerical":
             # in regression model finder wraps its object in TargetRegressor
-            transformer = FunctionTransformer(lambda x: x)
+            func_transformer = FunctionTransformer(func=None)  # identity function, x = x
+            text = self._func_trans_regression_wrapper_text
+            transformer = WrapperFunctionTransformer(text, func_transformer)
+            print(transformer)
         else:
             raise ValueError(
                 "Target type set as {target_type}, should be Categorical or Numerical".format(target_type=self.target_type)

@@ -4,9 +4,49 @@ from sklearn.preprocessing import PowerTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
+from sklearn import clone
 import pytest
 import numpy as np
 import pandas as pd
+
+from ml_dashboard.transformer import WrapperFunctionTransformer
+
+
+@pytest.mark.parametrize(
+    ("test_func",),
+    (
+            (lambda x: x,),
+            (lambda x: 1,),
+            (lambda x: x**2,),
+    )
+)
+def test_wrapper_func_transformer(test_func):
+    """Testing if WrapperFunctionTransformer still has functionality of an underlying FunctionTransformer."""
+    test_arr = np.array([1, 1, 1, 2, 3, 4, 5]).reshape(-1, 1)
+
+    tr = FunctionTransformer(func=test_func)
+    wrap_tr = WrapperFunctionTransformer("test", clone(tr))
+
+    expected_arr = tr.fit_transform(test_arr)
+    actual_arr = wrap_tr.fit_transform(test_arr)
+
+    assert np.array_equal(actual_arr, expected_arr)
+    assert str(wrap_tr) != str(tr)
+
+
+@pytest.mark.parametrize(
+    ("test_text",),
+    (
+            ("Test1",),
+            ("Test2",),
+            ("",),
+    )
+
+)
+def test_wrapper_func_transformer_str(test_text):
+    """Testing if str() function of WrapperFunctionTransformer returns text provided as an argument."""
+    wrap_tr = WrapperFunctionTransformer(test_text, FunctionTransformer())
+    assert str(wrap_tr) == test_text
 
 
 def test_transformer_create_preprocessor_X(categorical_features, numerical_features):
@@ -28,7 +68,7 @@ def test_transformer_create_preprocessor_X(categorical_features, numerical_featu
     ("target_type", "expected_function"),
     (
             ("Categorical", LabelEncoder()),
-            ("Numerical", FunctionTransformer(lambda x: x))
+            ("Numerical", WrapperFunctionTransformer("test", lambda x: x))
     )
 )
 def test_transformer_create_preprocessor_y(categorical_features, numerical_features, target_type, expected_function):

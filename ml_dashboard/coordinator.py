@@ -39,11 +39,13 @@ class Coordinator:
     _n_features_pairplots_limit = 15
 
     def __init__(self, X, y, output_directory, feature_descriptions_dict=None, root_path=None, random_state=None,
-                 classification_pos_label=None):
+                 classification_pos_label=None, force_classification_pos_label_multiclass=False):
 
         # TODO: transformed_features, disable_pairplots, only model?
 
         self._set_default_flags()
+
+        self._force_classification_pos_label_multiclass_flag = force_classification_pos_label_multiclass
 
         self.random_state = random_state
         self.output_directory = output_directory
@@ -124,7 +126,7 @@ class Coordinator:
 
         self.output.create_html(
             do_pairplots=do_pairplots,
-            do_logging=do_logging
+            do_logs=do_logging
         )
         print(self._output_created_text.format(directory=self.output.output_directory))
 
@@ -149,13 +151,12 @@ class Coordinator:
         self._custom_transformer_flag = False
         self._create_pairplots_flag = True
 
+
     def _do_transformations(self):
         self._fit_transform_test_splits()
         self._fit_transformer()
         self.transformed_X = self.transformer.transform(self.X)
         self.transformed_y = self.transformer.transform_y(self.y)
-
-
 
     def _initialize_model_and_output(self):
         self.model_finder = ModelFinder(
@@ -240,7 +241,7 @@ class Coordinator:
                 "label '{label}' not in unique values of y: {values}".format(label=label, values=str(unique))
             )
 
-        if len(unique) > 2:
+        if len(unique) > 2 and not self._force_classification_pos_label_multiclass_flag:
             # TODO: I dont understand why warnings arent showing up in the console
             warnings.warn("n of unique values in y is > 2, classification_pos_label will be ignored")
             print("WARNING: n of unique values in y is > 2, classification_pos_label will be ignored")

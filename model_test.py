@@ -1,6 +1,5 @@
 from sklearn.metrics import accuracy_score, mean_squared_error, jaccard_score
 from sklearn.model_selection import train_test_split
-from lazypredict.Supervised import LazyClassifier
 from sklearn.svm import SVC, SVR
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.preprocessing import QuantileTransformer
@@ -38,23 +37,23 @@ if __name__ == "__main__":
 
     # examples
 
-    # X, y, descriptions = iris()
+    X, y, descriptions = iris()
     # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
     # X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
     # X, y, descriptions = digits()
 
-    coord = Coordinator(X, y, output_directory, descriptions, os.getcwd(), random_state=42)
+    coord = Coordinator(X, y, output_directory, descriptions, os.getcwd(), random_state=42, classification_pos_label=1)
 
     # output = coord.quick_find()
     # print("\n".join(map(lambda x: x[0] + ": " + str(x[1]), output)))
     #
-    models = [SVC(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
-              SVC(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
-              SVC(C=10.0, kernel="linear"),
-              SVC(C=100.0)
-              ]
+    # models = [SVC(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
+    #           SVC(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
+    #           SVC(C=10.0, kernel="linear"),
+    #           SVC(C=100.0)
+    #           ]
 
     # models = [SVR(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
     #           SVR(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
@@ -62,7 +61,7 @@ if __name__ == "__main__":
     #           SVR(C=100.0)
     #           ]
 
-    # models = None
+    models = None
 
     coord.create_dashboard(models=models, logging=False)
 
