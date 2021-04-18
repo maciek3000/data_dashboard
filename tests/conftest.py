@@ -26,6 +26,7 @@ from ml_dashboard.analyzer import Analyzer
 from ml_dashboard.transformer import Transformer
 from ml_dashboard.model_finder import ModelFinder
 from ml_dashboard.output import Output
+from ml_dashboard.coordinator import Coordinator
 
 
 @pytest.fixture
@@ -664,3 +665,11 @@ def output(
         transformed_y_test=transformed_y_test
     )
     return o
+
+
+@pytest.fixture
+def coordinator(data_classification_balanced, tmpdir, root_path_to_package, seed):
+    X, y = data_classification_balanced
+    c = Coordinator(X, y, output_directory=tmpdir, random_state=seed, root_path=root_path_to_package[0])
+    return c
+

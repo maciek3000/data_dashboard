@@ -194,12 +194,12 @@ class Coordinator:
         X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, random_state=self.random_state)
 
         # resetting index so it can be joined later on with test predictions
-        output = []
-        for d in [X_train, X_test, y_train, y_test]:
-            new_d = d.reset_index(drop=True)
-            output.append(new_d)
+        # output = []
+        # for d in [X_train, X_test, y_train, y_test]:
+        #     new_d = d.reset_index(drop=True)
+        #     output.append(new_d)
 
-        self.X_train, self.X_test, self.y_train, self.y_test = output
+        self.X_train, self.X_test, self.y_train, self.y_test = X_train, X_test, y_train, y_test
 
     def _fit_transform_test_splits(self):
         # fitting only on train data
