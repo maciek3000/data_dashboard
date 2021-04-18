@@ -824,7 +824,6 @@ class ScatterPlotGrid(MainGrid):
                                     major_label_text_color=self.plot_design.text_color, width=30,
                                     major_tick_line_color=self.plot_design.text_color, major_tick_in=0)
                 legend = default_figure({"height": 120, "width": 120, "css_classes": [self._legend]})
-                # TODO: supress warning
                 legend.add_layout(colorbar, "right")
 
         else:

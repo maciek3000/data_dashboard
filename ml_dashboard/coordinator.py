@@ -15,8 +15,6 @@ import warnings
 import copy
 
 
-
-
 class Coordinator:
     """Main object of the package.
 
@@ -41,7 +39,9 @@ class Coordinator:
     def __init__(self, X, y, output_directory, feature_descriptions_dict=None, root_path=None, random_state=None,
                  classification_pos_label=None, force_classification_pos_label_multiclass=False):
 
-        # TODO: transformed_features, disable_pairplots, only model?
+        # TODO: transformed_features as an argument
+        # TODO: pipeline to be constructed and returned
+        # TODO: change name to Dashboard
 
         self._set_default_flags()
 
@@ -194,12 +194,12 @@ class Coordinator:
         X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, random_state=self.random_state)
 
         # resetting index so it can be joined later on with test predictions
-        # output = []
-        # for d in [X_train, X_test, y_train, y_test]:
-        #     new_d = d.reset_index(drop=True)
-        #     output.append(new_d)
+        output = []
+        for d in [X_train, X_test, y_train, y_test]:
+            new_d = d.reset_index(drop=True)
+            output.append(new_d)
 
-        self.X_train, self.X_test, self.y_train, self.y_test = X_train, X_test, y_train, y_test
+        self.X_train, self.X_test, self.y_train, self.y_test = output #X_train, X_test, y_train, y_test
 
     def _fit_transform_test_splits(self):
         # fitting only on train data

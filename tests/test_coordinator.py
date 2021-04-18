@@ -99,6 +99,11 @@ def test_coordinator_create_test_splits(coordinator, data_classification_balance
     """Testing if the train/test split in coordinator is done correctly."""
     X, y = data_classification_balanced
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
+    X_train = X_train.reset_index(drop=True)
+    X_test = X_test.reset_index(drop=True)
+    y_train = y_train.reset_index(drop=True)
+    y_test = y_test.reset_index(drop=True)
+
     coordinator._create_test_splits()
     assert coordinator.X_train.equals(X_train)
     assert coordinator.X_test.equals(X_test)
@@ -127,3 +132,6 @@ def test_coordinator_fit_transform_test_splits(coordinator, data_classification_
     assert np.array_equal(c.transformed_X_test.toarray(), expected_X_test.toarray())
     assert np.array_equal(c.transformed_y_train, expected_y_train)
     assert np.array_equal(c.transformed_y_test, expected_y_test)
+
+# TODO: test if indexes match between untransformed and transformed data
+

@@ -311,7 +311,6 @@ class ModelFinder:
                 self.default_scoring = roc_auc_score
 
         elif problem_type == self._target_numerical:
-            # TODO: y transformer wrapper for clf
             self.problem = self._regression
             self.scoring_functions = self._scoring_regression
             self.default_models = regressors

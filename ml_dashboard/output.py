@@ -227,6 +227,8 @@ class Output:
         )
 
         # test split of original data
+        # original test_df and transformed test_df can be compared and concatted later on cause their indexes are
+        # reset in the beginning
         original_test_df = pd.concat([self.X_test, self.y_test], axis=1)
 
         # test split of transformed data, with user-friendly column names

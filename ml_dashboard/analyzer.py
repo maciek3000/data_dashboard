@@ -62,7 +62,7 @@ class Analyzer:
 
         for feature_name in self.features.features():
             feature = self.features[feature_name]
-            # TODO: NaNs are not allowed
+            # dropping NaN values - visualization shows untransformed data and nans will be imputed during transformations
             series = feature.data().dropna()
 
             if isinstance(feature, CategoricalFeature):
@@ -105,7 +105,7 @@ class Analyzer:
         for col in self.features.categorical_features():
             df[col + self._categorical_suffix] = df[col].astype(str)
 
-        # TODO: rethink NaNs
+        # dropping NaN values - visualization shows untransformed data and nans will be imputed during transformations
         scatter_data = df.dropna().to_dict(orient="list")
         return scatter_data
 

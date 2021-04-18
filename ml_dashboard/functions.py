@@ -66,11 +66,6 @@ def obj_name(obj):
     return obj_str
 
 
-def info_symbol_html():
-    # TODO: check if used anywhere
-    return "<span class='info-symbol'>&#x1F6C8;</span>"
-
-
 def append_description(description, parsed_html):
     # adding <span> that will hold description of a feature
     # every \n is replaced with <br> tag
