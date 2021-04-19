@@ -16,7 +16,6 @@ class Analyzer:
         happen here and Analyzer should expose methods or properties with the final output.
     """
 
-    # TODO: make adjustments for scenarios when there are only categorical/numerical features
     _categorical_suffix = "_categorical"
     _feature_description = "description"
     _feature_type = "type"
@@ -29,10 +28,16 @@ class Analyzer:
         self.default_plot_design = PlotDesign()
 
     def numerical_describe_df(self):
-        return self._create_describe_df(self.features.numerical_features())
+        if len(self.features.numerical_features()) > 0:
+            return self._create_describe_df(self.features.numerical_features())
+        else:
+            return None
 
     def categorical_describe_df(self):
-        return self._create_describe_df(self.features.categorical_features())
+        if len(self.features.categorical_features()) > 0:
+            return self._create_describe_df(self.features.categorical_features())
+        else:
+            return None
 
     def df_head(self):
         return self.features.raw_data()[self.features.features()].head().T

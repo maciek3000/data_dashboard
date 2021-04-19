@@ -1,5 +1,5 @@
 from ml_dashboard.analyzer import Analyzer
-from ml_dashboard.features import CategoricalFeature, NumericalFeature
+from ml_dashboard.features import CategoricalFeature, NumericalFeature, Features
 import pandas as pd
 import pytest
 import math
@@ -23,6 +23,33 @@ def test_analyzer_numeric_describe(fixture_features, numerical_features):
     actual_df = analyzer._create_describe_df(numerical_features).round(2)
 
     assert expected_df.equals(actual_df)
+
+
+def test_analyzer_numeric_describe_no_numerical_features(data_classification_balanced):
+    """Testing if numeric_describe() returns None when there are no numerical columns present."""
+    numerical_cols = ["Price", "Height"]
+
+    X, y = data_classification_balanced
+    X = X.drop(numerical_cols, axis=1)
+    f = Features(X, y, None)
+    analyzer = Analyzer(f)
+    actual_result = analyzer.numerical_describe_df()
+
+    assert actual_result is None
+
+
+def test_analyzer_categorical_describe_no_categorical_features(data_classification_balanced):
+    """Testing if categorical_describe() returns None when there are no categorical columns present."""
+    numerical_cols = ["Price", "Height"]  # its easier to provide numerical columns instead of dropping all categorical
+
+    data = data_classification_balanced[0]
+    X = data[numerical_cols[:1]]
+    y = data[numerical_cols[1]]
+    f = Features(X, y, None)
+    analyzer = Analyzer(f)
+    actual_result = analyzer.categorical_describe_df()
+
+    assert actual_result is None
 
 
 def test_analyzer_categorical_describe(fixture_features, categorical_features):

@@ -64,6 +64,7 @@ class Overview(BaseView):
     _assets = "assets"
 
     # Strings for HTML
+    _table_None = "Provided X, y data do not include this Table."
     _mapping_title = "Category - Original"
     _mapping_format = "{mapped} - {original}"
     _too_many_categories = "(...) Showing only first {} categories"
@@ -113,8 +114,11 @@ class Overview(BaseView):
         dataframes = [numerical_df, categorical_df, head_df]
 
         for table_id, dataframe in zip(tables_ids, dataframes):
-            raw_html = self._change_dataframe_to_html(dataframe)
-            html_with_descriptions = self._stylize_html_table(raw_html, mapping, descriptions)
+            if dataframe is not None:
+                raw_html = self._change_dataframe_to_html(dataframe)
+                html_with_descriptions = self._stylize_html_table(raw_html, mapping, descriptions)
+            else:
+                html_with_descriptions = self._table_None
             output[table_id] = html_with_descriptions
 
         return output
