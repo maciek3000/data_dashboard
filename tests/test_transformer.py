@@ -80,6 +80,74 @@ def test_transformer_create_preprocessor_y(categorical_features, numerical_featu
 
 
 @pytest.mark.parametrize(
+    ("transformed_feature",),
+    (
+            ("Price",),
+            ("bool",),
+            ("AgeGroup",)
+    )
+)
+def test_transformer_preprocessor_X_remainder(
+        categorical_features, numerical_features, data_classification_balanced, expected_raw_mapping,
+        transformed_feature):
+
+    categorical_features.remove("Target")
+    categorical_features = [f for f in categorical_features if f != transformed_feature]
+    numerical_features = [f for f in numerical_features if f != transformed_feature]
+    X = data_classification_balanced[0].drop(["Date"], axis=1)
+
+    if transformed_feature in expected_raw_mapping.keys():
+        X[transformed_feature] = X[transformed_feature].replace(expected_raw_mapping[transformed_feature])
+
+    tr = Transformer(categorical_features, numerical_features, "Numerical")
+    tr.fit(X)
+    transformed = tr.transform(X)
+    try:
+        transformed = transformed.toarray()
+    except AttributeError:
+        transformed = transformed
+
+    cols = tr.transformed_columns() + [transformed_feature]
+    actual_result = pd.DataFrame(transformed, columns=cols)
+
+    assert np.allclose(actual_result[transformed_feature].to_numpy(), X[transformed_feature].to_numpy(), equal_nan=True)
+    # checking if there is only one column with transformed_feature (no derivations)
+    assert sum([1 for col in cols if transformed_feature in col]) == 1
+
+
+@pytest.mark.parametrize(
+    ("transformed_features",),
+    (
+            (["Height", "Price"],),
+            (["Price", "AgeGroup"],),
+    )
+)
+def test_transformer_preprocessor_X_remainder_order(categorical_features, numerical_features, data_classification_balanced, expected_raw_mapping,
+                                                    transformed_features):
+    """Testing if remainder portion of ColumnTransformer returns the columns in the expected (alphabetical) order."""
+    categorical_features.remove("Target")
+    categorical_features = [f for f in categorical_features if f not in transformed_features]
+    numerical_features = [f for f in numerical_features if f not in transformed_features]
+
+    X = data_classification_balanced[0].drop(["Date"], axis=1)
+
+    tr = Transformer(categorical_features, numerical_features, "Numerical")
+    tr.fit(X)
+    transformed = tr.transform(X)
+    try:
+        transformed = transformed.toarray()
+    except AttributeError:
+        transformed = transformed
+
+    cols = tr.transformed_columns() + sorted(transformed_features)
+    actual_result = pd.DataFrame(transformed, columns=cols)
+
+    for col in transformed_features:
+        assert np.allclose(actual_result[col].to_numpy(), X[col].to_numpy(), equal_nan=True)
+
+
+
+@pytest.mark.parametrize(
     ("target_type",),
     (
             (None,),

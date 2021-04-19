@@ -655,6 +655,7 @@ def output(
         analyzer=analyzer_fixture,
         transformer=transformer_classification,
         model_finder=model_finder_classification_fitted,
+        transformed_columns={},
         X_train=X_train,
         X_test=X_test,
         y_train=y_train,

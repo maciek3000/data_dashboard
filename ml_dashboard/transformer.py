@@ -216,7 +216,8 @@ class Transformer:
             transformers=[
                 (self._numerical_pipeline, numeric_transformer, numerical_features),
                 (self._categorical_pipeline, categorical_transformer, categorical_features)
-            ]
+            ],
+            remainder="passthrough"
         )
 
         return col_transformer

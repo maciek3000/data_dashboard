@@ -78,7 +78,7 @@ class Output:
 
     def __init__(self,
                  root_path, output_directory, package_name,
-                 features, analyzer, transformer, model_finder,
+                 features, analyzer, transformer, model_finder, transformed_columns,
                  X_train, X_test, y_train, y_test,
                  transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test
                  ):
@@ -88,6 +88,7 @@ class Output:
         self.analyzer = analyzer
         self.transformer = transformer
         self.model_finder = model_finder
+        self.transformed_columns = transformed_columns
 
         # data used to create the output
         self.X_train = X_train
@@ -123,7 +124,8 @@ class Output:
                     template=self.env.get_template(self._view_features_html),
                     css_path=os.path.join(self.static_path(), self._view_features_css),
                     js_path=os.path.join(self.static_path(), self._view_features_js),
-                    target_name=self.features.target
+                    target_name=self.features.target,
+                    transformed_columns=self.transformed_columns
                 )
 
         self.view_models = self._models_view_creator(
@@ -234,7 +236,9 @@ class Output:
         # test split of transformed data, with user-friendly column names
         tr_X = make_pandas_data(self.transformed_X_test, pd.DataFrame)
         tr_y = make_pandas_data(self.transformed_y_test, pd.Series)
-        tr_X.columns = self.transformer.transformed_columns()
+
+        # accommodating for any pre-transformed columns with self.transformed_columns
+        tr_X.columns = self.transformer.transformed_columns() + sorted(self.transformed_columns)
         tr_y.name = self.features.target
         transformed_df = pd.concat([tr_X, tr_y], axis=1)
 

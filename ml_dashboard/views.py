@@ -6,6 +6,9 @@ from bokeh.core.validation import silence
 
 from .functions import append_description, series_to_dict, replace_duplicate_str, assess_models_names
 
+placeholder_features_limit_crossed = "<div>Plot was turned off because of too many features present in the data. Reduce" \
+                                     " the number of features or call 'create_dashboard' with 'force_pairplot=True'" \
+                                     " argument.</div>"
 
 class BaseView:
     """Parent Class for Views (Subpages) in the created HTML.
@@ -102,7 +105,7 @@ class Overview(BaseView):
         if do_pairplot_flag:
             output[self._pairplot_id] = self._pairplot(pairplot_path)
         else:
-            output[self._pairplot_id] = "<div>Too many Features</div>"
+            output[self._pairplot_id] = placeholder_features_limit_crossed
 
         return self.template.render(**output)
 
@@ -210,6 +213,13 @@ class FeatureView(BaseView):
 
     _transformed_feature = "transformed_feature"
     _transformed_feature_template = '<div class="{feature_class}" id="{feature_name}">{content}</div>'
+    _single_transformed_feature_template = """
+        <div class='{transformed_feature_grid_class}'>
+            {transformers_html}
+            <div class='{transformations_table_class}'>
+                {df_html}
+            </div>
+        </div>"""
 
     _transformed_feature_original_prefix = "Original_"
     _transformed_feature_transformed_df_title = "Applied Transformations (First 5 Rows) - Test Data"
@@ -231,12 +241,13 @@ class FeatureView(BaseView):
     _feature_menu_header = "<div class='features-menu-title'><div>Features</div><div class='close-button'>x</div></div>"
     _feature_menu_single_feature = "<div class='{}'><span>{:03}. {}</span></div>"
 
-    def __init__(self, template, css_path, js_path, target_name):
+    def __init__(self, template, css_path, js_path, target_name, transformed_columns):
         super().__init__()
         self.template = template
         self.css = css_path
         self.js = js_path
         self.target_name = target_name
+        self.transformed_columns = transformed_columns
 
     def render(
             self,
@@ -290,7 +301,7 @@ class FeatureView(BaseView):
             output[self._scatterplot] = scatterplot_div
             silence(MISSING_RENDERERS, False)
         else:
-            output[self._scatterplot] = "<div>Too many features</div>"
+            output[self._scatterplot] = placeholder_features_limit_crossed
 
         # Transformed Features
 
@@ -344,19 +355,30 @@ class FeatureView(BaseView):
             if col == initial_feature:
                 feature_class += " " + self._first_feature_transformed
 
-            transformers = transformations[col][0]
-            new_cols = transformations[col][1]
-            content = self._single_transformed_feature(df[col], transformed_df[new_cols], transformers)
-            if col in numerical_features:
-                plot_row = normal_plots[col]
-                content += """<div class='{plots_class}'><div class='{subtitle_div}'>{title}</div><div>{plot_row}</div></div>""".format(
-                    title=self._transformed_feature_normal_transformations_title,
-                    subtitle_div=self._transformed_feature_subtitle_div,
-                    plots_class=self._transformed_feature_plots_grid,
-                    plot_row=plot_row
-                )
+            if col not in self.transformed_columns:
+                transformers = transformations[col][0]
+                new_cols = transformations[col][1]
+                content = self._single_transformed_feature(df[col], transformed_df[new_cols], transformers)
+                if col in numerical_features:
+                    plot_row = normal_plots[col]
+                    content += """<div class='{plots_class}'><div class='{subtitle_div}'>{title}</div><div>{plot_row}</div></div>""".format(
+                        title=self._transformed_feature_normal_transformations_title,
+                        subtitle_div=self._transformed_feature_subtitle_div,
+                        plots_class=self._transformed_feature_plots_grid,
+                        plot_row=plot_row
+                    )
 
-            output += self._transformed_feature_template.format(feature_class=feature_class, title=col, content=content, feature_name=col)
+                output += self._transformed_feature_template.format(feature_class=feature_class, title=col, content=content, feature_name=col)
+            else:
+                # in case feature was pre-transformed, there is no actual data to show but the structure of HTML
+                # should be preserved to not break any CSS interactions
+                content = self._single_transformed_feature_template.format(
+                    transformed_feature_grid_class=self._transformed_feature_grid,
+                    transformers_html="Feature pre-transformed - no information provided.",
+                    transformations_table_class=self._transformed_feature_transformations_table,
+                    df_html=""
+                )
+                output += self._transformed_feature_template.format(feature_class=feature_class, title=col, content=content, feature_name=col)
 
         return output
 
@@ -364,13 +386,7 @@ class FeatureView(BaseView):
         transformers_html = self._transformers_html(transformers)
         df_html = self._transformed_dataframe_html(series, transformed_output)
 
-        template = """
-        <div class='{transformed_feature_grid_class}'>
-            {transformers_html}
-            <div class='{transformations_table_class}'>
-                {df_html}
-            </div>
-        </div>"""
+        template = self._single_transformed_feature_template
 
         output = template.format(
             transformed_feature_grid_class=self._transformed_feature_grid,

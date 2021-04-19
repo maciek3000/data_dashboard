@@ -45,13 +45,14 @@ class CategoricalFeature(BaseFeature):
 
     type = "Categorical"
 
-    def __init__(self, series, name, description, imputed_category, mapping=None):
+    def __init__(self, series, name, description, imputed_category, transformed=False, mapping=None):
 
         self.series = series.copy()
         self.name = name
         self.description = description
         self.original_mapping = mapping
         self.imputed_category = imputed_category  # flag to check if type of feature was provided or imputed
+        self.transformed = transformed  # flag to check if the feature is already transformed
 
         self.raw_mapping = self._create_raw_mapping()
         self.mapped_series = self._create_mapped_series()
@@ -114,12 +115,14 @@ class NumericalFeature(BaseFeature):
 
     type = "Numerical"
 
-    def __init__(self, series, name, description, imputed_category):
+    def __init__(self, series, name, description, imputed_category, transformed=False):
 
         self.series = series.copy()
         self.name = name
         self.description = description
         self.imputed_category = imputed_category  # flag to check if type of feature was provided or imputed
+        self.transformed = transformed  # flag to check if the feature is already transformed
+
         self.normalized_series = None
 
     def data(self):
@@ -154,10 +157,15 @@ class Features:
 
     _description_not_available = "Description not Available"
 
-    def __init__(self, X, y, descriptor=None):
+    def __init__(self, X, y, descriptor=None, transformed_features=None):
 
         self.original_dataframe = pd.concat([X, y], axis=1).copy()
         self.target = y.name
+
+        if transformed_features:
+            self.transformed_features = frozenset(transformed_features)
+        else:
+            self.transformed_features = frozenset()  # empty set
 
         self._all_features = None
         self._categorical_features = None
@@ -199,12 +207,19 @@ class Features:
                 if description is None:
                     description = self._description_not_available
 
+                # checking if feature is already transformed
+                if column in self.transformed_features:
+                    transformed = True
+                else:
+                    transformed = False
+
                 if category == self.categorical:  # Categorical
                     feature = CategoricalFeature(
                         series=self.original_dataframe[column],
                         name=column,
                         description=description,
                         mapping=mapping,
+                        transformed=transformed,
                         imputed_category=category_imputed
                     )
 
@@ -213,6 +228,7 @@ class Features:
                         series=self.original_dataframe[column],
                         name=column,
                         description=description,
+                        transformed=transformed,
                         imputed_category=category_imputed
                     )
 
@@ -243,54 +259,71 @@ class Features:
             except Exception:
                 raise
 
-    def features(self, drop_target=False):
+    def features(self, drop_target=False, exclude_transformed=False):
         if not self._all_features:
             self._all_features = self._create_features()
 
+        features = self._all_features
         if drop_target:
-            return [feature for feature in self._all_features if feature != self.target]
-        else:
-            return self._all_features
+            features = [feature for feature in features if feature != self.target]
 
-    def categorical_features(self, drop_target=False):
+        if exclude_transformed:
+            features = [feature for feature in features if not self._features[feature].transformed]
+
+        return features
+
+    def categorical_features(self, drop_target=False, exclude_transformed=False):
         if not self._categorical_features:
             self._categorical_features = self._create_categorical_features()
 
+        categorical_features = self._categorical_features
         if drop_target:
-            return [feature for feature in self._categorical_features if feature != self.target]
-        else:
-            return self._categorical_features
+            categorical_features = [feature for feature in categorical_features if feature != self.target]
 
-    def numerical_features(self, drop_target=False):
+        if exclude_transformed:
+            categorical_features = [feature for feature in categorical_features if not self._features[feature].transformed]
+
+        return categorical_features
+
+    def numerical_features(self, drop_target=False, exclude_transformed=False):
         if not self._numerical_features:
-            output = []
-            for feature in self._features.values():
-                if isinstance(feature, NumericalFeature):
-                    output.append(feature.name)
-            self._numerical_features = sort_strings(output)
+            self._numerical_features = self._create_numerical_features()
 
+        numerical_features = self._numerical_features
         if drop_target:
-            return [feature for feature in self._numerical_features if feature != self.target]
-        else:
-            return self._numerical_features
+            numerical_features = [feature for feature in numerical_features if feature != self.target]
 
-    def raw_data(self, drop_target=False):
+        if exclude_transformed:
+            numerical_features = [feature for feature in numerical_features if not self._features[feature].transformed]
+
+        return numerical_features
+
+    def raw_data(self, drop_target=False, exclude_transformed=False):
         if self._raw_dataframe is None:
             self._raw_dataframe = self._create_raw_dataframe()
 
+        raw_df = self._raw_dataframe
         if drop_target:
-            return self._raw_dataframe.drop([self.target], axis=1)
-        else:
-            return self._raw_dataframe
+            raw_df = raw_df.drop([self.target], axis=1)
 
-    def data(self, drop_target=False):
+        if exclude_transformed:
+            raw_df = raw_df.drop(self.transformed_features, axis=1)
+
+        return raw_df
+
+    def data(self, drop_target=False, exclude_transformed=False):
         if self._mapped_dataframe is None:
             self._mapped_dataframe = self._create_mapped_dataframe()
 
+        mapped_df = self._mapped_dataframe
+
         if drop_target:
-            return self._mapped_dataframe.drop([self.target], axis=1)
-        else:
-            return self._mapped_dataframe
+            mapped_df = mapped_df.drop([self.target], axis=1)
+
+        if exclude_transformed:
+            mapped_df = mapped_df.drop(self.transformed_features, axis=1)
+
+        return mapped_df
 
     def mapping(self):
         if self._mapping is None:

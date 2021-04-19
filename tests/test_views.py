@@ -123,7 +123,7 @@ def test_overview_unused_features_html(input_list, expected_string):
 def test_features_view_create_features_menu(input_features):
     """Testing if Features menu is created properly given the input features."""
 
-    fv = FeatureView("test_template", "test_css", "test_html", "test-target")
+    fv = FeatureView("test_template", "test_css", "test_html", "test-target", {})
     title_template = fv._feature_menu_header
     fv._menu_single_feature_class = "test-class"
     actual_result = fv._create_features_menu(input_features)
@@ -150,7 +150,7 @@ def test_features_view_create_features_menu_target_name(target_name, expected_fe
     """Testing if target-class is being added to the output of features_menu HTML where feature name is a target at
     the same time."""
     features = ["Feature0", "Feature1", "Feature2", "Feature3"]
-    fv = FeatureView("test_template", "test_css", "test_html", target_name)
+    fv = FeatureView("test_template", "test_css", "test_html", target_name, {})
     fv._menu_single_feature_class = "test-class"
     fv._menu_target_feature_class = "test-target-class"
     actual_result = fv._create_features_menu(features)
@@ -197,7 +197,7 @@ def test_features_view_transformed_dataframe_html(input_series, input_df, expect
     test_title = "test-title"
     prefix = "test_prefix-"
 
-    fv = FeatureView("test_template", "test_css", "test_html", "test-target")
+    fv = FeatureView("test_template", "test_css", "test_html", "test-target", {})
     fv._transformed_feature_subtitle_div = test_subtitle
     fv._transformed_feature_transformed_df_title = test_title
     fv._transformed_feature_original_prefix = prefix
@@ -247,7 +247,7 @@ def test_features_view_transformed_dataframe_html(input_series, input_df, expect
 )
 def test_features_view_transformers_html(input_transformers, expected_result):
     """Testing if transformers_html() method returns correct HTML output based on provided list of transformers."""
-    fv = FeatureView("test_template", "test_css", "test_html", "test-target")
+    fv = FeatureView("test_template", "test_css", "test_html", "test-target", {})
     fv._transformed_feature_single_transformer = "test-single-tr"
     fv._transformed_feature_transformer_list = "test-transformer-list"
     fv._transformed_feature_transformers_title = "Test Title For Transformers"
@@ -285,7 +285,7 @@ def test_features_view_transformed_features_divs(data_classification_balanced, t
     transformations["Target"] = (transformer_classification_fitted.y_transformations(), ["Target"])
     numerical_features = transformer_classification_fitted.numerical_features
 
-    fv = FeatureView("test_template", "test_css", "test_html", "Target")
+    fv = FeatureView("test_template", "test_css", "test_html", "Target", {})
     fv._first_feature_transformed = "test-chosen-feature"
     fv._transformed_feature_div = "test-div"
     fv._transformed_feature_plots_grid = "test-grid"

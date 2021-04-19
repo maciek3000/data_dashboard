@@ -100,6 +100,7 @@ def test_coordinator_assess_n_features(coordinator, input_df, limit, expected_fl
 def test_coordinator_create_test_splits(coordinator, data_classification_balanced, seed):
     """Testing if the train/test split in coordinator is done correctly."""
     X, y = data_classification_balanced
+    X = X.drop(["Date"], axis=1)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
     X_train = X_train.reset_index(drop=True)
@@ -194,3 +195,34 @@ def test_coordinator_train_test_split_match_original_transformed_y(coordinator, 
         transformed = tr.transform_y(np.array(y_test.loc[ind]).reshape(-1, 1))[0]
         actual = transformed_y_test.loc[ind]
         assert actual == transformed
+
+
+@pytest.mark.parametrize(
+    ("transformed_cols",),
+    (
+            (["Price", "Height"],),
+            (["Sex", "bool", "Product"],),
+            (["AgeGroup", "Price", "Product", "Sex"],),
+            (["AgeGroup", "Height", "Price", "Product", "Sex", "bool"],),
+            ([],),
+    )
+)
+def test_coordinator_check_transformed_cols(coordinator, transformed_cols):
+    """Testing if checking provided transformed_columns to coordinator works properly."""
+    actual_result = coordinator._check_transformed_cols(transformed_cols)
+    assert actual_result == set(transformed_cols)
+
+
+@pytest.mark.parametrize(
+    ("incorrect_transformed_columns",),
+    (
+            (["Date", "AgeGroup"],),
+            (["Target", "AgeGroup", "Price"],),
+            (["AgeGroup", "Height", "Price_test"],)
+    )
+)
+def test_coordinator_check_transformed_cols_error(coordinator, incorrect_transformed_columns):
+    """Testing if providing incorrect transformed columns (that aren't in the provided X data) raises an error."""
+    with pytest.raises(ValueError) as excinfo:
+        res = coordinator._check_transformed_cols(incorrect_transformed_columns)
+    assert str(set(incorrect_transformed_columns)) in str(excinfo.value)

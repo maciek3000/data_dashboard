@@ -218,6 +218,29 @@ def test_features_analyze_features_forced_category(data_classification_balanced,
 
 
 @pytest.mark.parametrize(
+    ("transformed_features",),
+    (
+            (["Price", "Height"],),
+            ({"Sex", "bool", "Target"},),
+            (("Product", "AgeGroup", "Height", "bool"),)
+    )
+)
+def test_features_analyze_features_transformed_features(data_classification_balanced, feature_descriptor, transformed_features):
+    """Testing if creating features properly assigns Transformed flag based on provided transformed_features sequence."""
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor, transformed_features)
+
+    f.original_dataframe = pd.concat([X, y], axis=1)  # original_dataframe needs to be set up
+    actual = f._analyze_features(feature_descriptor)
+
+    for feature in actual.keys():
+        if feature in transformed_features:
+            assert actual[feature].transformed
+        else:
+            assert not actual[feature].transformed
+
+
+@pytest.mark.parametrize(
     ("feature_descriptor_type",),
     (
             ("normal",),
@@ -273,6 +296,29 @@ def test_features_features_list_no_target(
 
     assert actual == expected
 
+@pytest.mark.parametrize(
+    ("transformed_features",),
+    (
+            (["Height", "Price"],),
+            (["AgeGroup", "Product", "bool"],),
+            (None,),
+            ({},)
+    )
+)
+def test_features_features_list_exclude_transformed(data_classification_balanced, feature_descriptor, transformed_features):
+    """Testing if returning feature list with transformed columns excluded works properly."""
+    col_list = ["AgeGroup", "bool", "Height", "Price", "Product", "Sex", "Target"]
+    X, y = data_classification_balanced
+
+    f = Features(X, y, feature_descriptor, transformed_features)
+    actual_result = f.features(exclude_transformed=True)
+    if transformed_features:
+        expected_result = [feature for feature in col_list if feature not in transformed_features]
+    else:
+        expected_result = col_list
+
+    assert actual_result == expected_result
+
 
 @pytest.mark.parametrize(
     ("feature_descriptor_type", "expected"),
@@ -326,6 +372,31 @@ def test_features_numerical_features_no_target(
 
 
 @pytest.mark.parametrize(
+    ("transformed_features",),
+    (
+            (["Height", "Price"],),
+            (["AgeGroup", "Product", "bool"],),
+            (["bool", "Price"],),
+            (None,),
+            ({},),
+    )
+)
+def test_features_numerical_features_exclude_transformed(data_classification_balanced, feature_descriptor, transformed_features):
+    """Testing if returning numerical features list with transformed columns excluded works properly."""
+    col_list = ["Height", "Price"]
+    X, y = data_classification_balanced
+
+    f = Features(X, y, feature_descriptor, transformed_features)
+    actual_result = f.numerical_features(exclude_transformed=True)
+    if transformed_features:
+        expected_result = [feature for feature in col_list if feature not in transformed_features]
+    else:
+        expected_result = col_list
+
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
     ("feature_descriptor_type", "expected"),
     (
             ("normal", ["AgeGroup", "bool", "Product", "Sex", "Target"]),
@@ -375,6 +446,31 @@ def test_features_categorical_features_no_target(
     actual = f.categorical_features(drop_target=True)
 
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    ("transformed_features",),
+    (
+            (["Height", "Price"],),
+            (["AgeGroup", "Product", "bool"],),
+            (["bool", "Price"],),
+            (None,),
+            ({},),
+    )
+)
+def test_features_categorical_features_exclude_transformed(data_classification_balanced, feature_descriptor, transformed_features):
+    """Testing if returning categorical features list with transformed columns excluded works properly."""
+    col_list = ["AgeGroup", "bool", "Product", "Sex", "Target"]
+    X, y = data_classification_balanced
+
+    f = Features(X, y, feature_descriptor, transformed_features)
+    actual_result = f.categorical_features(exclude_transformed=True)
+    if transformed_features:
+        expected_result = [feature for feature in col_list if feature not in transformed_features]
+    else:
+        expected_result = col_list
+
+    assert actual_result == expected_result
 
 
 def test_features_unused_features(data_classification_balanced, feature_descriptor):
@@ -432,6 +528,33 @@ def test_features_raw_data_no_target(data_classification_balanced, feature_descr
     assert actual_df.equals(expected_df)
 
 
+@pytest.mark.parametrize(
+    ("transformed_columns",),
+    (
+            (["Height", "Price"],),
+            (["AgeGroup", "Product", "bool"],),
+            (["bool", "Price"],),
+            (None,),
+            ({},),
+    )
+)
+def test_features_raw_data_excluded_transformed(data_classification_balanced, feature_descriptor, transformed_columns):
+    """Testing if raw_data returns correct dataframe without transformed columns when excluded_transformed
+    is set to True."""
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor, transformed_columns)
+
+    expected_df = X.drop(["Date"], axis=1)
+    if transformed_columns:
+        expected_df = expected_df.drop(transformed_columns, axis=1)
+
+    cols = expected_df.columns
+
+    actual_df = f.raw_data(exclude_transformed=True)[cols]
+
+    assert actual_df.equals(expected_df)
+
+
 def test_features_create_mapped_dataframe(data_classification_balanced, feature_descriptor, expected_raw_mapping):
     """Testing if ._create_mapped_dataframe correctly returns mapped dataframe (with replaced values according to
     mapping). """
@@ -456,6 +579,33 @@ def test_features_data(data_classification_balanced, feature_descriptor, expecte
     cols = expected_df.columns
 
     actual_df = f.data(drop_target=True)[cols]
+
+    assert actual_df.equals(expected_df)
+
+
+@pytest.mark.parametrize(
+    ("transformed_columns",),
+    (
+            (["Height", "Price"],),
+            (["AgeGroup", "Product", "bool"],),
+            (["bool", "Price"],),
+            (None,),
+            ({},),
+    )
+)
+def test_features_data_excluded_transformed(data_classification_balanced, feature_descriptor, transformed_columns, expected_raw_mapping):
+    """Testing if data returns correctly mapped dataframe without transformed columns when excluded_transformed
+    is set to True."""
+    X, y = data_classification_balanced
+    f = Features(X, y, feature_descriptor, transformed_columns)
+
+    expected_df = X.drop(["Date"], axis=1)
+    if transformed_columns:
+        expected_df = expected_df.drop(transformed_columns, axis=1)
+    expected_df = expected_df.replace(expected_raw_mapping)
+    cols = expected_df.columns
+
+    actual_df = f.data(exclude_transformed=True)[cols]
 
     assert actual_df.equals(expected_df)
 

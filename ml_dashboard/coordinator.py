@@ -37,29 +37,29 @@ class Coordinator:
     _n_features_pairplots_limit = 15
 
     def __init__(self, X, y, output_directory, feature_descriptions_dict=None, root_path=None, random_state=None,
-                 classification_pos_label=None, force_classification_pos_label_multiclass=False):
+                 classification_pos_label=None, force_classification_pos_label_multiclass=False,
+                 already_transformed_columns=None):
 
-        # TODO: transformed_features as an argument
         # TODO: pipeline to be constructed and returned
         # TODO: change name to Dashboard
 
-        self._set_default_flags()
+        if root_path is None:
+            self.root_path = os.getcwd()
+        else:
+            self.root_path = root_path
 
+        self._create_pairplots_flag = True
         self._force_classification_pos_label_multiclass_flag = force_classification_pos_label_multiclass
 
         self.random_state = random_state
         self.output_directory = output_directory
 
         self.X, self.y = self._check_provided_data(X, y)
-        self._assess_n_features(self.X)
 
         if classification_pos_label is not None:
             classification_pos_label = self._check_classification_pos_label(classification_pos_label)
 
-        if root_path is None:
-            self.root_path = os.getcwd()
-        else:
-            self.root_path = root_path
+        self.already_transformed_columns = self._check_transformed_cols(already_transformed_columns)
 
         self.transformed_X = None
         self.transformed_y = None
@@ -68,18 +68,25 @@ class Coordinator:
 
         self.plot_design = PlotDesign()
         self.features_descriptions = FeatureDescriptor(feature_descriptions_dict)
-        self.features = Features(self.X, self.y, self.features_descriptions)
+        self.features = Features(self.X, self.y, self.features_descriptions, self.already_transformed_columns)
         self.analyzer = Analyzer(self.features)
 
+        # dropping features assessed as unusable
+        self.X = self.X.drop(self.features.unused_features(), axis=1)
+        self._assess_n_features(self.X)
+
+        # excluding Transformed columns from transformations, they will be concatted at the end because of
+        # remainder='passthrough' argument of ColumnTransformer
         self.transformer = Transformer(
-            categorical_features=self.features.categorical_features(drop_target=True),
-            numerical_features=self.features.numerical_features(drop_target=True),
+            categorical_features=self.features.categorical_features(drop_target=True, exclude_transformed=True),
+            numerical_features=self.features.numerical_features(drop_target=True, exclude_transformed=True),
             target_type=self.features[self.features.target].type,
             random_state=self.random_state,
             classification_pos_label=classification_pos_label
         )
 
-        self.transformer_eval = copy.deepcopy(self.transformer)  # provided to Output as it creates dashboard with splits
+        self.transformer_eval = copy.deepcopy(
+            self.transformer)  # provided to Output as it creates dashboard with splits
 
         # https://scikit-learn.org/stable/modules/cross_validation.html#computing-cross-validated-metrics
         # Just as it is important to test a predictor on data held-out from training, preprocessing
@@ -104,7 +111,8 @@ class Coordinator:
         output = self.model_finder.predict(transformed)
         return output
 
-    def create_dashboard(self, models=None, scoring=None, mode="quick", logging=True, disable_pairplots=False, force_pairplot=False):
+    def create_dashboard(self, models=None, scoring=None, mode="quick", logging=True, disable_pairplots=False,
+                         force_pairplot=False):
         # force_pairplot - useful only when n of features > limit
         # disable_pairplots - disables pairplots in the dashboard, takes precedence over force_pairplot
 
@@ -146,10 +154,6 @@ class Coordinator:
     # def transform(self, X):
     #     return self.transformer.transform(X)
 
-    def _set_default_flags(self):
-        self._create_pairplots_flag = True
-
-
     def _do_transformations(self):
         self._fit_transform_test_splits()
         self._fit_transformer()
@@ -176,6 +180,7 @@ class Coordinator:
             analyzer=self.analyzer,
             transformer=self.transformer_eval,
             model_finder=self.model_finder,
+            transformed_columns=self.already_transformed_columns,
             X_train=self.X_train,
             X_test=self.X_test,
             y_train=self.y_train,
@@ -248,4 +253,24 @@ class Coordinator:
         n = df.shape[1]
         if n > self._n_features_pairplots_limit:
             self._create_pairplots_flag = False
-            print("N Features > limit")
+            warnings.warn(
+                "Number of features crossed their default limit - pairplots will be turned off to reduce"
+                " runtime and/or to avoid MemoryErrors. To force pairplots to be created, call 'create_html' with"
+                " 'force_pairplots=True' argument.")
+
+    def _check_transformed_cols(self, transformed_columns):
+        if transformed_columns is not None:
+            cols_in_data = set(self.X.columns)
+            transformed = set(transformed_columns)
+
+            if not transformed <= cols_in_data:  # checking if transformed is a subset of cols_in_data
+                raise ValueError("Provided transformed_columns: {transformed} are not a subset"
+                                 " of columns in data: {columns}".format(
+                    transformed=transformed,
+                    columns=cols_in_data
+                )
+                )
+            else:
+                return transformed
+        else:
+            return {}

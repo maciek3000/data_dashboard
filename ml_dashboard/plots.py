@@ -990,8 +990,11 @@ class ModelsPlotRegression:
 
         p.scatter(scatter_data[0], scatter_data[1], color=color, size=16, fill_alpha=0.8)
 
-        baseline = Span(location=0, dimension="width", line_color=self.plot_design.models_dummy_color, line_width=1, line_dash="dashed")
-        p.add_layout(baseline)
+        y_line = []
+        for q in np.linspace(0, 1, 11):
+            y_line.append(scatter_data[0].quantile(q=q))
+
+        p.line(y_line, y_line, line_width=1, color=self.plot_design.models_dummy_color, line_dash="dashed")
 
         p.xaxis.axis_label = "Actual"
         p.yaxis.axis_label = "Predicted"
@@ -1034,8 +1037,11 @@ class ModelsPlotRegression:
 
         p.scatter(scatter_data[0], scatter_data[1], color=color, size=10, fill_alpha=0.8)
 
-        p.line([min(scatter_data[0]), max(scatter_data[0])], [0, 0], line_width=2,
-               color=self.plot_design.models_dummy_color)
+        baseline = Span(location=0, dimension="width", line_color=self.plot_design.models_dummy_color, line_width=2)
+        p.add_layout(baseline)
+
+        # p.line([min(scatter_data[0]), max(scatter_data[0])], [0, 0], line_width=2,
+        #        color=self.plot_design.models_dummy_color)
 
         p.xaxis.axis_label = "Predicted"
         p.yaxis.axis_label = "Residual"
