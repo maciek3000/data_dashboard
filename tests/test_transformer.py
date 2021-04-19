@@ -1,5 +1,5 @@
 from ml_dashboard.transformer import Transformer
-from sklearn.preprocessing import LabelEncoder, FunctionTransformer, OneHotEncoder, QuantileTransformer, StandardScaler
+from sklearn.preprocessing import LabelEncoder, FunctionTransformer, OneHotEncoder, QuantileTransformer, StandardScaler, OrdinalEncoder
 from sklearn.preprocessing import PowerTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
@@ -74,7 +74,7 @@ def test_transformer_create_preprocessor_X(categorical_features, numerical_featu
 def test_transformer_create_preprocessor_y(categorical_features, numerical_features, target_type, expected_function):
     """Testing if y preprocessor is created correctly."""
     tr = Transformer(categorical_features, numerical_features, target_type)
-    preprocessor = tr._create_preprocessor_y()
+    preprocessor = tr._create_default_transformer_y()
 
     assert type(preprocessor).__name__ == type(expected_function).__name__
 
@@ -95,7 +95,7 @@ def test_transformer_create_preprocessor_y_invalid_target_type(categorical_featu
     tr = Transformer(categorical_features, numerical_features, "Categorical")  # initiating with proper type
     tr.target_type = target_type
     with pytest.raises(ValueError) as excinfo:
-        preprocessor = tr._create_preprocessor_y()
+        preprocessor = tr._create_default_transformer_y()
     assert "should be Categorical or Numerical" in str(excinfo.value)
 
 
@@ -311,6 +311,47 @@ def test_transformer_transformers(transformer_classification_fitted, feature, ca
     assert actual_result == expected_result
 
 
+def test_transformer_custom_transformers(categorical_features, numerical_features, seed):
+    """Testing if setting custom transformers in Transformer object works correctly."""
+    categorical_tr = [SimpleImputer(strategy="most_frequent"), OrdinalEncoder()]
+    numerical_tr = [SimpleImputer(), PowerTransformer()]
+    y_transformer = FunctionTransformer()
+
+    tr = Transformer(categorical_features, numerical_features, "Categorical", seed)
+    tr.set_custom_preprocessor_X(categorical_tr, numerical_tr)
+    tr.set_custom_preprocessor_y(y_transformer)
+
+    assert tr.categorical_transformers == categorical_tr
+    assert tr.numerical_transformers == numerical_tr
+    assert tr.y_transformer == y_transformer
+
+
+@pytest.mark.parametrize(
+    ("custom_transformers", "tr_type"),
+    (
+            ([SimpleImputer(strategy="constant", fill_value="Missing"), OneHotEncoder()], "categorical"),
+            ([SimpleImputer(strategy="average"), PowerTransformer()], "numerical")
+    )
+)
+def test_transformer_custom_transformer_none_transformers(categorical_features, numerical_features, seed, custom_transformers, tr_type):
+    """Testing if setting custom transformers with only one type of transformers provided works correctly."""
+    tr = Transformer(categorical_features, numerical_features, "Categorical", seed)
+
+    if tr_type == "categorical":
+        tr.set_custom_preprocessor_X(categorical_transformers=custom_transformers)
+        expected_numerical = tr._default_numerical_transformers
+        expected_categorical = custom_transformers
+    elif tr_type == "numerical":
+        tr.set_custom_preprocessor_X(numerical_transformers=custom_transformers)
+        expected_numerical = custom_transformers
+        expected_categorical = tr._default_categorical_transformers
+    else:
+        raise
+
+    assert tr.categorical_transformers == expected_categorical
+    assert tr.numerical_transformers == expected_numerical
+
+
 @pytest.mark.parametrize(
     ("feature",),
     (
@@ -415,7 +456,7 @@ def test_transformer_transformed_columns_categorical_encoding(transformer_classi
 def test_transformer_transformed_columns_no_one_hot_encoder(transformer_classification_fitted, data_classification_balanced):
     """Testing if columns from transformed_columns() are correctly calculated when there is no OneHotEncoder present
     in the preprocessor."""
-    transformer_classification_fitted.set_custom_preprocessor_X([SimpleImputer()], [SimpleImputer(strategy="most_frequent")])
+    transformer_classification_fitted.set_custom_preprocessor_X([SimpleImputer(strategy="most_frequent")], [SimpleImputer()])
     transformer_classification_fitted.fit(data_classification_balanced[0])
     expected_results = ["Height", "Price", "AgeGroup", "bool", "Product", "Sex"]
     actual_results = transformer_classification_fitted.transformed_columns()

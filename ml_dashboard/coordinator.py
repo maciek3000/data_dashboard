@@ -130,25 +130,23 @@ class Coordinator:
         )
         print(self._output_created_text.format(directory=self.output.output_directory))
 
-    def set_custom_transformers(self, numerical_transformers, categorical_transformers, y_transformer=None):
+    def set_custom_transformers(self, categorical_transformers=None, numerical_transformers=None, y_transformers=None):
         for tr in [self.transformer, self.transformer_eval]:
             tr.set_custom_preprocessor_X(
                 numerical_transformers=numerical_transformers,
                 categorical_transformers=categorical_transformers
             )
-            if y_transformer:
-                tr.set_custom_preprocessor_y(y_transformer)
+            if y_transformers:
+                tr.set_custom_preprocessor_y(y_transformers)
 
         self._do_transformations()
         self._initialize_model_and_output()
-        self._custom_transformer_flag = True
 
     # # exposed method in case only transformation is needed
     # def transform(self, X):
     #     return self.transformer.transform(X)
 
     def _set_default_flags(self):
-        self._custom_transformer_flag = False
         self._create_pairplots_flag = True
 
 

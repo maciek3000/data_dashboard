@@ -282,7 +282,7 @@ def test_features_view_transformed_features_divs(data_classification_balanced, t
     tr_y = pd.Series(transformed_classification_data[1], name="Target")
     transformed_df = pd.concat([tr_X, tr_y], axis=1)
     transformations = transformer_classification_fitted.transformations()
-    transformations["Target"] = (transformer_classification_fitted.y_transformers(), ["Target"])
+    transformations["Target"] = (transformer_classification_fitted.y_transformations(), ["Target"])
     numerical_features = transformer_classification_fitted.numerical_features
 
     fv = FeatureView("test_template", "test_css", "test_html", "Target")

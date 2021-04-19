@@ -279,7 +279,7 @@ class Output:
             test_features_df=original_test_df,
             test_transformed_features_df=transformed_df,
             X_transformations=self.transformer.transformations(),
-            y_transformations=self.transformer.y_transformers(),
+            y_transformations=self.transformer.y_transformations(),
             normal_transformations_plots=generated_normal_transformations_plots,
             initial_feature=first_feature
         )

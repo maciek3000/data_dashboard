@@ -3,6 +3,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import numpy as np
 from sklearn import clone
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import PowerTransformer, OneHotEncoder, FunctionTransformer
 
 
 @pytest.mark.parametrize(
@@ -133,5 +135,20 @@ def test_coordinator_fit_transform_test_splits(coordinator, data_classification_
     assert np.array_equal(c.transformed_y_train, expected_y_train)
     assert np.array_equal(c.transformed_y_test, expected_y_test)
 
+
+def test_coordinator_set_custom_transformer(coordinator, data_classification_balanced):
+    numerical_tr = [SimpleImputer(strategy="mean"), PowerTransformer()]
+    categorical_tr = [SimpleImputer(strategy="constant", fill_value="Missing"), OneHotEncoder(drop="first")]
+    y_transformer = FunctionTransformer()
+
+    coordinator.set_custom_transformers(categorical_tr, numerical_tr, y_transformer)
+
+    for tr in [coordinator.transformer, coordinator.transformer_eval]:
+        assert tr.numerical_transformers == numerical_tr
+        assert tr.categorical_transformers == categorical_tr
+        assert tr.y_transformer == y_transformer
+
+
 # TODO: test if indexes match between untransformed and transformed data
+
 

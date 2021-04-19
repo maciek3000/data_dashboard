@@ -1,7 +1,7 @@
 from sklearn import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, QuantileTransformer, LabelEncoder, FunctionTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, QuantileTransformer, LabelEncoder, FunctionTransformer, OrdinalEncoder
 from sklearn.preprocessing import PowerTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.experimental import enable_iterative_imputer  # noqa
@@ -77,7 +77,7 @@ class Transformer:
 
         self.categorical_transformers = self._check_random_state(self._default_categorical_transformers)
         self.numerical_transformers = self._check_random_state(self._default_numerical_transformers)
-
+        self.y_transformer = self._create_default_transformer_y()
         # self.features = features
         # self.feature_names = features.features(drop_target=True)
         # self.target = features.target
@@ -120,9 +120,8 @@ class Transformer:
 
         return output
 
-    def y_transformers(self):
-        transformer = self.preprocessor_y
-        return [transformer]
+    def y_transformations(self):
+        return [self.y_transformer]
 
     def transformers(self, feature):
         if feature in self.categorical_features:
@@ -133,7 +132,6 @@ class Transformer:
             return None
 
     def transformed_columns(self):
-        # TODO: check if transformer is fitted
         # checking if there are any categorical_features at all
         if len(self.categorical_features) > 0:
             cat_transformers = self.preprocessor_X.named_transformers_[self._categorical_pipeline]
@@ -192,13 +190,16 @@ class Transformer:
 
         return output
 
-    def set_custom_preprocessor_X(self, numerical_transformers, categorical_transformers):
-        self.numerical_transformers = numerical_transformers
-        self.categorical_transformers = categorical_transformers
+    def set_custom_preprocessor_X(self, categorical_transformers=None, numerical_transformers=None):
+        if categorical_transformers:
+            self.categorical_transformers = categorical_transformers
+        if numerical_transformers:
+            self.numerical_transformers = numerical_transformers
         self.preprocessor_X = self._create_preprocessor_X()
 
     def set_custom_preprocessor_y(self, transformer):
-        self.preprocessor_y = transformer
+        self.y_transformer = transformer
+        self.preprocessor_y = self._create_preprocessor_y()
 
     def _create_preprocessor_X(self):
 
@@ -220,7 +221,7 @@ class Transformer:
 
         return col_transformer
 
-    def _create_preprocessor_y(self):
+    def _create_default_transformer_y(self):
         if self.target_type == "Categorical":
             if self.classification_pos_label is not None:
                 func_transformer = FunctionTransformer(lambda x: np.where(x == self.classification_pos_label, 1, 0))
@@ -239,6 +240,9 @@ class Transformer:
             )
 
         return transformer
+
+    def _create_preprocessor_y(self):
+        return self.y_transformer
 
     def y_classes(self):
         if self.target_type == "Numerical":
