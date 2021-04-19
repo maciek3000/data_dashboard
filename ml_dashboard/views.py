@@ -82,7 +82,6 @@ class Overview(BaseView):
                numerical_df, categorical_df, unused_features, head_df, do_pairplot_flag, pairplot_path,  # main elements of the View
                mapping, descriptions  # auxilliary dictionaries
                ):
-        # TODO: add placeholders in case there are no categorical/numerical columns
         output = {}
 
         # Standard params

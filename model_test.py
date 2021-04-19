@@ -45,7 +45,9 @@ if __name__ == "__main__":
     # X, y, descriptions = breast_cancer()  # 30 features
     # X, y, descriptions = digits()
 
-    coord = Coordinator(X, y, output_directory, descriptions, os.getcwd(), random_state=42, classification_pos_label=1)
+    # X = X.drop(["CHAS", "RAD"], axis=1)
+
+    coord = Coordinator(X, y, output_directory, descriptions, os.getcwd(), random_state=42)
     # coord.set_custom_transformers(numerical_transformers=[SimpleImputer(), PowerTransformer()])
 
     # output = coord.quick_find()
@@ -65,7 +67,7 @@ if __name__ == "__main__":
 
     models = None
 
-    coord.create_dashboard(models=models, logging=False, mode="quick")
+    coord.create_dashboard(models=models, scoring=accuracy_score, logging=False, mode="quick")
 
 
 

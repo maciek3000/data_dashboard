@@ -8,7 +8,7 @@ from .plot_design import PlotDesign
 from .functions import sanitize_input, make_pandas_data, obj_name
 import os
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
 import pandas as pd
 import random
 import warnings
@@ -187,9 +187,12 @@ class Coordinator:
         )
 
     def _create_test_splits(self):
-
-        # TODO: implement Stratified split in case of imbalance
-        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, random_state=self.random_state)
+        # StratifiedShuffleSplit to accommodate imbalances in the data
+        # train size is default - 0.9
+        splitter = StratifiedShuffleSplit(random_state=self.random_state)
+        splitter.get_n_splits(self.X, self.y)
+        train_index, test_index = next(splitter.split(self.X, self.y))
+        X_train, X_test, y_train, y_test = self.X.loc[train_index], self.X.loc[test_index], self.y.loc[train_index], self.y.loc[test_index]
 
         # resetting index so it can be joined later on with test predictions
         output = []
@@ -197,7 +200,7 @@ class Coordinator:
             new_d = d.reset_index(drop=True)
             output.append(new_d)
 
-        self.X_train, self.X_test, self.y_train, self.y_test = output #X_train, X_test, y_train, y_test
+        self.X_train, self.X_test, self.y_train, self.y_test = output
 
     def _fit_transform_test_splits(self):
         # fitting only on train data

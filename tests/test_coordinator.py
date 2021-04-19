@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
 import numpy as np
 from sklearn import clone
 from sklearn.impute import SimpleImputer
@@ -100,7 +100,12 @@ def test_coordinator_assess_n_features(coordinator, input_df, limit, expected_fl
 def test_coordinator_create_test_splits(coordinator, data_classification_balanced, seed):
     """Testing if the train/test split in coordinator is done correctly."""
     X, y = data_classification_balanced
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
+
+    splitter = StratifiedShuffleSplit(random_state=seed)
+    splitter.get_n_splits(X, y)
+
+    train_indexes, test_indexes = next(splitter.split(X, y))
+    X_train, X_test, y_train, y_test = X.loc[train_indexes], X.loc[test_indexes], y.loc[train_indexes], y.loc[test_indexes]
     X_train = X_train.reset_index(drop=True)
     X_test = X_test.reset_index(drop=True)
     y_train = y_train.reset_index(drop=True)
@@ -137,6 +142,7 @@ def test_coordinator_fit_transform_test_splits(coordinator, data_classification_
 
 
 def test_coordinator_set_custom_transformer(coordinator, data_classification_balanced):
+    """Testing if setting custom transformers update both instances of regular and train/test splits Transformers."""
     numerical_tr = [SimpleImputer(strategy="mean"), PowerTransformer()]
     categorical_tr = [SimpleImputer(strategy="constant", fill_value="Missing"), OneHotEncoder(drop="first")]
     y_transformer = FunctionTransformer()
