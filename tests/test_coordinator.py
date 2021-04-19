@@ -155,6 +155,46 @@ def test_coordinator_set_custom_transformer(coordinator, data_classification_bal
         assert tr.y_transformer == y_transformer
 
 
-# TODO: test if indexes match between untransformed and transformed data
+def test_coordinator_train_test_split_match_original_transformed_X(coordinator, data_classification_balanced):
+    """Testing if indexes of original train/test data match those of transformed train/test data (X)."""
+    c = coordinator
+    c._do_transformations()
+    tr = c.transformer_eval
+    X_train, X_test = c.X_train, c.X_test
+
+    df_func = pd.DataFrame.sparse.from_spmatrix
+    transformed_X_train = df_func(c.transformed_X_train)
+    transformed_X_test = df_func(c.transformed_X_test)
+
+    for ind in X_train.index:
+        cols = X_train.columns
+        transformed = tr.transform(pd.DataFrame(X_train.loc[ind].to_numpy().reshape(1, -1), columns=cols)).toarray()[0]
+        actual = transformed_X_train.loc[ind].to_numpy()
+        assert np.allclose(transformed, actual)
+
+    for ind in X_test.index:
+        cols = X_test.columns
+        transformed = tr.transform(pd.DataFrame(X_test.loc[ind].to_numpy().reshape(1, -1), columns=cols)).toarray()[0]
+        actual = transformed_X_test.loc[ind].to_numpy()
+        assert np.allclose(transformed, actual)
 
 
+def test_coordinator_train_test_split_match_original_transformed_y(coordinator, data_classification_balanced):
+    """Testing if indexes of original train/test data match those of transformed train/test data (y)."""
+    c = coordinator
+    c._do_transformations()
+    tr = c.transformer_eval
+    y_train, y_test = c.y_train, c.y_test
+
+    transformed_y_train = pd.Series(c.transformed_y_train)
+    transformed_y_test = pd.Series(c.transformed_y_test)
+
+    for ind in y_train.index:
+        transformed = tr.transform_y(np.array(y_train.loc[ind]).reshape(-1, 1))[0]
+        actual = transformed_y_train.loc[ind]
+        assert actual == transformed
+
+    for ind in y_test.index:
+        transformed = tr.transform_y(np.array(y_test.loc[ind]).reshape(-1, 1))[0]
+        actual = transformed_y_test.loc[ind]
+        assert actual == transformed
