@@ -191,7 +191,6 @@ class ModelFinder:
         return new_model
 
     def set_model(self, model):
-        # TODO: Assess if the copy for train/test needs to be stored as a property
         model = self._wrap_model(model)
         params = model.get_params()
         copy_for_scoring = model.__class__(**params).fit(self.X_train, self.y_train) # copy.copy(model).fit(self.X_train, self.y_train)  #

@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # examples
 
     # X, y, descriptions = iris()
-    # X, y, descriptions = boston()
+    X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
     # X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
@@ -67,9 +67,7 @@ if __name__ == "__main__":
 
     models = None
 
-    coord.create_dashboard(models=models, scoring=accuracy_score, logging=False, mode="quick")
-
-
+    coord.create_dashboard(models=models, logging=False, mode="quick")
 
     #ml = coord.search_and_fit(mode="quick", scoring=accuracy_score)
 

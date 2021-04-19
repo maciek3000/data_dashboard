@@ -187,12 +187,12 @@ class Coordinator:
         )
 
     def _create_test_splits(self):
-        # StratifiedShuffleSplit to accommodate imbalances in the data
-        # train size is default - 0.9
-        splitter = StratifiedShuffleSplit(random_state=self.random_state)
-        splitter.get_n_splits(self.X, self.y)
-        train_index, test_index = next(splitter.split(self.X, self.y))
-        X_train, X_test, y_train, y_test = self.X.loc[train_index], self.X.loc[test_index], self.y.loc[train_index], self.y.loc[test_index]
+        # # StratifiedShuffleSplit to accommodate imbalances in the data
+        # # train size is default - 0.9
+        # splitter = StratifiedShuffleSplit(random_state=self.random_state)
+        # splitter.get_n_splits(self.X, self.y)
+        # train_index, test_index = next(splitter.split(self.X, self.y))
+        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, random_state=self.random_state)#self.X.loc[train_index], self.X.loc[test_index], self.y.loc[train_index], self.y.loc[test_index]
 
         # resetting index so it can be joined later on with test predictions
         output = []

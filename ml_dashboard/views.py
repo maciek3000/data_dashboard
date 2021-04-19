@@ -126,9 +126,6 @@ class Overview(BaseView):
         return dataframe.to_html(float_format="{:.2f}".format)
 
     def _stylize_html_table(self, html_table, mapping, descriptions):
-        # TODO:
-        # new HTML is created and appended via functions, but the reference to the table object is passed nonetheless
-        # this is sloppy and should be changed (or can it?)
         table = BeautifulSoup(html_table, "html.parser")
         headers = table.select("table tbody tr th")
 

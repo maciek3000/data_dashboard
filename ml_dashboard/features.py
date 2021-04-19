@@ -177,7 +177,6 @@ class Features:
         features = {}
 
         for column in self.original_dataframe.columns:
-            # TODO: rethink if can be split into smaller functions
             try:
                 description = None
                 category = None

@@ -407,6 +407,9 @@ class InfoGrid(MainGrid):
 
     # plot elements
     _histogram_title = "Feature Distribution"
+    _hist_source_data = "hist"
+    _hist_source_left_edges = "left_edges"
+    _hist_source_right_edges = "right_edges"
 
     def __init__(self, features, plot_design, feature_description_class, ):
         super().__init__(features, plot_design, feature_description_class)
@@ -501,11 +504,10 @@ class InfoGrid(MainGrid):
         source = ColumnDataSource()
         first_values = histogram_data[feature]
 
-        # TODO: move names to properties
         source.data = {
-            "hist": first_values[0],
-            "left_edges": first_values[1],
-            "right_edges": first_values[2]
+            self._hist_source_data: first_values[0],
+            self._hist_source_left_edges: first_values[1],
+            self._hist_source_right_edges: first_values[2]
         }
         return source
 
@@ -522,15 +524,14 @@ class InfoGrid(MainGrid):
 
         fcolor = self.plot_design.fill_color
         p = default_figure(kwargs)
-        p.quad(top="hist", bottom=0, left="left_edges", right="right_edges", source=source,
-               fill_color=fcolor, line_color=fcolor)
+        p.quad(top=self._hist_source_data, bottom=0, left=self._hist_source_left_edges, right=self._hist_source_right_edges,
+               source=source, fill_color=fcolor, line_color=fcolor)
 
         p.y_range.start = 0
         p.yaxis.visible = False
 
         p.xaxis.ticker = BasicTicker(desired_num_ticks=5)
         p.xaxis.formatter = NumeralTickFormatter(format="0.[0]")
-        # p.xaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
 
         return p
 
@@ -731,7 +732,6 @@ class ScatterPlotGrid(MainGrid):
                 }
             )
 
-        # TODO: No X axis label as no axis are being updated in the js callback - decide if needed somehow?
         p = default_figure()
         p.plot_width = 200
         p.plot_height = 200
@@ -741,12 +741,8 @@ class ScatterPlotGrid(MainGrid):
         # apparently it clogs up plots and JS interactions
         # p.xaxis.major_label_orientation = -0.75  # in radians
 
-        # TODO: move formatter to the main level?
         p.xaxis.ticker = BasicTicker(desired_num_ticks=4)
         p.yaxis.ticker = BasicTicker(desired_num_ticks=4)
-
-        # p.xaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
-        # p.yaxis.formatter = FuncTickFormatter(code="""return String(tick.toFixed(2));""")
 
         p.xaxis.formatter = NumeralTickFormatter(format="0.[0]")
         p.yaxis.formatter = NumeralTickFormatter(format="0.[0]")
@@ -774,7 +770,6 @@ class ScatterPlotGrid(MainGrid):
         # HTML needs to be prepared so that description is hidden/hoverable
         desc = self.feature_descriptions[hue]
 
-        # TODO: this is a repeated snippet from Overview as well - make into one function?
         parsed_html = BeautifulSoup(self._row_description_html.format(hue=hue), "html.parser")
         parsed_html.string.wrap(parsed_html.new_tag("p"))
         parsed_html.p.append(append_description(desc, parsed_html))
