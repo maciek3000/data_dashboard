@@ -451,9 +451,11 @@ class ModelFinder:
         fitted_and_scored = []
 
         for model in initiated_models:
-            start_time = time.time()
-            model.fit(self.X_train, self.y_train)
-            stop_time = time.time()
+            with warnings.catch_warnings():  # ignoring warnings, esp QuantileTransformer for Wrapper in Regression
+                warnings.simplefilter("ignore")
+                start_time = time.time()
+                model.fit(self.X_train, self.y_train)
+                stop_time = time.time()
 
             model_results = {self._fit_time_name: stop_time-start_time, self._params_name: self._wrap_params(model.get_params())}
             score_results = self._score_model(model, chosen_scoring)

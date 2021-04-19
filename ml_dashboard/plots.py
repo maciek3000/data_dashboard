@@ -1,6 +1,6 @@
 from bokeh.plotting import figure
 from bokeh.layouts import column, row, Spacer
-from bokeh.models import ColumnDataSource, FuncTickFormatter
+from bokeh.models import ColumnDataSource, FuncTickFormatter, Span
 from bokeh.models.widgets import Select, Div, HTMLTemplateFormatter
 from bokeh.models import CustomJS, ColorBar, BasicTicker, PrintfTickFormatter, LinearColorMapper, Panel, Tabs, \
     HoverTool, LabelSet, NumeralTickFormatter
@@ -313,7 +313,7 @@ class MainGrid:
         an end-user, but it can still be accessed (and clicked) by JS scripts in the background.
     """
 
-    _features_dropdown = "features_dropdown"
+    _features_dropdown = "features-dropdown"
 
     def __init__(self, features, plot_design, feature_description_class):
         self.features = features
@@ -392,14 +392,10 @@ class InfoGrid(MainGrid):
                 var left_edges = new_hist[1];
                 var right_edges = new_hist[2];
                 
-                /* var edges = new_hist[1];
-                var left_edges = edges.slice(0, edges.length - 1);
-                var right_edges = edges.slice(1, edges.length); */
-                
                 // histogram source updated
-                hist_source.data["hist"] = hist;
-                hist_source.data["left_edges"] = left_edges;
-                hist_source.data["right_edges"] = right_edges;
+                hist_source.data["{hist_source_data}"] = hist;
+                hist_source.data["{hist_source_left_edges}"] = left_edges;
+                hist_source.data["{hist_source_right_edges}"] = right_edges;
                 
                 // updating ColumnDataSources
                 hist_source.change.emit();
@@ -457,7 +453,13 @@ class InfoGrid(MainGrid):
             "hist_data": histogram_data
         }
 
-        callback = CustomJS(args=kwargs, code=self._histogram_callback)
+        code = self._histogram_callback.format(
+            hist_source_data=self._hist_source_data,
+            hist_source_left_edges=self._hist_source_left_edges,
+            hist_source_right_edges=self._hist_source_right_edges
+        )
+
+        callback = CustomJS(args=kwargs, code=code)
         return callback
 
     def _create_info_div_callback(self, summary_statistics):
@@ -551,6 +553,8 @@ class ScatterPlotGrid(MainGrid):
 
         Dropdown from a parent MainGrid class is connected via JS to dynamically change X values in scatter plots.
     """
+    # Bokeh Name
+    _scatterplot_grid_dropdown = "scatter_plot_grid_dropdown"
 
     # HTML elements
     _row_description_html = "{hue}"
@@ -560,14 +564,6 @@ class ScatterPlotGrid(MainGrid):
         </div><div class='legend-description'>{category}</div></div>
     """
 
-    # CSS elements
-    _scatterplot_grid_dropdown = "scatter_plot_grid_dropdown"
-    _active_feature_hue = "active_feature_hue"
-    _scatterplot_row = "scatter_plot_row"
-    _hue_title = "hue-title"
-    _row_description = "row-description"
-
-    # TODO: make js callback dynamic, look into the JS code
     # JS Callbacks
     _scatterplot_callback_js = """
                 // new dropdown value
@@ -576,27 +572,23 @@ class ScatterPlotGrid(MainGrid):
                 // new x 
                 var new_x = new_val;
                 
-                // TODO: class here
-                document.querySelector("." + "chosen-feature-scatter").innerText = new_val;
+                document.querySelector("." + "{chosen_feature_scatter}").innerText = new_val;
                 
                 // scatter source updated
-                for (i=0; i<scatter_sources.length; i++) {
+                for (i=0; i<scatter_sources.length; i++) {{
                     scatter_sources[i].data["x"] = scatter_sources[i].data[new_x];
                     scatter_sources[i].change.emit();
-                };
+                }};
                 
-                // TODO: classes here
                 // removing previous greying out
-                var all_scatter_rows = document.getElementsByClassName("scatter_plot_row");
-                for (j=0; j<all_scatter_rows.length; j++) {
-                    all_scatter_rows[j].classList.remove("active_feature_hue");
-                };
+                var all_scatter_rows = document.getElementsByClassName("{scatter_plot_row}");
+                for (j=0; j<all_scatter_rows.length; j++) {{
+                    all_scatter_rows[j].classList.remove("{active_feature_hue}");
+                }};
                 
-                // TODO: class here
                 // greying out
-                var scatter_row = document.getElementsByClassName("scatter_plot_row_" + new_val);
-                scatter_row[0].classList.add("active_feature_hue");
-
+                var scatter_row = document.getElementsByClassName("{scatter_plot_row}" + "-" + new_val);
+                scatter_row[0].classList.add("{active_feature_hue}");
             """
 
     # hardcoded limit
@@ -618,6 +610,11 @@ class ScatterPlotGrid(MainGrid):
     _legend = "legend"
     _legend_categorical = "legend-categorical"
     _chosen_feature_scatter_title = "chosen-feature-scatter"
+    _active_feature_hue = "active-feature-hue"
+    _scatterplot_row = "scatter-plot-row"
+    _hue_title = "hue-title"
+    _row_description = "row-description"
+
 
     def __init__(self, features, plot_design, categorical_features, feature_descriptions, feature_mapping,
                  feature_description_class, categorical_suffix="_categorical"):
@@ -663,7 +660,13 @@ class ScatterPlotGrid(MainGrid):
             "scatter_sources": sources
         }
 
-        callback = CustomJS(args=kwargs, code=self._scatterplot_callback_js)
+        code = self._scatterplot_callback_js.format(
+            chosen_feature_scatter=self._chosen_feature_scatter_title,
+            scatter_plot_row=self._scatterplot_row,
+            active_feature_hue=self._active_feature_hue
+        )
+
+        callback = CustomJS(args=kwargs, code=code)
         return callback
 
     def _create_scatter_rows(self, scatter_data, features, initial_feature):
@@ -698,7 +701,7 @@ class ScatterPlotGrid(MainGrid):
         r = row(
             color_legend,
             *plots,
-            css_classes=[self._scatterplot_row, self._scatterplot_row + "_" + hue],
+            css_classes=[self._scatterplot_row, self._scatterplot_row + "-" + hue],
             margin=(0, 48, 0, 0)
         )
 
@@ -987,12 +990,8 @@ class ModelsPlotRegression:
 
         p.scatter(scatter_data[0], scatter_data[1], color=color, size=16, fill_alpha=0.8)
 
-        # TODO: will it really work or is it plotted always as a straight line?
-        y_line = []
-        for q in np.linspace(0, 1, 11):
-            y_line.append(scatter_data[0].quantile(q=q))
-
-        p.line(y_line, y_line, line_width=1, color=self.plot_design.models_dummy_color, line_dash="dashed")
+        baseline = Span(location=0, dimension="width", line_color=self.plot_design.models_dummy_color, line_width=1, line_dash="dashed")
+        p.add_layout(baseline)
 
         p.xaxis.axis_label = "Actual"
         p.yaxis.axis_label = "Predicted"

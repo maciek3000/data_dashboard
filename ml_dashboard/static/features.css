@@ -1,4 +1,4 @@
-.features_dropdown {
+.features-dropdown {
     display: none !important;
 }
 
@@ -168,7 +168,7 @@
 
 /* ScatterGrid */
 
-.active_feature_hue > div {
+.active-feature-hue > div {
     filter: grayscale(1) !important;
 }
 

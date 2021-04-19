@@ -4,6 +4,7 @@ from sklearn.svm import SVC, SVR
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.preprocessing import QuantileTransformer, PowerTransformer
 from sklearn.impute import SimpleImputer
+import numpy as np
 
 import os
 import pandas as pd
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     # examples
 
     # X, y, descriptions = iris()
-    X, y, descriptions = boston()
+    # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
     # X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
