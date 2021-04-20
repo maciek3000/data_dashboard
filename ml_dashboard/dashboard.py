@@ -40,9 +40,6 @@ class Dashboard:
                  classification_pos_label=None, force_classification_pos_label_multiclass=False,
                  already_transformed_columns=None):
 
-        # TODO: pipeline to be constructed and returned
-        # TODO: change name to Dashboard
-
         if root_path is None:
             self.root_path = os.getcwd()
         else:
@@ -107,8 +104,7 @@ class Dashboard:
         self.model_finder.set_model_and_fit(model)
 
     def predict(self, X):
-        transformed = self.transformer.transform(X)
-        output = self.model_finder.predict(transformed)
+        output = self.model_finder.predict(X)
         return output
 
     def create_dashboard(self, models=None, scoring=None, mode="quick", logging=True, disable_pairplots=False,
@@ -150,9 +146,16 @@ class Dashboard:
         self._do_transformations()
         self._initialize_model_and_output()
 
-    # # exposed method in case only transformation is needed
-    # def transform(self, X):
-    #     return self.transformer.transform(X)
+    # exposed method in case only transformation is needed
+    def transform(self, X):
+        return self.transformer.transform(X)
+
+    def transform_predict(self, X):
+        transformed = self.transform(X)
+        return self.predict(transformed)
+
+    def best_model(self):
+        return self.model_finder.best_model()
 
     def _do_transformations(self):
         self._fit_transform_test_splits()

@@ -198,6 +198,9 @@ class ModelFinder:
         self._chosen_model_params = params
         self._chosen_model_scores = self._score_model(copy_for_scoring, self.default_scoring)
 
+    def best_model(self):
+        return self._chosen_model
+
     def fit(self):
         if self._chosen_model is None:
             raise ModelNotSetError(
