@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import json
 
-from ml_dashboard.coordinator import Coordinator
+from ml_dashboard.dashboard import Dashboard
 from ml_dashboard.examples.examples import iris, boston, diabetes, digits, wine, breast_cancer
 
 if __name__ == "__main__":
@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     # X = X.drop(["CHAS", "RAD"], axis=1)
 
-    coord = Coordinator(X, y, output_directory, descriptions, os.getcwd(), random_state=42)
+    coord = Dashboard(X, y, output_directory, descriptions, os.getcwd(), random_state=42)
     # coord.set_custom_transformers(numerical_transformers=[SimpleImputer(), PowerTransformer()])
 
     # output = coord.quick_find()
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     models = None
 
-    coord.create_dashboard(models=models, logging=False, mode="quick", disable_pairplots=True)
+    coord.create_dashboard(models=models, logging=False, mode="quick")
 
 
     #ml = coord.search_and_fit(mode="quick", scoring=accuracy_score)

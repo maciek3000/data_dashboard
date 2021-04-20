@@ -15,7 +15,7 @@ import warnings
 import copy
 
 
-class Coordinator:
+class Dashboard:
     """Main object of the package.
 
         The role of this class is to analyze the provided data (in terms of summary statistics, visualizing any
