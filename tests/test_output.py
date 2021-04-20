@@ -231,9 +231,10 @@ def test_output_create_subdirectories(output, tmpdir):
         assert os.path.isdir(d)
 
 
-def test_output_copy_static(output, tmpdir):
+def test_output_copy_static(output, tmpdir, root_path_to_package):
     """Testing if static files are copied correctly to the output_directory folder."""
-    base_files = [os.path.join(output._static_template_path, f) for f in output._static_files_names]
+    directory, pkg_name = root_path_to_package[0], root_path_to_package[1]
+    base_files = [os.path.join(directory, pkg_name, "static", f) for f in output._static_files_names]
     expected_filepaths = [os.path.join(tmpdir, "static", f) for f in output._static_files_names]
 
     output._create_subdirectories()

@@ -36,7 +36,7 @@ class Dashboard:
 
     _n_features_pairplots_limit = 15
 
-    def __init__(self, X, y, output_directory, feature_descriptions_dict=None, root_path=None, random_state=None,
+    def __init__(self, output_directory, X, y, feature_descriptions_dict=None, root_path=None, random_state=None,
                  classification_pos_label=None, force_classification_pos_label_multiclass=False,
                  already_transformed_columns=None):
 

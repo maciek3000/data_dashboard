@@ -671,6 +671,6 @@ def output(
 @pytest.fixture
 def dashboard(data_classification_balanced, tmpdir, root_path_to_package, seed):
     X, y = data_classification_balanced
-    d = Dashboard(X, y, output_directory=tmpdir, random_state=seed, root_path=root_path_to_package[0])
+    d = Dashboard(tmpdir, X, y,  random_state=seed, root_path=root_path_to_package[0])
     return d
 

@@ -1,5 +1,5 @@
 import os, datetime
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, PackageLoader
 from .views import Overview, FeatureView, ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
 from .plots import PairPlot, InfoGrid, ScatterPlotGrid, CorrelationPlot, NormalTransformationsPlots
 from .plots import ModelsPlotClassification, ModelsPlotRegression, ModelsPlotMulticlass, ModelsDataTable
@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import shutil
 import pathlib
+import pkgutil
 
 
 class Output:
@@ -108,9 +109,10 @@ class Output:
         # if the Coordinator is imported as a package, this whole facade might crumble with directories
         # being created in seemingly random places.
         self.root_path = root_path
-        self._templates_path = os.path.join(self.root_path, package_name, self._templates_directory_name)
-        self._static_template_path = os.path.join(self.root_path, package_name, self._static_directory_name)
-        self.env = Environment(loader=FileSystemLoader(self._templates_path))
+        self.package_name = package_name
+        # self._templates_path = os.path.join(self.root_path, package_name, self._templates_directory_name)
+        # self._static_template_path = os.path.join(self.root_path, package_name, self._static_directory_name)
+        self.env = Environment(loader=PackageLoader(package_name, self._templates_directory_name))
 
         # Views
         self.view_overview = Overview(
@@ -360,7 +362,9 @@ class Output:
 
     def _copy_static(self):
         for f in self._static_files_names:
-            shutil.copy(os.path.join(self._static_template_path, f), os.path.join(self.static_path(), f))
+            f_to_copy = pkgutil.get_data(self.package_name, os.path.join(self._static_directory_name, f)).decode("utf-8")
+            with open(os.path.join(self.static_path(), f), "w", newline="") as fw:
+                fw.write(f_to_copy)
 
     def _path_to_file(self, filename):
         return os.path.join(self.output_directory, filename)
