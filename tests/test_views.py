@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from bokeh.plotting import figure
 
-from ml_dashboard.views import Overview, FeatureView, ModelsView, ModelsViewClassification
+from data_dashboard.views import Overview, FeatureView, ModelsView, ModelsViewClassification
 
 
 @pytest.mark.parametrize(

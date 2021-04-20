@@ -5,7 +5,7 @@ from bokeh.layouts import Row
 import datetime
 import pandas as pd
 
-from ml_dashboard.views import ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
+from data_dashboard.views import ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
 
 
 @pytest.mark.parametrize(

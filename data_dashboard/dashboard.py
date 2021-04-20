@@ -30,7 +30,7 @@ class Dashboard:
         .full_analysis() function which tries to build the whole analysis from the ground up.
     """
 
-    _name = "ml_dashboard"
+    _name = "data_dashboard"
     _output_created_text = "Created output at {directory}"
     _model_found_text = "Model: {name}\nScore: {score}\nParams: {params}"
 

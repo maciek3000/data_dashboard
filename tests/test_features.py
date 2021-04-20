@@ -1,5 +1,5 @@
-from ml_dashboard.features import NumericalFeature, CategoricalFeature, Features
-from ml_dashboard.descriptor import FeatureDescriptor
+from data_dashboard.features import NumericalFeature, CategoricalFeature, Features
+from data_dashboard.descriptor import FeatureDescriptor
 import pandas as pd
 import pytest
 

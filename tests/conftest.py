@@ -20,13 +20,13 @@ from sklearn.impute import SimpleImputer
 
 
 # this package
-from ml_dashboard.descriptor import FeatureDescriptor
-from ml_dashboard.features import Features
-from ml_dashboard.analyzer import Analyzer
-from ml_dashboard.transformer import Transformer
-from ml_dashboard.model_finder import ModelFinder
-from ml_dashboard.output import Output
-from ml_dashboard.dashboard import Dashboard
+from data_dashboard.descriptor import FeatureDescriptor
+from data_dashboard.features import Features
+from data_dashboard.analyzer import Analyzer
+from data_dashboard.transformer import Transformer
+from data_dashboard.model_finder import ModelFinder
+from data_dashboard.output import Output
+from data_dashboard.dashboard import Dashboard
 
 
 @pytest.fixture
@@ -316,7 +316,7 @@ def analyzer_fixture(fixture_features):
 
 @pytest.fixture
 def root_path_to_package():
-    package_name = "ml_dashboard"
+    package_name = "data_dashboard"
     root_path = os.path.split(os.getcwd())[0]
 
     return root_path, package_name

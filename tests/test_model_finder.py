@@ -8,9 +8,9 @@ from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accurac
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.exceptions import NotFittedError
 
-from ml_dashboard.model_finder import ModelFinder, ModelNotSetError
-from ml_dashboard.model_finder import WrappedModelRegression
-from ml_dashboard.models import classifiers, regressors
+from data_dashboard.model_finder import ModelFinder, ModelNotSetError
+from data_dashboard.model_finder import WrappedModelRegression
+from data_dashboard.models import classifiers, regressors
 
 
 

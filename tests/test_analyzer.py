@@ -1,5 +1,5 @@
-from ml_dashboard.analyzer import Analyzer
-from ml_dashboard.features import CategoricalFeature, NumericalFeature, Features
+from data_dashboard.analyzer import Analyzer
+from data_dashboard.features import CategoricalFeature, NumericalFeature, Features
 import pandas as pd
 import pytest
 import math

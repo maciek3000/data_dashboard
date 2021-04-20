@@ -8,7 +8,7 @@ from sklearn.metrics import roc_auc_score, accuracy_score, roc_curve, det_curve
 from sklearn.dummy import DummyClassifier
 from sklearn.exceptions import NotFittedError
 
-from ml_dashboard.model_finder import ModelsNotSearchedError
+from data_dashboard.model_finder import ModelsNotSearchedError
 
 
 @pytest.mark.parametrize(

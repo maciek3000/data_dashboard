@@ -1,4 +1,4 @@
-from ml_dashboard.transformer import Transformer
+from data_dashboard.transformer import Transformer
 from sklearn.preprocessing import LabelEncoder, FunctionTransformer, OneHotEncoder, QuantileTransformer, StandardScaler, OrdinalEncoder
 from sklearn.preprocessing import PowerTransformer
 from sklearn.model_selection import train_test_split
@@ -9,7 +9,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from ml_dashboard.transformer import WrapperFunctionTransformer
+from data_dashboard.transformer import WrapperFunctionTransformer
 
 
 @pytest.mark.parametrize(

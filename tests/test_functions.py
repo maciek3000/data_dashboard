@@ -7,9 +7,9 @@ from sklearn.linear_model import Ridge, PassiveAggressiveClassifier, SGDRegresso
 from sklearn.linear_model import Lasso
 from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, log_loss
 
-from ml_dashboard.functions import append_description, assess_models_names, calculate_numerical_bins, make_pandas_data
-from ml_dashboard.functions import modify_histogram_edges, obj_name, replace_duplicate_str, reverse_sorting_order
-from ml_dashboard.functions import sanitize_input, series_to_dict, sort_strings
+from data_dashboard.functions import append_description, assess_models_names, calculate_numerical_bins, make_pandas_data
+from data_dashboard.functions import modify_histogram_edges, obj_name, replace_duplicate_str, reverse_sorting_order
+from data_dashboard.functions import sanitize_input, series_to_dict, sort_strings
 
 
 @pytest.mark.parametrize(

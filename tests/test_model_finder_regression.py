@@ -11,8 +11,8 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.exceptions import NotFittedError
 from sklearn.dummy import DummyRegressor
 
-from ml_dashboard.model_finder import ModelsNotSearchedError
-from ml_dashboard.model_finder import WrappedModelRegression
+from data_dashboard.model_finder import ModelsNotSearchedError
+from data_dashboard.model_finder import WrappedModelRegression
 
 
 @pytest.mark.parametrize(

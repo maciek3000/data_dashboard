@@ -10,8 +10,8 @@ import os
 import pandas as pd
 import json
 
-from ml_dashboard.dashboard import Dashboard
-from ml_dashboard.examples.examples import iris, boston, diabetes, digits, wine, breast_cancer
+from data_dashboard.dashboard import Dashboard
+from data_dashboard.examples.examples import iris, boston, diabetes, digits, wine, breast_cancer
 
 if __name__ == "__main__":
 
