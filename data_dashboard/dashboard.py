@@ -13,6 +13,8 @@ import pandas as pd
 import random
 import warnings
 import copy
+import pathlib
+import webbrowser
 
 
 class Dashboard:
@@ -40,16 +42,16 @@ class Dashboard:
                  classification_pos_label=None, force_classification_pos_label_multiclass=False,
                  already_transformed_columns=None):
 
-        if root_path is None:
-            self.root_path = os.getcwd()
-        else:
-            self.root_path = root_path
+        # if root_path is None:
+        #     self.root_path = os.getcwd()
+        # else:
+        #     self.root_path = root_path
 
         self._create_pairplots_flag = True
         self._force_classification_pos_label_multiclass_flag = force_classification_pos_label_multiclass
 
         self.random_state = random_state
-        self.output_directory = output_directory
+
 
         self.X, self.y = self._check_provided_data(X, y)
 
@@ -57,6 +59,7 @@ class Dashboard:
             classification_pos_label = self._check_classification_pos_label(classification_pos_label)
 
         self.already_transformed_columns = self._check_transformed_cols(already_transformed_columns)
+        self.output_directory = self._check_output_directory(output_directory)
 
         self.transformed_X = None
         self.transformed_y = None
@@ -133,6 +136,7 @@ class Dashboard:
             do_logs=do_logging
         )
         print(self._output_created_text.format(directory=self.output.output_directory))
+        webbrowser.open_new(self.output.overview_file())
 
     def set_custom_transformers(self, categorical_transformers=None, numerical_transformers=None, y_transformers=None):
         for tr in [self.transformer, self.transformer_eval]:
@@ -176,7 +180,6 @@ class Dashboard:
         )
 
         self.output = Output(
-            root_path=self.root_path,
             output_directory=self.output_directory,
             package_name=self._name,
             features=self.features,
@@ -262,6 +265,7 @@ class Dashboard:
                 " 'force_pairplots=True' argument.")
 
     def _check_transformed_cols(self, transformed_columns):
+        # TODO: change to list
         if transformed_columns is not None:
             cols_in_data = set(self.X.columns)
             transformed = set(transformed_columns)
@@ -277,3 +281,7 @@ class Dashboard:
                 return transformed
         else:
             return {}
+
+    def _check_output_directory(self, directory):
+        pathlib.Path(directory).mkdir(exist_ok=True, parents=True)
+        return directory

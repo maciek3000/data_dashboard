@@ -7,7 +7,7 @@ long_description = (here / "readme.md").read_text(encoding="utf-8")
 
 setup(
     name="data_dashboard",
-    version="0.0.6",
+    version="0.0.7",
     description="Dashboard to explore the data and to create baseline Machine Learning model.",
     long_description=long_description,
     long_description_content_type="text/markdown",

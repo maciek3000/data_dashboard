@@ -243,3 +243,24 @@ def test_output_copy_static(output, tmpdir, root_path_to_package):
     for actual_file, expected_file in zip(expected_filepaths, base_files):
         assert os.path.exists(actual_file)
         assert open(actual_file, "r").readlines() == open(expected_file, "r").readlines()
+
+
+def test_output_overview_path(output, tmpdir):
+    """Testing if overview HTML file path is created correctly."""
+    expected_path = os.path.join(tmpdir, "overview.html")
+    actual_path = output.overview_file()
+    assert actual_path == expected_path
+
+
+def test_output_features_path(output, tmpdir):
+    """Testing if features HTML file path is created correctly."""
+    expected_path = os.path.join(tmpdir, "features.html")
+    actual_path = output.features_file()
+    assert actual_path == expected_path
+
+
+def test_output_models_path(output, tmpdir):
+    """Testing if models HTML file path is created correctly."""
+    expected_path = os.path.join(tmpdir, "models.html")
+    actual_path = output.models_file()
+    assert actual_path == expected_path

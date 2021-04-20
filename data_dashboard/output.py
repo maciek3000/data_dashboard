@@ -78,11 +78,13 @@ class Output:
     ]
 
     def __init__(self,
-                 root_path, output_directory, package_name,
+                 output_directory, package_name,
                  features, analyzer, transformer, model_finder, transformed_columns,
                  X_train, X_test, y_train, y_test,
                  transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test
                  ):
+
+        self.hyperlinks = None
 
         # objects needed to create the output
         self.features = features
@@ -104,11 +106,7 @@ class Output:
         # directory where the dashboard will be created
         self.output_directory = output_directory
 
-        # TODO:
-        # this solution is sufficient right now but nowhere near satisfying
-        # if the Coordinator is imported as a package, this whole facade might crumble with directories
-        # being created in seemingly random places.
-        self.root_path = root_path
+        # self.root_path = root_path
         self.package_name = package_name
         # self._templates_path = os.path.join(self.root_path, package_name, self._templates_directory_name)
         # self._static_template_path = os.path.join(self.root_path, package_name, self._static_directory_name)
@@ -177,7 +175,7 @@ class Output:
         current_time = time_started.strftime(self._time_format)
 
         created_on = self._footer_note.format(time=current_time)
-        hyperlinks = {
+        self.hyperlinks = {
             self._view_overview: self._path_to_file(self._view_overview_html),
             self._view_features: self._path_to_file(self._view_features_html),
             self._view_models: self._path_to_file(self._view_models_html)
@@ -260,7 +258,7 @@ class Output:
         overview_rendered = self.view_overview.render(
             base_css=base_css,
             creation_date=created_on,
-            hyperlinks=hyperlinks,
+            hyperlinks=self.hyperlinks,
             numerical_df=self.analyzer.numerical_describe_df(),
             categorical_df=self.analyzer.categorical_describe_df(),
             unused_features=self.analyzer.unused_features(),
@@ -275,7 +273,7 @@ class Output:
         features_rendered = self.view_features.render(
             base_css=base_css,
             creation_date=created_on,
-            hyperlinks=hyperlinks,
+            hyperlinks=self.hyperlinks,
             summary_grid=generated_infogrid_summary,
             correlations_plot=generated_correlation_plot,
             do_scatterplot_flag=do_pairplots,
@@ -294,7 +292,7 @@ class Output:
         models_rendered = self.view_models.render(
             base_css=base_css,
             creation_date=created_on,
-            hyperlinks=hyperlinks,
+            hyperlinks=self.hyperlinks,
             model_results=self.model_finder.search_results(self._view_models_model_limit),
             models_right=models_right,
             models_left_bottom=models_left_bottom,
@@ -333,6 +331,15 @@ class Output:
 
     def logs_path(self):
         return os.path.join(self.output_directory, self._created_logs_directory)
+
+    def overview_file(self):
+        return os.path.join(self.output_directory, self._view_overview_html)
+
+    def features_file(self):
+        return os.path.join(self.output_directory, self._view_features_html)
+
+    def models_file(self):
+        return os.path.join(self.output_directory, self._view_models_html)
 
     def _write_html(self, template_filename, template):
         template_filepath = self._path_to_file(template_filename)

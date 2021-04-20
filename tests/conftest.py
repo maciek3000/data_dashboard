@@ -648,7 +648,6 @@ def output(
     transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test = split_dataset_categorical
 
     o = Output(
-        root_path=root_path_to_package[0],
         output_directory=tmpdir,
         package_name=root_path_to_package[1],
         features=fixture_features,
