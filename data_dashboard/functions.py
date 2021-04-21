@@ -1,19 +1,40 @@
-from collections import Counter, defaultdict
-import numpy as np
 import re
-from scipy.sparse import csr_matrix
+import numpy as np
 import pandas as pd
+from collections import Counter, defaultdict
+from scipy.sparse import csr_matrix
 
 
 def sanitize_input(input_str_list):
+    r"""Replace all instances of 'weird' characters in string elements of a input_str_list sequence with '_'.
+
+    Example:
+        [a/?, b\\t, c] --> [a__, b_, c]
+
+    :param input_str_list: list of strings
+    :type input_str_list: list/iterable
+
+    :return: new_input - list of newly created strings
+    :rtype: list
+    """
     p = r'["/\\.,?!:;\n\t\r\a\f\v\b]'
     new_input = [re.sub(p, "_", x) for x in input_str_list]
     return new_input
 
 
 def calculate_numerical_bins(series):
+    """Calculate how many bins in a histogram should there be for a provided numerical series.
 
-    # https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
+    Method used to calculate it is 'Freedman-Diaconis rule' -
+    https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule . If the calculated result doesn't make sense (e.g. is
+    higher than the number of rows or is 0 or lower), then return either number of rows from series or 1, respectively.
+
+    :param series: numerical Series on which calculations happen
+    :type series: pandas.Series
+
+    :return: number of bins
+    :rtype: int
+    """
     n = series.size
     iqr = series.quantile(0.75) - series.quantile(0.25)
     bins = (series.max() - series.min()) / ((2*iqr)*pow(n, (-1/3)))
@@ -23,6 +44,7 @@ def calculate_numerical_bins(series):
     if bins > n or np.isnan(bins):
         bins = n
 
+    # if the number of bins is 0 or lower, then 1 is returned
     if bins <= 0:
         bins = 1
 
@@ -31,6 +53,23 @@ def calculate_numerical_bins(series):
 
 
 def modify_histogram_edges(edges, interval_percentage=0.005):
+    """Modify edges calculated by np.histogram by adding little space between them.
+
+    numpy.histogram method computes bin_edges of a histogram and a default way to use them is to define
+    left_edges = edges[:-1]; right_edges = edges[1:] and provide that to BarPlot Visualization. However, that method
+    does not provide any space between one Bar and another, what leads to cluttering the Visualization and
+    indistinguishable Bars. Moving right_edges to the left by a defined interval_percentage adds aforementioned space
+    and makes Visualization look better and be more useful.
+
+    :param edges: edges calculated by numpy.histogram method
+    :type edges: array/list
+    :param interval_percentage: percentage by which right_edges of the histogram will be moved to the left,
+        defaults to 0.005
+    :type interval_percentage: float, optional
+
+    :return: left_edges, right_edges arrays
+    :rtype: tuple
+    """
     # Adding space between the edges to visualize the data properly
     interval = (max(edges) - min(edges)) * interval_percentage  # 0.5%
     left_edges = edges[:-1]
@@ -39,26 +78,48 @@ def modify_histogram_edges(edges, interval_percentage=0.005):
 
 
 def sort_strings(list_of_strings):
+    """Return sorted list of strings in an ascending order by treating every string as if it would start with an
+    uppercase letter.
+
+    Example:
+        [toast2, Test3, Toast, test33] --> [Test3, test33, Toast, toast2]
+
+    :param list_of_strings: list of string elements
+    :type list_of_strings: list/iterable
+
+    :return: sorted list of strings
+    :rtype: list
+    """
     return sorted(list_of_strings, key=lambda x: x.upper())
 
 
 def reverse_sorting_order(str_name):
-    """If str_name ends with err_strings defined in functions, returns False. Otherwise, returns True.
+    """Return False if str_name ends with one of the err_strings suffixes. Otherwise, return True.
 
-        Negation was introduced as the function is used to determine the order of the sorting depending on scoring
-        function name: if scoring ends with "_error" or "_loss", it means that lower score is better. If it doesn't,
-        then it means that higher score is better. As default sorting is ascending, reverse=True needs to be explicitly
-        provided for the object (e.g. list) to be sorted in a descending fashion.
+    Negation was introduced as the function is used to determine the order of the sorting depending on scoring
+    function name: if scoring ends with "_error" or "_loss", it means that lower score is better. If it doesn't,
+    then it means that higher score is better. As default sorting is ascending, reverse=True needs to be explicitly
+    provided for the sorted function so that sortable object (e.g. list) is sorted in a descending fashion.
+
+    :param str_name: string to be evaluated
+    :type str_name: str
+
+    :return: False if str_name ends with one of the strings defined inside the function; True otherwise.
+    :rtype: bool
     """
-    # functions ending with _error or _loss return a value to minimize, the lower the better.
     err_strings = ("_error", "_loss")
-    # boolean output will get fed to "reversed" argument of sorted function: True -> descending; False -> ascending
-    # if str ends with one of those, then it means that lower is better -> ascending sort.
     return not str_name.endswith(err_strings)
 
 
 def obj_name(obj):
-    """Checks if obj defines __name__ property and if not, gets it from it's Parent Class."""
+    """Return __name__ property of obj and if it's not defined, return it from obj's Parent Class.
+
+    :param obj: object
+    :type obj: object
+
+    :return: __name__ of the object or it's Class
+    :rtype: str
+    """
     try:
         obj_str = obj.__name__
     except AttributeError:
@@ -66,69 +127,134 @@ def obj_name(obj):
     return obj_str
 
 
-def append_description(description, parsed_html):
-    # adding <span> that will hold description of a feature
-    # every \n is replaced with <br> tag
+def append_description(text, parsed_html):
+    r"""
+    Encompass in <span> HTML tag and append provided text to the end of provided parsed_html and return the created tag.
+
+    Additionally, every \\n in text is replaced with <br> HTML tag.
+
+    :param text: text string
+    :type text: str
+    :param parsed_html: HTML text parsed with BeautifulSoup4
+    :type parsed_html: bs4.BeautifulSoup
+
+    :return: Newly created <span> Tag.
+    :rtype: bs4.Tag
+    """
     new_tag = parsed_html.new_tag("span")
-    lines = description.split("\n")
+    lines = text.split("\n")
     new_tag.string = lines[0]
     if len(lines) > 1:
-        for line in lines[1:]:
+        for line in lines[1:]:  # [1:] because the first line is already appended before the loop
             new_tag.append(parsed_html.new_tag("br"))
             new_tag.append(parsed_html.new_string("{}".format(line)))
+
     return new_tag
 
 
-def series_to_dict(srs):
-    params = srs.to_dict()
-    dict_str = {model: str(params_str)[1:-1].replace(", ", "\n") for model, params_str in params.items()}
+def series_to_dict(series):
+    r"""Return dictionary constructed from pandas.Series where keys are indexes of Series and values are respective
+    string values from the array, but every instance of ', ' string is replaced with \\n.
+
+    :param series: pandas Series
+    :type series: pandas.Series
+
+    :return: dictionary with changed strings in values
+    :rtype: dict
+    """
+    dictionary = series.to_dict()
+    dict_str = {key: str(item_str)[1:-1].replace(", ", "\n") for key, item_str in dictionary.items()}
     return dict_str
 
 
 def replace_duplicate_str(duplicate_list_of_str):
+    """Replace every duplicate instance of string element in duplicate_list_of_str with new string indicating which
+    duplicate element it is. Return unchanged duplicate_list_of_str if there are no duplicates.
 
+    Example:
+        [a, b, a, b, c, a] --> [a, b, a #1, b #1, c, a #2] \n
+        [a, b] --> [a, b]
+
+    :param duplicate_list_of_str: list which can contain duplicate string elements
+    :type duplicate_list_of_str: list/iterable
+
+    :return: list with counted duplicates or duplicate_list_of_str if no duplicates are present.
+    :rtype: list
+    """
     if len(set(duplicate_list_of_str)) != len(duplicate_list_of_str):
         base_cnt = Counter(duplicate_list_of_str)
         item_cnt = defaultdict(int)
-        new_container = []
+        new_sequence = []
 
         for item in duplicate_list_of_str:
             if base_cnt[item] > 1:
                 new_item = item + " #" + str(item_cnt[item] + 1)
                 item_cnt[item] += 1
-                new_container.append(new_item)
+                new_sequence.append(new_item)
             else:
-                new_container.append(item)
+                new_sequence.append(item)
 
-        return new_container
+        return new_sequence
     else:
         return duplicate_list_of_str
 
 
-def assess_models_names(model_tuple):
-    models = [obj_name(tp[0]) for tp in model_tuple]
+def assess_models_names(model_tuples):
+    """Replace first element of a tuple in a sequence of tuples with its appropriate obj_name and additionally check
+    if the name is duplicated across other first elements of tuples and replace if it's the case.
+
+    :param model_tuples: sequence of 2-item tuples (object, value)
+    :type model_tuples: list/sequence
+
+    :return: list of new tuples with their first element appropriately replaced
+    :rtype: list
+    """
+    models = [obj_name(tp[0]) for tp in model_tuples]
     new_names = replace_duplicate_str(models)
-    new_tuple = [(new_name, value[1]) for new_name, value in zip(new_names, model_tuple)]
+    new_tuple = [(new_name, value[1]) for new_name, value in zip(new_names, model_tuples)]
     return new_tuple
 
 
-def make_pandas_data(data, desired_pandas_obj):
+def make_pandas_data(data, desired_pandas_class):
+    """Transform provided data object into a desired pandas class instance.
+
+    data can be provided as either scipy.csr_matrix, numpy.ndarray, instance of desired_pandas_class or any other object
+    that can be fed directly into a construction call of desired_pandas_class
+    (e.g. dict in pd.DataFrame(data=your_dict)).
+
+    desired_pandas_class should be pandas.DataFrame, pandas.Series or any other pandas object that would be creatable
+    from either csr_matrix, ndarray or other allowed data container.
+
+    NOTE: when data is an instance of desired_pandas_obj (DataFrame or Series), returned DataFrame or Series will
+    have it's index reset.
+
+    :raises Exception: when data is not csr_matrix, ndarray or desired_pandas_class instance and it can't be used
+        as an argument to create desired_pandas_class
+
+    :param data: scipy.csr_matrix, numpy.ndarray, instance of desired_pandas_class or any other object that can be used
+        in construction of desired_pandas_class object (desired_pandas_class(data))
+    :type data: Any
+    :param desired_pandas_class: class from pandas module to contain data, e.g. pandas.DataFrame or pandas.Series
+    :type desired_pandas_class: pandas class
+
+    :return: desired_pandas_class object with data inside.
+    :rtype: desired_pandas_class
+    """
     if isinstance(data, csr_matrix):
         X_arr = data.toarray()
-        if desired_pandas_obj == pd.Series:
+        if desired_pandas_class == pd.Series:  # special case as pd.Series needs 1d array
             X_arr = X_arr[0]
-        new_data = desired_pandas_obj(X_arr)
+        new_data = desired_pandas_class(X_arr)
     elif isinstance(data, np.ndarray):
-        new_data = desired_pandas_obj(data)
-    elif isinstance(data, desired_pandas_obj):
+        new_data = desired_pandas_class(data)
+    elif isinstance(data, desired_pandas_class):
         # resetting indexes: no use for them as of now and simple count will give the possibility to match rows
         # between raw and transformed data
-        # copy: to make sure that changes won't affect the original data
         new_data = data.reset_index(drop=True)
     else:
         try:
-            new_data = desired_pandas_obj(data)
-        except:
+            new_data = desired_pandas_class(data)
+        except Exception:
             raise
 
     return new_data

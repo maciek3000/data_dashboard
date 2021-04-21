@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     models = None
     # coord.search_and_fit(models=models, mode="detailed")
-    coord.create_dashboard(models=models, logging=True, mode="detailed", disable_pairplots=True)
+    coord.create_dashboard(models=models, mode="quick")
 
 
     #ml = coord.search_and_fit(mode="quick", scoring=accuracy_score)
