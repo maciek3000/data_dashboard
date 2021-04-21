@@ -8,14 +8,15 @@ from scipy.sparse import csr_matrix
 def sanitize_input(input_str_list):
     r"""Replace all instances of 'weird' characters in string elements of a input_str_list sequence with '_'.
 
-    Example:
+    Examples:
         [a/?, b\\t, c] --> [a__, b_, c]
 
-    :param input_str_list: list of strings
-    :type input_str_list: list/iterable
+    Args:
+        input_str_list (list/iterable): list of strings
 
-    :return: new_input - list of newly created strings
-    :rtype: list
+    Returns:
+        list: list of newly created strings
+
     """
     p = r'["/\\.,?!:;\n\t\r\a\f\v\b]'
     new_input = [re.sub(p, "_", x) for x in input_str_list]
@@ -29,11 +30,11 @@ def calculate_numerical_bins(series):
     https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule . If the calculated result doesn't make sense (e.g. is
     higher than the number of rows or is 0 or lower), then return either number of rows from series or 1, respectively.
 
-    :param series: numerical Series on which calculations happen
-    :type series: pandas.Series
+    Args:
+        series (pandas.Series): numerical Series on which calculations happen
 
-    :return: number of bins
-    :rtype: int
+    Returns:
+        int: number of bins
     """
     n = series.size
     iqr = series.quantile(0.75) - series.quantile(0.25)
@@ -61,14 +62,13 @@ def modify_histogram_edges(edges, interval_percentage=0.005):
     indistinguishable Bars. Moving right_edges to the left by a defined interval_percentage adds aforementioned space
     and makes Visualization look better and be more useful.
 
-    :param edges: edges calculated by numpy.histogram method
-    :type edges: array/list
-    :param interval_percentage: percentage by which right_edges of the histogram will be moved to the left,
-        defaults to 0.005
-    :type interval_percentage: float, optional
+    Args:
+        edges ({numpy.ndarray, list}): edges calculated by numpy.histogram method
+        interval_percentage (float, optional): percentage by which right_edges of the histogram will be moved to
+            the left, defaults to 0.005
 
-    :return: left_edges, right_edges arrays
-    :rtype: tuple
+    Returns:
+        tuple: 2 element tuple of left_edges, right_edges values
     """
     # Adding space between the edges to visualize the data properly
     interval = (max(edges) - min(edges)) * interval_percentage  # 0.5%
@@ -81,14 +81,14 @@ def sort_strings(list_of_strings):
     """Return sorted list of strings in an ascending order by treating every string as if it would start with an
     uppercase letter.
 
-    Example:
+    Examples:
         [toast2, Test3, Toast, test33] --> [Test3, test33, Toast, toast2]
 
-    :param list_of_strings: list of string elements
-    :type list_of_strings: list/iterable
+    Args:
+        list_of_strings (list): list of string elements
 
-    :return: sorted list of strings
-    :rtype: list
+    Returns:
+        list: sorted list of strings
     """
     return sorted(list_of_strings, key=lambda x: x.upper())
 
@@ -101,11 +101,11 @@ def reverse_sorting_order(str_name):
     then it means that higher score is better. As default sorting is ascending, reverse=True needs to be explicitly
     provided for the sorted function so that sortable object (e.g. list) is sorted in a descending fashion.
 
-    :param str_name: string to be evaluated
-    :type str_name: str
+    Args:
+        str_name (str): string to be evaluated
 
-    :return: False if str_name ends with one of the strings defined inside the function; True otherwise.
-    :rtype: bool
+    Returns:
+        bool: False if str_name ends with one of the strings defined inside the function; True otherwise.
     """
     err_strings = ("_error", "_loss")
     return not str_name.endswith(err_strings)
@@ -114,11 +114,11 @@ def reverse_sorting_order(str_name):
 def obj_name(obj):
     """Return __name__ property of obj and if it's not defined, return it from obj's Parent Class.
 
-    :param obj: object
-    :type obj: object
+    Args:
+        obj (object): object
 
-    :return: __name__ of the object or it's Class
-    :rtype: str
+    Returns:
+        str: __name__ of the object or it's Class
     """
     try:
         obj_str = obj.__name__
@@ -128,18 +128,17 @@ def obj_name(obj):
 
 
 def append_description(text, parsed_html):
-    r"""
-    Encompass in <span> HTML tag and append provided text to the end of provided parsed_html and return the created tag.
+    r"""Encompass in <span> HTML tag and append provided text to the end of provided parsed_html and return the
+    created tag.
 
     Additionally, every \\n in text is replaced with <br> HTML tag.
 
-    :param text: text string
-    :type text: str
-    :param parsed_html: HTML text parsed with BeautifulSoup4
-    :type parsed_html: bs4.BeautifulSoup
+    Args:
+        text (str): text string
+        parsed_html (bs4.BeautifulSoup): HTML text parsed with BeautifulSoup4
 
-    :return: Newly created <span> Tag.
-    :rtype: bs4.Tag
+    Returns:
+        bs4.Tag: Newly created <span> Tag.
     """
     new_tag = parsed_html.new_tag("span")
     lines = text.split("\n")
@@ -156,11 +155,11 @@ def series_to_dict(series):
     r"""Return dictionary constructed from pandas.Series where keys are indexes of Series and values are respective
     string values from the array, but every instance of ', ' string is replaced with \\n.
 
-    :param series: pandas Series
-    :type series: pandas.Series
+    Args:
+        series (pandas.Series): Series
 
-    :return: dictionary with changed strings in values
-    :rtype: dict
+    Returns:
+        dict: dictionary with changed strings in values
     """
     dictionary = series.to_dict()
     dict_str = {key: str(item_str)[1:-1].replace(", ", "\n") for key, item_str in dictionary.items()}
@@ -171,15 +170,15 @@ def replace_duplicate_str(duplicate_list_of_str):
     """Replace every duplicate instance of string element in duplicate_list_of_str with new string indicating which
     duplicate element it is. Return unchanged duplicate_list_of_str if there are no duplicates.
 
-    Example:
+    Examples:
         [a, b, a, b, c, a] --> [a, b, a #1, b #1, c, a #2] \n
         [a, b] --> [a, b]
 
-    :param duplicate_list_of_str: list which can contain duplicate string elements
-    :type duplicate_list_of_str: list/iterable
+    Args:
+        duplicate_list_of_str ({list, iterable}): list which can contain duplicate string elements
 
-    :return: list with counted duplicates or duplicate_list_of_str if no duplicates are present.
-    :rtype: list
+    Returns:
+        list: list with counted duplicates or duplicate_list_of_str if no duplicates are present.
     """
     if len(set(duplicate_list_of_str)) != len(duplicate_list_of_str):
         base_cnt = Counter(duplicate_list_of_str)
@@ -203,11 +202,11 @@ def assess_models_names(model_tuples):
     """Replace first element of a tuple in a sequence of tuples with its appropriate obj_name and additionally check
     if the name is duplicated across other first elements of tuples and replace if it's the case.
 
-    :param model_tuples: sequence of 2-item tuples (object, value)
-    :type model_tuples: list/sequence
+    Args:
+        model_tuples ({list, sequence}): sequence of 2-item tuples (object, value)
 
-    :return: list of new tuples with their first element appropriately replaced
-    :rtype: list
+    Returns:
+        list: list of new tuples with their first element appropriately replaced
     """
     models = [obj_name(tp[0]) for tp in model_tuples]
     new_names = replace_duplicate_str(models)
@@ -225,20 +224,24 @@ def make_pandas_data(data, desired_pandas_class):
     desired_pandas_class should be pandas.DataFrame, pandas.Series or any other pandas object that would be creatable
     from either csr_matrix, ndarray or other allowed data container.
 
-    NOTE: when data is an instance of desired_pandas_obj (DataFrame or Series), returned DataFrame or Series will
-    have it's index reset.
+    Note:
+        when data is an instance of desired_pandas_obj (DataFrame or Series), returned DataFrame or Series will
+        have it's index reset.
 
-    :raises Exception: when data is not csr_matrix, ndarray or desired_pandas_class instance and it can't be used
-        as an argument to create desired_pandas_class
+    Args:
+        data ({scipy.csr_matrix, numpy.ndarray, desired_pandas_class, object}): scipy.csr_matrix, numpy.ndarray,
+            instance of desired_pandas_class or any other object that can be used in construction of
+            desired_pandas_class object (desired_pandas_class(data))
+        desired_pandas_class ({pandas.Series, pandas.DataFrame, object}): class from pandas module to contain data,
+            e.g. pandas.DataFrame or pandas.Series
 
-    :param data: scipy.csr_matrix, numpy.ndarray, instance of desired_pandas_class or any other object that can be used
-        in construction of desired_pandas_class object (desired_pandas_class(data))
-    :type data: Any
-    :param desired_pandas_class: class from pandas module to contain data, e.g. pandas.DataFrame or pandas.Series
-    :type desired_pandas_class: pandas class
+    Returns:
+        desired_pandas_class: desired_pandas_class object with data inside.
 
-    :return: desired_pandas_class object with data inside.
-    :rtype: desired_pandas_class
+    Raises:
+        Exception: when data is not csr_matrix, ndarray or desired_pandas_class instance and it can't be used
+            as an argument to create desired_pandas_class
+
     """
     if isinstance(data, csr_matrix):
         X_arr = data.toarray()
