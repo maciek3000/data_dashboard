@@ -1,6 +1,21 @@
 class PlotDesign:
+    """Simple Container of hardcoded style elements to be used across all modules.
 
+    Attributes:
+        text_color (str): text color in hex
+        text_font (str): text font
+        pairplot_color (str): pairplot color in hex
+        fill_color (str): fill color of plot elements in hex
+        base_color_tints (list): list of tints (hex) for a base color (main color is first, lighter tints follow)
+        contrary_color_tints (list): list of tints (hex) for a contrary  color (main color is first,
+            lighter tints follow)
+        models_color_tuple (tuple): 2 element tuple of colors for Models View - contrary_color, tint of base color
+        models_dummy_color (str): color for the dummy Model in hex
+        contrary_half_color_tints (list): list of custom contrary color tints used in Models View Confusion Matrices
+        base_half_color_tints (list): list of custom base color tints used in Models View Confusion Matrices
+    """
     def __init__(self):
+        """Create PlotDesign object."""
         self.text_color = "#8C8C8C"
         self.text_font = "Lato"
         self.pairplot_color = "#19529c"
