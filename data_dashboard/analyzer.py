@@ -58,7 +58,7 @@ class Analyzer:
         d = df.T.round(4).to_dict()
         for key, feat_dict in d.items():
             feat_dict[self._feature_description] = self.features[key].description
-            feat_dict[self._feature_type] = self.features[key].type
+            feat_dict[self._feature_type] = self.features[key].feature_type
 
         return d
 

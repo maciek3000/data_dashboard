@@ -106,9 +106,9 @@ def test_analyzer_summary_statistics(
     describe_dict = df.describe().round(4).to_dict()
     print(describe_dict)
     if category == "cat":
-        expected_category = CategoricalFeature.type
+        expected_category = CategoricalFeature.feature_type
     elif category == "num":
-        expected_category = NumericalFeature.type
+        expected_category = NumericalFeature.feature_type
     else:
         raise
 

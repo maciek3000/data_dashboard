@@ -80,7 +80,7 @@ class Dashboard:
         self.transformer = Transformer(
             categorical_features=self.features.categorical_features(drop_target=True, exclude_transformed=True),
             numerical_features=self.features.numerical_features(drop_target=True, exclude_transformed=True),
-            target_type=self.features[self.features.target].type,
+            target_type=self.features[self.features.target].feature_type,
             random_state=self.random_state,
             classification_pos_label=classification_pos_label
         )
@@ -175,7 +175,7 @@ class Dashboard:
             X_test=self.transformed_X_test,
             y_train=self.transformed_y_train,
             y_test=self.transformed_y_test,
-            target_type=self.features[self.features.target].type.lower(),
+            target_type=self.features[self.features.target].feature_type.lower(),
             random_state=self.random_state
         )
 
@@ -265,7 +265,6 @@ class Dashboard:
                 " 'force_pairplots=True' argument.")
 
     def _check_transformed_cols(self, transformed_columns):
-        # TODO: change to list
         if transformed_columns is not None:
             cols_in_data = set(self.X.columns)
             transformed = set(transformed_columns)
@@ -278,9 +277,9 @@ class Dashboard:
                 )
                 )
             else:
-                return transformed
+                return sorted(transformed)
         else:
-            return {}
+            return []
 
     def _check_output_directory(self, directory):
         pathlib.Path(directory).mkdir(exist_ok=True, parents=True)

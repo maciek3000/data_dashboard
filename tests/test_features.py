@@ -148,9 +148,9 @@ def test_features_impute_column_type(data_classification_balanced, column_name, 
     df = pd.concat([X, y], axis=1)
     f = Features(X, y)
 
-    cat = f.categorical
-    num = f.numerical
-    dat = f.date
+    cat = f._categorical
+    num = f._numerical
+    dat = f._date
 
     if expected_type == "categorical":
         expected = cat
@@ -302,7 +302,7 @@ def test_features_features_list_no_target(
             (["Height", "Price"],),
             (["AgeGroup", "Product", "bool"],),
             (None,),
-            ({},)
+            ([],)
     )
 )
 def test_features_features_list_exclude_transformed(data_classification_balanced, feature_descriptor, transformed_features):
@@ -378,7 +378,7 @@ def test_features_numerical_features_no_target(
             (["AgeGroup", "Product", "bool"],),
             (["bool", "Price"],),
             (None,),
-            ({},),
+            ([],),
     )
 )
 def test_features_numerical_features_exclude_transformed(data_classification_balanced, feature_descriptor, transformed_features):
@@ -455,7 +455,7 @@ def test_features_categorical_features_no_target(
             (["AgeGroup", "Product", "bool"],),
             (["bool", "Price"],),
             (None,),
-            ({},),
+            ([],),
     )
 )
 def test_features_categorical_features_exclude_transformed(data_classification_balanced, feature_descriptor, transformed_features):
@@ -535,7 +535,7 @@ def test_features_raw_data_no_target(data_classification_balanced, feature_descr
             (["AgeGroup", "Product", "bool"],),
             (["bool", "Price"],),
             (None,),
-            ({},),
+            ([],),
     )
 )
 def test_features_raw_data_excluded_transformed(data_classification_balanced, feature_descriptor, transformed_columns):
@@ -590,7 +590,7 @@ def test_features_data(data_classification_balanced, feature_descriptor, expecte
             (["AgeGroup", "Product", "bool"],),
             (["bool", "Price"],),
             (None,),
-            ({},),
+            ([],),
     )
 )
 def test_features_data_excluded_transformed(data_classification_balanced, feature_descriptor, transformed_columns, expected_raw_mapping):
