@@ -1,4 +1,3 @@
-
 class FeatureDescriptor:
     """Provides external information on Features.
 

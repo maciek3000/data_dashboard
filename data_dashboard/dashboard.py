@@ -52,7 +52,6 @@ class Dashboard:
 
         self.random_state = random_state
 
-
         self.X, self.y = self._check_provided_data(X, y)
 
         if classification_pos_label is not None:
@@ -194,7 +193,8 @@ class Dashboard:
             transformed_X_train=self.transformed_X_train,
             transformed_X_test=self.transformed_X_test,
             transformed_y_train=self.transformed_y_train,
-            transformed_y_test=self.transformed_y_test
+            transformed_y_test=self.transformed_y_test,
+            random_state=self.random_state
         )
 
     def _create_test_splits(self):

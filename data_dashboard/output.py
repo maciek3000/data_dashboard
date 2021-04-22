@@ -81,10 +81,12 @@ class Output:
                  output_directory, package_name,
                  features, analyzer, transformer, model_finder, transformed_columns,
                  X_train, X_test, y_train, y_test,
-                 transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test
+                 transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test,
+                 random_state=None
                  ):
 
         self.hyperlinks = None
+        self.random_state = random_state
 
         # objects needed to create the output
         self.features = features
@@ -204,7 +206,7 @@ class Output:
 
         # CorrelationsPlot
         generated_correlation_plot = self.correlation_plot.correlation_plot(
-            correlation_data_normalized=self.analyzer.correlation_data_normalized(),
+            correlation_data_normalized=self.analyzer.correlation_data_normalized(random_state=self.random_state),
             correlation_data_raw=self.analyzer.correlation_data_raw()
         )
 

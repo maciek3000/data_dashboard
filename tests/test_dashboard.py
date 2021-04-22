@@ -211,7 +211,7 @@ def test_dashboard_train_test_split_match_original_transformed_y(dashboard, data
 def test_dashboard_check_transformed_cols(dashboard, transformed_cols):
     """Testing if checking provided transformed_columns by dashboard works properly."""
     actual_result = dashboard._check_transformed_cols(transformed_cols)
-    assert actual_result == set(transformed_cols)
+    assert actual_result == sorted(transformed_cols)
 
 
 @pytest.mark.parametrize(

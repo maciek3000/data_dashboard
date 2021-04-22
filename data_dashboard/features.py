@@ -199,17 +199,17 @@ class NumericalFeature(BaseFeature):
 
 
 class Features:
-    """Container for Features in the analyzed data.
+    """Container for Features objects in the analyzed data.
 
     Data comes with different types of features - numerical, categorical, date, bool, etc. Goal of this class
-    is to have the data in one place, classify available Features and provide any corresponding metadata that might
-    be needed. This might include descriptions for every feature, respective mapping between original and mapped
-    Categorical Features, etc.
+    is to have the data in one place, classify available features (columns) and provide any corresponding metadata
+    that might be needed. This might include descriptions for every feature, respective mapping between original
+    and mapped Categorical Features, etc.
 
     Please note, that target variable (y) also is treated as a feature - you need to explicitly state it in
     methods if you wish to exclude it.
 
-    available_categories is a work in progress (?) property that defines what type of features are implemented.
+    available_categories is a work in progress property that defines what type of features are implemented.
     max_categories defines what is a limit of unique values in a column for it to be treated as categorical
     (even if the data itself comes as a int/float type).
 
@@ -238,7 +238,7 @@ class Features:
         Automatically analyze provided DataFrame (X + y) and assess their types.
 
         Args:
-            X (pandas.DataFrame): DataFrame of Features, from which Models will learn
+            X (pandas.DataFrame): DataFrame of features (columns), from which Models will learn
             y (pandas.Series): Series of target variable data
             descriptor (descriptor.FeatureDescriptor, optional): FeatureDescriptor object holding external information/
                 metadata about features (e.g. their description, category, etc.), defaults to None
@@ -263,18 +263,18 @@ class Features:
         self._mapping = None
         self._descriptions = None
 
-        # returns {feature_name: feature object} dict
+        # {feature_name: feature object} dict
         self._features = self._analyze_features(descriptor)
 
     def _analyze_features(self, descriptor):
         """Analyze original_dataframe attribute and assess type of each column (Numerical or Categorical).
 
         Every column present in the original_dataframe will be checked and appropriate FeatureClass will be created
-        for it. Every Feature will also have mapping and description attributes specific to them.
+        for it. Every FeatureClass will also have mapping and description attributes specific to them.
 
         If descriptor holds information about a given feature, then this information takes priority and will be used
-        to construct Features (e.g. if the category of the feature is provided as Categorical, then CategoricalFeatures
-        object will be created, even though it might not meet the conditions for it).
+        to construct Features objects (e.g. if the category of the feature is provided as Categorical, then
+        CategoricalFeatures object will be created, even though it might not meet the conditions for it).
 
         If there is no information about a feature in descriptor or descriptor is None, then description defaults to
         _description_not_available attribute. Mapping is described in CategoricalFeature docstring.
@@ -542,7 +542,7 @@ class Features:
         return self._unused_columns
 
     def _create_features(self):
-        """Return list of names as taken from name attribute of every Feature present in _features.
+        """Return list of names as taken from name attribute of every FeatureClass present in _features.
 
         Returns:
             list: list of features names
@@ -554,7 +554,8 @@ class Features:
         return output
 
     def _create_categorical_features(self):
-        """Return list of names of Features (name attribute) if a given Feature is an instance of CategoricalFeature.
+        """Return list of names of features (name attribute) if a given FeatureClass is an instance of
+        CategoricalFeature.
 
         Returns:
             list: list of categorical features names
@@ -567,7 +568,8 @@ class Features:
         return output
 
     def _create_numerical_features(self):
-        """Return list of names of Features (name attribute) if a given Feature is an instance of NumericalFeature.
+        """Return list of names of features (name attribute) if a given FeatureClass is an instance of
+        NumericalFeature.
 
         Returns:
             list: list of numerical features names
@@ -580,7 +582,8 @@ class Features:
         return output
 
     def _create_mapped_dataframe(self):
-        """Return pandas.Dataframe made from single mapped series (where appropriate) of every Feature (data method).
+        """Return pandas.Dataframe made from single mapped series (where appropriate) of every FeatureClass
+        (data method).
 
         Returns:
             pandas.DataFrame: dataframe consisting of mapped series
@@ -588,7 +591,7 @@ class Features:
         return pd.concat([self._features[feature].data() for feature in self._features], axis=1)
 
     def _create_raw_dataframe(self):
-        """Return pandas.DataFrame made from original series data of every Feature.
+        """Return pandas.DataFrame made from original series data of every FeatureClass.
 
         Distinction is needed as NumericalFeature defines only data method, whereas CategoricalFeature has both
         data and original_data methods.
@@ -606,7 +609,7 @@ class Features:
 
     def _create_mapping(self):
         """Create dictionary of 'feature name': mapping dict pairs, where mapping dict is taken from mapping method
-        of every Feature.
+        of every FeatureClass.
 
         Returns:
             dict: 'feature name': mapping dict pairs
@@ -618,7 +621,7 @@ class Features:
 
     def _create_descriptions(self):
         """Create dictionary of 'feature name': description pairs, where description is taken from description attribute
-        of every Feature.
+        of every FeatureClass.
 
         Returns:
             dict: 'feature name': description pairs
@@ -632,10 +635,10 @@ class Features:
         """Return arg item from _features attribute dictionary.
 
         Args:
-            arg (str): str representing the name of the feature
+            arg (str, Hashable): str representing the name of the feature
 
         Returns:
-            Feature: Feature present in _features attribute dictionary
+            Feature: FeatureClass present in _features attribute dictionary
 
         Raises:
             KeyError: when arg is not in _features
