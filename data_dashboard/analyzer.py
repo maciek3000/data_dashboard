@@ -191,21 +191,6 @@ class Analyzer:
         scatter_data = df.dropna().to_dict(orient="list")
         return scatter_data
 
-    def _create_describe_df(self, feature_list):
-        """Return transposed pandas.DataFrame with summary statistics from describe method for features data in
-        Features object. Additionally add percentage of missing values in the data.
-
-        Args:
-            feature_list (list): list of columns that will be extracted from Features data
-
-        Returns:
-            pandas.DataFrame: describe DataFrame
-        """
-        df = self.features.data()[feature_list]
-        ds = df.describe().astype("float64").T
-        ds[self._feature_missing] = df.isna().sum() / max(df.count())
-        return ds
-
     def feature_list(self):
         """Return list of features as provided by Features.features method.
 
@@ -237,3 +222,18 @@ class Analyzer:
             dict: features description dict
         """
         return self.features.descriptions()
+
+    def _create_describe_df(self, feature_list):
+        """Return transposed pandas.DataFrame with summary statistics from describe method for features data in
+        Features object. Additionally add percentage of missing values in the data.
+
+        Args:
+            feature_list (list): list of columns that will be extracted from Features data
+
+        Returns:
+            pandas.DataFrame: describe DataFrame
+        """
+        df = self.features.data()[feature_list]
+        ds = df.describe().astype("float64").T
+        ds[self._feature_missing] = df.isna().sum() / max(df.count())
+        return ds
