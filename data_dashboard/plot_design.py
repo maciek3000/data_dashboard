@@ -13,6 +13,7 @@ class PlotDesign:
         models_dummy_color (str): color for the dummy Model in hex
         contrary_half_color_tints (list): list of custom contrary color tints used in Models View Confusion Matrices
         base_half_color_tints (list): list of custom base color tints used in Models View Confusion Matrices
+        contrary_color_linear_palette (list): list of contrary color tints used in Scatter Plot Linear Legend
     """
     def __init__(self):
         """Create PlotDesign object."""
@@ -65,3 +66,5 @@ class PlotDesign:
             "#c8d5e7",
             "#e3eaf3"
         ]
+
+        self.contrary_color_linear_palette = ["#FFF7F3", "#FFB695", "#EB6F54", "#9C2B19"]

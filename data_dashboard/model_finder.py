@@ -219,7 +219,9 @@ class ModelFinder:
 
         self._dummy_model, self._dummy_model_scores = self._create_dummy_model()
 
-    # ===== # Search for Model functions
+    ####################################################################
+    # =============== Exposed Search and Fit functions =============== #
+    ####################################################################
 
     def search_and_fit(self, models=None, scoring=None, mode=_mode_quick):
         """Search for the Model and set it as the chosen Model.
@@ -380,7 +382,9 @@ class ModelFinder:
         """
         return self._gridsearch_results
 
-    # ===== # Visualization Data for View functions
+    #########################################################################
+    # =============== Visualization Data for View functions =============== #
+    #########################################################################
 
     def search_results(self, model_limit):
         """Return detailed search results DataFrame from _search_results_dataframe.
@@ -567,7 +571,9 @@ class ModelFinder:
 
         return _
 
-    # ===== # Internal functions
+    ######################################################
+    # =============== Problem assessment =============== #
+    ######################################################
 
     def _set_problem(self, problem_type):
         """Set different instance attributes depending on the problem_type provided.
@@ -598,6 +604,10 @@ class ModelFinder:
             self.default_models = regressors
             self.default_scoring = mean_squared_error
             self.target_transformer = QuantileTransformer(output_distribution="normal", random_state=self.random_state)
+
+    ####################################################
+    # =============== Search Functions =============== #
+    ####################################################
 
     def _search_for_models(self, models, mode, scoring):
         """Assess Models in regard to their performance with provided scoring function.
@@ -872,6 +882,10 @@ class ModelFinder:
 
         return fitted_and_scored, all_results
 
+    #####################################################
+    # =============== Scoring Functions =============== #
+    #####################################################
+
     def _score_model(self, fitted_model, chosen_scoring):
         """Score Model with all default scoring functions of a given problem type (+) chosen_scoring on X_test and
         y_test splits and return the result.
@@ -908,40 +922,35 @@ class ModelFinder:
 
         return scorings
 
-    def _plot_curves(self, plot_func, model_limit):
-        """Calculate data needed to plot performance curve from plot_func.
+    def _calculate_model_score(self, model, X, y_true, scoring_function):
+        """Calculate Model score based on the type of scoring_function - if it requires simple '0-1' predictions
+        or calculated probabilities.
 
-        Functions calculating performance curves require probas instead of '0-1' predictions. As not every Model has
-        predict_probas method, decision_function method is also tried to get the probabilities.
+        scoring_function is checked if it's defined in _probas_function class attribute - container of pre-defined
+        functions that might require probabilities. If it is, then probabilities are used as predictions. Otherwise,
+        simple predict call is used.
 
         Args:
-            plot_func (function): sklearn function that calculates curve data
-            model_limit (int): number of Models from search results
+            model (sklearn.Model): Model which performance will be assessed
+            X (pandas.DataFrame, numpy.ndarray, scipy.csr_matrix): X feature space on which predictions will happen
+            y_true (pandas.Series, numpy.ndarray): true target variable which will be compared with predictions
+            scoring_function (function): sklearn scoring function
 
         Returns:
-            list: tuples of (Model, calculated curve data)
-
-        Raises:
-            ModelsNotSearchedError: when no search and performance assessment between Models happened
+            float: score of scoring_function
         """
-        if self._search_results is None:
-            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
-
-        curves = []
-        models = [tp[0] for tp in self._search_results[:model_limit]]
-        for model in models:
+        # check if scoring_function is defined in _probas_function class attribute
+        if any((func == obj_name(scoring_function) for func in self._probas_functions)):
             try:
-                y_score = model.predict_proba(self.X_test)
-                # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/base.py#L104
-                # predictions for class 1 in a binary setting - second column
-                y_score = y_score[:, 1]
+                predictions = model.predict_proba(X)
+                if self.problem == self._classification:
+                    predictions = predictions[:, 1]
             except AttributeError:
-                y_score = model.decision_function(self.X_test)
-
-            result = plot_func(self.y_test, y_score)
-            curves.append((model, result))
-
-        return curves
+                predictions = model.decision_function(X)  # decision_function returns 1d result
+        else:
+            predictions = model.predict(X)
+        score = scoring_function(y_true, predictions)
+        return score
 
     def _create_scoring_multiclass(self):
         """Create scoring functions for multiclass problem with some of the parameters pre-set.
@@ -971,6 +980,10 @@ class ModelFinder:
 
         scorings += self._scoring_multiclass  # appending functions that do not require specific parameters
         return scorings
+
+    ######################################################
+    # =============== Wrapping Functions =============== #
+    ######################################################
 
     def _wrap_model(self, model):
         """Wrap Model in WrappedModelRegression if the problem type is regression, return unchanged model otherwise.
@@ -1024,35 +1037,48 @@ class ModelFinder:
 
         return params
 
-    def _calculate_model_score(self, model, X, y_true, scoring_function):
-        """Calculate Model score based on the type of scoring_function - if it requires simple '0-1' predictions
-        or calculated probabilities.
+    ######################################################
+    # =============== Visualization Data =============== #
+    ######################################################
 
-        scoring_function is checked if it's defined in _probas_function class attribute - container of pre-defined
-        functions that might require probabilities. If it is, then probabilities are used as predictions. Otherwise,
-        simple predict call is used.
+    def _plot_curves(self, plot_func, model_limit):
+        """Calculate data needed to plot performance curve from plot_func.
+
+        Functions calculating performance curves require probas instead of '0-1' predictions. As not every Model has
+        predict_probas method, decision_function method is also tried to get the probabilities.
 
         Args:
-            model (sklearn.Model): Model which performance will be assessed
-            X (pandas.DataFrame, numpy.ndarray, scipy.csr_matrix): X feature space on which predictions will happen
-            y_true (pandas.Series, numpy.ndarray): true target variable which will be compared with predictions
-            scoring_function (function): sklearn scoring function
+            plot_func (function): sklearn function that calculates curve data
+            model_limit (int): number of Models from search results
 
         Returns:
-            float: score of scoring_function
+            list: tuples of (Model, calculated curve data)
+
+        Raises:
+            ModelsNotSearchedError: when no search and performance assessment between Models happened
         """
-        # check if scoring_function is defined in _probas_function class attribute
-        if any((func == obj_name(scoring_function) for func in self._probas_functions)):
+        if self._search_results is None:
+            raise ModelsNotSearchedError("Search Results is not available. Call 'search' to obtain comparison models.")
+
+        curves = []
+        models = [tp[0] for tp in self._search_results[:model_limit]]
+        for model in models:
             try:
-                predictions = model.predict_proba(X)
-                if self.problem == self._classification:
-                    predictions = predictions[:, 1]
+                y_score = model.predict_proba(self.X_test)
+                # https://github.com/scikit-learn/scikit-learn/blob/95119c13af77c76e150b753485c662b7c52a41a2/sklearn/metrics/_plot/base.py#L104
+                # predictions for class 1 in a binary setting - second column
+                y_score = y_score[:, 1]
             except AttributeError:
-                predictions = model.decision_function(X)  # decision_function returns 1d result
-        else:
-            predictions = model.predict(X)
-        score = scoring_function(y_true, predictions)
-        return score
+                y_score = model.decision_function(self.X_test)
+
+            result = plot_func(self.y_test, y_score)
+            curves.append((model, result))
+
+        return curves
+
+    ###############################################
+    # =============== Dummy Model =============== #
+    ###############################################
 
     def _create_dummy_model(self):
         """Create dummy Model for a given problem type and calculate default scores for it.

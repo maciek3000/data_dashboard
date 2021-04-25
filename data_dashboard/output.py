@@ -51,7 +51,6 @@ class Output:
     _view_models = "models"
     _view_models_html = "models.html"
     _view_models_css = "models.css"
-    # _view_models_js = "models.js"
 
     # directories
     _static_directory_name = "static"
@@ -74,7 +73,6 @@ class Output:
         _view_features_css,
         _view_features_js,
         _view_models_css,
-        # _view_models_js
     ]
 
     def __init__(self,
@@ -155,10 +153,10 @@ class Output:
         self.scattergrid = ScatterPlotGrid(
             features=self.features.features(),  # list of features
             plot_design=self.plot_design,
+            feature_description_class=self._element_with_description_class,  # class of hoverable description
             categorical_features=self.features.categorical_features(),  # categorical features including target
             feature_descriptions=self.features.descriptions(),  # descriptions of all features including target
-            feature_mapping=self.features.mapping(),  # mapping of variables in features
-            feature_description_class=self._element_with_description_class  # class of hoverable description
+            feature_mapping=self.features.mapping()  # mapping of variables in features
         )
 
         self.normal_transformations_plot = NormalTransformationsPlots(

@@ -219,6 +219,48 @@ class Transformer:
         self.fit_y(y)
         return self.transform_y(y)
 
+    def set_custom_preprocessor_X(self, categorical_transformers=None, numerical_transformers=None):
+        """Set preprocessors for categorical and numerical features in X to be used later on in the process (e.g. with
+        fit or transform calls).
+
+        Both lists of transformers are optional - only one type of custom transformers can be set, the other one left
+        will be set to default transformers. If none of the lists are provided, then the method is equal to setting
+        default transformers.
+
+        Args:
+            categorical_transformers (list, optional): transformers to be used on categorical features, defaults to None
+            numerical_transformers (list, optional): transformers to be used on numerical features, defaults to None
+        """
+        if categorical_transformers:
+            self.categorical_transformers = categorical_transformers
+        if numerical_transformers:
+            self.numerical_transformers = numerical_transformers
+        self.preprocessor_X = self._create_preprocessor_X()
+
+    def set_custom_preprocessor_y(self, transformer):
+        """Set provided transformer as preprocessor for y to be used later on in the process (e.g. with fit or
+        transform calls).
+
+        Args:
+            transformer (Transformer): transformer that will be used to transform y (target)
+        """
+        self.y_transformer = transformer
+        self.preprocessor_y = self._create_preprocessor_y()
+
+    def y_classes(self):
+        """Return classes (labels) present in preprocessor_y.
+
+        Returns:
+            numpy.ndarray: array of classes present in fitted preprocessor_y
+
+        Raises:
+            ValueError: when target_type is 'Numerical'
+        """
+        if self.target_type == "Numerical":
+            raise ValueError("No classes present in regression problem.")
+
+        return self.preprocessor_y.classes_
+
     def transformed_columns(self):
         """Return list of names of transformed columns.
 
@@ -367,48 +409,6 @@ class Transformer:
             output.append((transformer, pipe.transform(single_feature_test_data)))
 
         return output
-
-    def set_custom_preprocessor_X(self, categorical_transformers=None, numerical_transformers=None):
-        """Set preprocessors for categorical and numerical features in X to be used later on in the process (e.g. with
-        fit or transform calls).
-
-        Both lists of transformers are optional - only one type of custom transformers can be set, the other one left
-        will be set to default transformers. If none of the lists are provided, then the method is equal to setting
-        default transformers.
-
-        Args:
-            categorical_transformers (list, optional): transformers to be used on categorical features, defaults to None
-            numerical_transformers (list, optional): transformers to be used on numerical features, defaults to None
-        """
-        if categorical_transformers:
-            self.categorical_transformers = categorical_transformers
-        if numerical_transformers:
-            self.numerical_transformers = numerical_transformers
-        self.preprocessor_X = self._create_preprocessor_X()
-
-    def set_custom_preprocessor_y(self, transformer):
-        """Set provided transformer as preprocessor for y to be used later on in the process (e.g. with fit or
-        transform calls).
-
-        Args:
-            transformer (Transformer): transformer that will be used to transform y (target)
-        """
-        self.y_transformer = transformer
-        self.preprocessor_y = self._create_preprocessor_y()
-
-    def y_classes(self):
-        """Return classes (labels) present in preprocessor_y.
-
-        Returns:
-            numpy.ndarray: array of classes present in fitted preprocessor_y
-
-        Raises:
-            ValueError: when target_type is 'Numerical'
-        """
-        if self.target_type == "Numerical":
-            raise ValueError("No classes present in regression problem.")
-
-        return self.preprocessor_y.classes_
 
     def _create_preprocessor_X(self):
         """Create preprocessor for X features with different Transformers for Categorical and Numerical features.
