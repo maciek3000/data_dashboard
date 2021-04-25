@@ -1,15 +1,35 @@
 import numpy as np
-from sklearn.linear_model import SGDClassifier, PassiveAggressiveClassifier, RidgeClassifier, Perceptron, LogisticRegression
-from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier, BaggingClassifier, ExtraTreesClassifier #, HistGradientBoostingClassifier
+# Classification/Multiclass
+from sklearn.linear_model import SGDClassifier, PassiveAggressiveClassifier, RidgeClassifier, Perceptron
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier, BaggingClassifier, ExtraTreesClassifier
 from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
+# Regression
+from sklearn.linear_model import HuberRegressor, Lasso, SGDRegressor, ElasticNet
+from sklearn.linear_model import Ridge, PassiveAggressiveRegressor
+from sklearn.svm import SVR
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, AdaBoostRegressor, BaggingRegressor
+from xgboost import XGBRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neural_network import MLPRegressor
+"""Default models and their parameters to be used during search method of ModelFinder.
 
+Note:
+    Models and their parameters were chosen arbitrarily to achieve a good balance between performance and search
+    results. By no means should they be treated as an exhaustive Models list, more as a quick reference for some
+    of the Models available in sklearn.
 
-from sklearn.naive_bayes import GaussianNB
-from sklearn.experimental import enable_hist_gradient_boosting
+Attributes:
+    alpha (numpy.ndarray): array of alpha parameter values
+    C (numpy.ndarray): array of C parameter values
+    classifiers (dict): 'Model class': param_grid dict pairs of Models to be used in Classification/Multiclass
+    regressors (dict): 'Model class': param_grid dict pairs of Models to be used in Regression
+"""
+
 
 alpha = np.logspace(-4, 5, 10)
 # tol = np.logspace(-5, -1, 5)
@@ -117,15 +137,6 @@ classifiers = {
 }
 
 
-from sklearn.linear_model import HuberRegressor, Lasso, SGDRegressor, ElasticNet
-from sklearn.linear_model import Ridge, PassiveAggressiveRegressor
-from sklearn.svm import SVR
-from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, AdaBoostRegressor, BaggingRegressor
-from xgboost import XGBRegressor
-from sklearn.neighbors import KNeighborsRegressor
-from sklearn.neural_network import MLPRegressor
-
-
 regressors = {
     HuberRegressor: {
         "epsilon": np.linspace(1.1, 2.0, 9),
@@ -202,4 +213,3 @@ regressors = {
         "alpha": alpha
     }
 }
-
