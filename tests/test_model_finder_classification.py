@@ -213,7 +213,7 @@ def test_model_finder_assess_models_classification(model_finder_classification, 
     expected_models = list(zip(models, scores))
     expected_keys = {"fit_time", "roc_auc_score", "params", "accuracy_score", "balanced_accuracy_score", "f1_score"}
 
-    actual_models, actual_results = model_finder_classification._assess_models(models, roc_auc_score)
+    actual_models, actual_results = model_finder_classification._assess_models_performance(models, roc_auc_score)
 
     assert actual_models == expected_models
     assert len(actual_results.keys()) == len(expected_models)

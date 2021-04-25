@@ -185,7 +185,7 @@ def test_model_finder_assess_models_multiclass(model_finder_multiclass, multicla
     expected_models = list(zip(models, scores))
     expected_keys = {"fit_time", "f1_score_weighted", "params", "precision_score_weighted"}
 
-    actual_models, actual_results = model_finder_multiclass._assess_models(models, multiclass_scorings[0])
+    actual_models, actual_results = model_finder_multiclass._assess_models_performance(models, multiclass_scorings[0])
 
     assert actual_models == expected_models
     assert len(actual_results.keys()) == len(expected_models)

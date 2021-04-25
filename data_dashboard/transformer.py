@@ -10,7 +10,7 @@ from .functions import calculate_numerical_bins, modify_histogram_edges
 
 
 class WrapperFunctionTransformer:
-    """Wrapper class for FunctionTransformer that defines custom __str__ method.
+    """Wrapper class for FunctionTransformer - defines custom __str__ method.
 
     Attributes:
         str_repr (str): text used in str method

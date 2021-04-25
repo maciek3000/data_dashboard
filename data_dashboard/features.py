@@ -3,7 +3,7 @@ from .functions import sort_strings
 
 
 class FeatureNotSupported(Exception):
-    """Exception for not supported Feature type."""
+    """Not supported Feature type."""
     pass
 
 

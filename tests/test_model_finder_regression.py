@@ -226,7 +226,7 @@ def test_model_finder_assess_models_regression(model_finder_regression, seed):
         "fit_time", "mean_squared_error", "params", "mean_absolute_error", "explained_variance_score", "r2_score"
     }
 
-    actual_models, actual_results = model_finder_regression._assess_models(models, mean_squared_error)
+    actual_models, actual_results = model_finder_regression._assess_models_performance(models, mean_squared_error)
 
     assert actual_models == expected_models
     assert len(actual_results.keys()) == len(expected_models)
