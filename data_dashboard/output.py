@@ -51,7 +51,7 @@ class Output:
     _view_models = "models"
     _view_models_html = "models.html"
     _view_models_css = "models.css"
-    _view_models_js = "models.js"
+    # _view_models_js = "models.js"
 
     # directories
     _static_directory_name = "static"
@@ -74,7 +74,7 @@ class Output:
         _view_features_css,
         _view_features_js,
         _view_models_css,
-        _view_models_js
+        # _view_models_js
     ]
 
     def __init__(self,
@@ -117,15 +117,15 @@ class Output:
         # Views
         self.view_overview = Overview(
                     template=self.env.get_template(self._view_overview_html),
-                    css_path=os.path.join(self.static_path(), self._view_overview_css),
+                    css_path=(self._static_directory_name + "/" + self._view_overview_css),
                     max_categories=self.analyzer.max_categories,
                     feature_description_class=self._element_with_description_class
                 )
 
         self.view_features = FeatureView(
                     template=self.env.get_template(self._view_features_html),
-                    css_path=os.path.join(self.static_path(), self._view_features_css),
-                    js_path=os.path.join(self.static_path(), self._view_features_js),
+                    css_path=(self._static_directory_name + "/" + self._view_features_css),
+                    js_path=(self._static_directory_name + "/" + self._view_features_js),
                     target_name=self.features.target,
                     transformed_columns=self.transformed_columns
                 )
@@ -172,15 +172,15 @@ class Output:
     def create_html(self, do_pairplots, do_logs):
 
         # base variables needed by every view
-        base_css = os.path.join(self.static_path(), self._base_css)  # path to output_directory
+        base_css = (self._static_directory_name + "/" + self._base_css)  # relative path to static directory
         time_started = datetime.datetime.now()
         current_time = time_started.strftime(self._time_format)
 
         created_on = self._footer_note.format(time=current_time)
         self.hyperlinks = {
-            self._view_overview: self._path_to_file(self._view_overview_html),
-            self._view_features: self._path_to_file(self._view_features_html),
-            self._view_models: self._path_to_file(self._view_models_html)
+            self._view_overview: self._view_overview_html,  # self._path_to_file(self._view_overview_html),
+            self._view_features: self._view_features_html,  # self._path_to_file(self._view_features_html),
+            self._view_models: self._view_models_html  # self._path_to_file(self._view_models_html)
         }
 
         # feature that will be chosen in the beginning
@@ -382,8 +382,8 @@ class Output:
 
         kwargs = {
             "template": self.env.get_template(self._view_models_html),
-            "css_path": os.path.join(self.static_path(), self._view_models_css),
-            "js_path": os.path.join(self.static_path(), self._view_models_js),
+            "css_path": (self._static_directory_name + "/" + self._view_models_css),
+            # "js_path": (self._static_directory_name + "/" + self._view_models_js),
             "params_name": self.model_finder.dataframe_params_name(),
             "model_with_description_class": self._element_with_description_class,
         }

@@ -1,4 +1,5 @@
 // Subcategory Divs
+/*
 window.onload = function() {
     var elements = document.getElementsByClassName("submenu");
     var i;
@@ -15,3 +16,4 @@ window.onload = function() {
         });
     }
 };
+*/

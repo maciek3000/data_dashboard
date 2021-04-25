@@ -331,7 +331,7 @@ def test_features_view_transformed_features_divs(data_classification_balanced, t
 )
 def test_model_view_results_table(input_df, expected_row_number):
     """Testing if html output produced by results_table method properly assigns css classes to table rows."""
-    mv = ModelsView("template", "test_css", "test_js", "params", "test-class")
+    mv = ModelsView("template", "test_css", "params", "test-class")
     first_row_class = mv._first_model_class
     middle_row_class = mv._other_model_class
 
@@ -361,7 +361,7 @@ def test_model_view_results_table(input_df, expected_row_number):
 def test_models_view_classification_single_matrix_table(input_array, expected_string):
     """Testing if confusion matrix html table is created correctly."""
     expected_class = "test-class"
-    mv = ModelsViewClassification("template", "test_css", "test_js", "params", "test-class")
+    mv = ModelsViewClassification("template", "test_css", "params", "test-class")
     mv._confusion_matrices_single_matrix_table = expected_class
     actual_result = mv._single_confusion_matrix_html(input_array)
 
@@ -390,7 +390,7 @@ def test_models_view_classification_confusion_matrices(input_tuple):
     other_model = "test-other-model"
     title_class = "test-title-class"
     matrix_class = "test-matrix-class"
-    mv = ModelsViewClassification("template", "test_css", "test_js", "params", "test-class")
+    mv = ModelsViewClassification("template", "test_css", "params", "test-class")
 
     mv._first_model_class = first_model
     mv._other_model_class = other_model

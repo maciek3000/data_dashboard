@@ -39,8 +39,8 @@ if __name__ == "__main__":
 
     # examples
 
-    # X, y, descriptions = iris()
-    X, y, descriptions = boston()
+    X, y, descriptions = iris()
+    # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
     # X, y, descriptions = wine()
     # X, y, descriptions = breast_cancer()  # 30 features
@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     # X = X.drop(["CHAS", "RAD"], axis=1)
 
-    coord = Dashboard(output_directory, X, y, descriptions, os.getcwd(), random_state=42, already_transformed_columns=["CHAS", "RAD"])
+    coord = Dashboard(output_directory, X, y, descriptions, os.getcwd(), random_state=42)
     # coord.set_custom_transformers(numerical_transformers=[SimpleImputer(), PowerTransformer()])
 
     # output = coord.quick_find()

@@ -437,7 +437,7 @@ class FeatureView(BaseView):
 class ModelsView(BaseView):
 
     _models_css = "models_css"
-    _models_js = "models_js"
+    # _models_js = "models_js"
 
     _models_table = "models_left_upper"
 
@@ -456,11 +456,11 @@ class ModelsView(BaseView):
     _first_model_class = "first-model"
     _other_model_class = "other-model"
 
-    def __init__(self, template, css_path, js_path, params_name, model_with_description_class):
+    def __init__(self, template, css_path, params_name, model_with_description_class):
         super().__init__()
         self.template = template
         self.css = css_path
-        self.js = js_path
+        # self.js = js_path
         self.params_name = params_name
         self.model_with_description_class = model_with_description_class
 
@@ -475,7 +475,7 @@ class ModelsView(BaseView):
         output.update(standard)
 
         output[self._models_css] = self.css
-        output[self._models_js] = self.js
+        # output[self._models_js] = self.js
         output[self._models_table] = self._models_result_table(model_results)
 
         incorrect_predictions_script, incorrect_predictions_div = components(incorrect_predictions_table)
