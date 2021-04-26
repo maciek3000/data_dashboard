@@ -420,6 +420,7 @@ def transformer_multiclass(categorical_features, numerical_features, seed, prepr
 
     return tr
 
+
 @pytest.fixture
 def transformer_classification_fitted(transformer_classification, data_classification_balanced):
     transformer_classification.fit(data_classification_balanced[0])
@@ -650,11 +651,11 @@ def output(
     o = Output(
         output_directory=tmpdir,
         package_name=root_path_to_package[1],
+        pre_transformed_columns=[],
         features=fixture_features,
         analyzer=analyzer_fixture,
         transformer=transformer_classification,
         model_finder=model_finder_classification_fitted,
-        transformed_columns={},
         X_train=X_train,
         X_test=X_test,
         y_train=y_train,

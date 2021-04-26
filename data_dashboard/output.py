@@ -1,4 +1,8 @@
-import os, datetime
+import os
+import datetime
+import pathlib
+import pkgutil
+import pandas as pd
 from jinja2 import Environment, PackageLoader
 from .views import Overview, FeatureView, ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
 from .plots import PairPlot, InfoGrid, ScatterPlotGrid, CorrelationPlot, NormalTransformationsPlots
@@ -6,27 +10,58 @@ from .plots import ModelsPlotClassification, ModelsPlotRegression, ModelsPlotMul
 from .plot_design import PlotDesign
 from .functions import make_pandas_data
 
-import pandas as pd
-import numpy as np
-import shutil
-import pathlib
-import pkgutil
-
 
 class Output:
     """Class for producing HTML output.
 
-        Creates several Views (Subpages) and joins them together to form an interactive WebPage/Dashboard.
-        Every view is static - there is no server communication between html template and provided data. Every
-        possible interaction is created with CSS/HTML or JS. This was a conscious design choice - albeit much slower
-        than emulating server interaction, files can be easily shared between parties of interest.
-        Keep in mind that basically all the data and the calculations are embedded into the files - if you'd wish
-        to post them on the server you have to be aware if the data itself can be posted for public scrutiny.
+    Output loads jinja2 templates from templates folder and provides them to Views object alongside all required
+    plots, calculated data and dynamic references to static files to create HTML pages. Pages are linked together
+    and can be navigated as regular HTML pages.
 
-        Output class uses jinja2 templates to provide them to Views, which are later populated by them with
-        adequate plots/calculations/text.
-        Output additionally defines filepaths to created HTML files and a bunch of standard variables used across
-        all templates.
+    Created HTML and static files are saved into the output directory. As links to pages/CSS/JS are relative, the whole
+    output directory can be copied and moved around.
+
+    Note:
+        Plots for ModelsView are created during create_html method call in comparison to every other Plot object and
+        are not included as instance attributes.
+
+    Attributes:
+        output_directory (str): directory where HTML output will be placed
+        package_name (str): name of the data_dashboard package
+        pre_transformed_columns (list): list of feature names that are already pre-transformed
+
+        features (Features): Features object
+        analyzer (Analyzer): Analyzer object
+        transformer (Transformer): Transformer object
+        model_finder (ModelFinder): ModelFinder object
+
+        X_train (pandas.DataFrame): train split of X features
+        X_test (pandas.DataFrame): test split of X features
+        y_train (pandas.Series): train split of y target variable
+        y_test (pandas.Series): test split of y target variable
+        transformed_X_train (numpy.ndarray, scipy.csr_matrix): transformed X train split
+        transformed_X_test (numpy.ndarray, scipy.csr_matrix): transformed X test split
+        transformed_y_train (numpy.ndarray): transformed y train split
+        transformed_y_test (numpy.ndarray): transformed y test split
+
+        random_state (int, None): integer for reproducibility on fitting and transformations, defaults to None if not
+            provided during __init__
+
+        env (jinja2.Environment): jinja2 Environment to load HTML templates
+
+        hyperlinks (dict): 'view name': view HTML path pairs (relative path)
+        view_overview (Overview): Overview HTML Subpage View
+        view_features (FeatureView): FeatureView HTML Subpage View
+        view_models (ModelsView):  ModelsView HTML Subpage View (depending on problem type)
+        plot_design (PlotDesign): PlotDesign object with predefined style elements
+
+        pairplot (PairPlot): PairPlot object for Overview page visualizations
+        infogrid (InfoGrid): InfoGrid object for FeatureView page visualizations
+        correlation_plot (CorrelationPlot): CorrelationPlot object for FeatureView page visualizations
+        scattergrid (ScatterPlotGrid): ScatterPlotGrid object for FeatureView page visualizations
+        normal_transformations_plot (NormalTransformationsPlots): NormalTransformationsPlots object for FeatureView
+            page visualizations
+        models_data_table (ModelsDataTable): ModelsDataTable object for ModelsView page visualizations
     """
 
     # base template
@@ -76,22 +111,58 @@ class Output:
     ]
 
     def __init__(self,
-                 output_directory, package_name,
-                 features, analyzer, transformer, model_finder, transformed_columns,
-                 X_train, X_test, y_train, y_test,
-                 transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test,
+                 output_directory,
+                 package_name,
+                 pre_transformed_columns,
+                 features,
+                 analyzer,
+                 transformer,
+                 model_finder,
+                 X_train,
+                 X_test,
+                 y_train,
+                 y_test,
+                 transformed_X_train,
+                 transformed_X_test,
+                 transformed_y_train,
+                 transformed_y_test,
                  random_state=None
                  ):
+        """Create Output object.
 
-        self.hyperlinks = None
-        self.random_state = random_state
+        Set jinja2 Environment to load HTML templates. Create View objects and Plot objects that are needed for
+        creating HTML output.
+
+        Args:
+            output_directory (str): directory where HTML output will be placed
+            package_name (str): name of the data_dashboard package
+            pre_transformed_columns (list): list of feature names that are already pre-transformed
+
+            features (Features): Features object
+            analyzer (Analyzer): Analyzer object
+            transformer (Transformer): Transformer object
+            model_finder (ModelFinder): ModelFinder object
+
+            X_train (pandas.DataFrame): train split of X features
+            X_test (pandas.DataFrame): test split of X features
+            y_train (pandas.Series): train split of y target variable
+            y_test (pandas.Series): test split of y target variable
+            transformed_X_train (numpy.ndarray, scipy.csr_matrix): transformed X train split
+            transformed_X_test (numpy.ndarray, scipy.csr_matrix): transformed X test split
+            transformed_y_train (numpy.ndarray): transformed y train split
+            transformed_y_test (numpy.ndarray): transformed y test split
+
+            random_state (int, optional): integer for reproducibility on fitting and transformations, defaults to None
+        """
+        self.output_directory = output_directory
+        self.package_name = package_name
+        self.pre_transformed_columns = pre_transformed_columns
 
         # objects needed to create the output
         self.features = features
         self.analyzer = analyzer
         self.transformer = transformer
         self.model_finder = model_finder
-        self.transformed_columns = transformed_columns
 
         # data used to create the output
         self.X_train = X_train
@@ -103,16 +174,14 @@ class Output:
         self.transformed_y_train = transformed_y_train
         self.transformed_y_test = transformed_y_test
 
-        # directory where the dashboard will be created
-        self.output_directory = output_directory
+        # random state
+        self.random_state = random_state
 
-        # self.root_path = root_path
-        self.package_name = package_name
-        # self._templates_path = os.path.join(self.root_path, package_name, self._templates_directory_name)
-        # self._static_template_path = os.path.join(self.root_path, package_name, self._static_directory_name)
+        # jinja2 Environment
         self.env = Environment(loader=PackageLoader(package_name, self._templates_directory_name))
 
         # Views
+        self.hyperlinks = None
         self.view_overview = Overview(
                     template=self.env.get_template(self._view_overview_html),
                     css_path=(self._static_directory_name + "/" + self._view_overview_css),
@@ -124,7 +193,7 @@ class Output:
                     css_path=(self._static_directory_name + "/" + self._view_features_css),
                     js_path=(self._static_directory_name + "/" + self._view_features_js),
                     target_name=self.features.target,
-                    pre_transformed_columns=self.transformed_columns
+                    pre_transformed_columns=self.pre_transformed_columns
                 )
 
         self.view_models = self._models_view_creator(
@@ -167,22 +236,49 @@ class Output:
         )
 
     def create_html(self, do_pairplots, do_logs):
+        """Create HTML output.
+
+        HTML output is put into output_directory attribute directory. HTML and static files are copied to the output
+        directory in a predefined structure and relative paths are used as hyperlinks to join them across HTML pages.
+        Necessary data for View objects and Plot objects is taken from features, analyzer, model_finder and transformer
+        objects passed during initialization.
+
+        Depending on do_pairplots flag, pairplot and scatterplot Plots might not be calculated and included in the HTML
+        output.
+
+        Depending on do_logs flag, .csv files of search results from model_finder might not be saved onto the output
+        directory.
+
+        Args:
+            do_pairplots (bool): flag indicating if pairplot and scatterplot Plot objects should generate the
+                appropriate Plots
+            do_logs (bool): flag indicating if log files of different model_finder search results should be written
+                down to the output directory
+        """
+        ###################################################
+        # =============== Base Parameters =============== #
+        ###################################################
 
         # base variables needed by every view
         base_css = (self._static_directory_name + "/" + self._base_css)  # relative path to static directory
         time_started = datetime.datetime.now()
-        current_time = time_started.strftime(self._time_format)
 
+        current_time = time_started.strftime(self._time_format)
         created_on = self._footer_note.format(time=current_time)
+
         self.hyperlinks = {
-            self._view_overview: self._view_overview_html,  # self._path_to_file(self._view_overview_html),
-            self._view_features: self._view_features_html,  # self._path_to_file(self._view_features_html),
-            self._view_models: self._view_models_html  # self._path_to_file(self._view_models_html)
+            self._view_overview: self._view_overview_html,
+            self._view_features: self._view_features_html,
+            self._view_models: self._view_models_html
         }
 
         # feature that will be chosen in the beginning
-        feature_list = self.analyzer.feature_list()
+        feature_list = self.analyzer.feature_list()  # feature list is already sorted
         first_feature = feature_list[0]
+
+        ############################################################
+        # =============== Plots and Necessary Data =============== #
+        ############################################################
 
         # seaborn pairplot
         if do_pairplots:
@@ -228,8 +324,6 @@ class Output:
         )
 
         # test split of original data
-        # original test_df and transformed test_df can be compared and concatted later on cause their indexes are
-        # reset in the beginning
         original_test_df = pd.concat([self.X_test, self.y_test], axis=1)
 
         # test split of transformed data, with user-friendly column names
@@ -237,21 +331,19 @@ class Output:
         tr_y = make_pandas_data(self.transformed_y_test, pd.Series)
 
         # accommodating for any pre-transformed columns with self.transformed_columns
-        tr_X.columns = self.transformer.transformed_columns() + sorted(self.transformed_columns)
+        tr_X.columns = self.transformer.transformed_columns() + sorted(self.pre_transformed_columns)
         tr_y.name = self.features.target
         transformed_df = pd.concat([tr_X, tr_y], axis=1)
-
-        # transformed_df = pd.DataFrame(data=self.transformed_X_test, columns=self.transformer.transformed_columns())
-        # transformed_df = pd.concat(
-        #     [transformed_df, pd.Series(self.transformed_y_test, name=self.features.target)],
-        #     axis=1
-        # )
 
         # data needed for ModelsView
         models_right, models_left_bottom = self._models_plot_output(self.model_finder.problem)
 
         predicted_y = self.model_finder.predictions_X_test(self._view_models_model_limit)
         predictions_table = self.models_data_table.data_table(self.X_test, self.y_test, predicted_y)
+
+        ###################################################
+        # =============== Rendering Views =============== #
+        ###################################################
 
         # Overview
         overview_rendered = self.view_overview.render(
@@ -298,7 +390,9 @@ class Output:
             predictions_table=predictions_table
         )
 
-        # Writing files to the HDD
+        #################################################
+        # =============== Writing Files =============== #
+        #################################################
 
         self._create_subdirectories()
 
@@ -323,29 +417,79 @@ class Output:
             self._write_logs(time_started)
 
     def static_path(self):
+        """Return absolute path to the static folder in the output directory.
+
+        Returns:
+            str: static directory path in output directory
+        """
         return os.path.join(self.output_directory, self._created_static_directory)
 
     def assets_path(self):
+        """Return absolute path to the assets folder in the output directory.
+
+        Returns:
+            str: assets directory path in output directory
+        """
         return os.path.join(self.output_directory, self._created_assets_directory)
 
     def logs_path(self):
+        """Return absolute path to the logs folder in the output directory.
+
+        Returns:
+            str: logs directory path in output directory
+        """
         return os.path.join(self.output_directory, self._created_logs_directory)
 
     def overview_file(self):
+        """Return absolute path to the Overview HTML file in the output directory.
+
+        Returns:
+            str: Overview HTML file path
+        """
         return os.path.join(self.output_directory, self._view_overview_html)
 
     def features_file(self):
+        """Return absolute path to the FeatureView HTML file in the output directory.
+
+        Returns:
+            str: FeatureView HTML file path
+        """
         return os.path.join(self.output_directory, self._view_features_html)
 
     def models_file(self):
+        """Return absolute path to the ModelsView HTML file in the output directory.
+
+        Returns:
+            str: ModelsView HTML file path
+        """
         return os.path.join(self.output_directory, self._view_models_html)
 
     def _write_html(self, template_filename, template):
+        """Write template HTML content into HTML file in output directory based on template filename.
+
+        template_filename is used to dynamically create HTML file path in output directory.
+
+        Args:
+            template_filename (str): HTML file name
+            template (str): rendered HTML content
+        """
         template_filepath = self._path_to_file(template_filename)
         with open(template_filepath, "w") as f:
             f.write(template)
 
     def _write_logs(self, time_started):
+        """Write down .csv files of model_finder search results into logs directory in output directory.
+
+        3 different search results are available in model_finder object:
+            - search results
+            - quicksearch results
+            - gridsearch results
+
+        Log .csv files are created in the new subdirectory for all of them as long as the result is not None.
+
+        Args:
+            time_started (datetime.datetime): start time of HTML Output creation
+        """
         directory = self._create_logs_directory(time_started)
         mf = self.model_finder
         dfs = [mf.search_results(model_limit=None), mf.quicksearch_results(), mf.gridsearch_results()]
@@ -356,27 +500,59 @@ class Output:
                 df.to_csv(os.path.join(directory, filename))
 
     def _create_logs_directory(self, time_started):
+        """Create subdirectory in logs in output directory.
+
+        New subdirectory is created in Logs with the formatted start time of the HTML output creation.
+
+        Args:
+            time_started (datetime.datetime): start time of HTML Output creation
+        """
         directory = time_started.strftime(self._logs_time_format)
         logs_directory = os.path.join(self.logs_path(), directory)
         pathlib.Path(logs_directory).mkdir(parents=True, exist_ok=True)
         return logs_directory
 
     def _create_subdirectories(self):
+        """Create directories for static and assets in case they don't exist.
+
+        Logs directory is not included as it might not be needed based on flags provided to 'create_html' method.
+        """
         # creating directories for static and assets files
         for directory_path in [self.static_path(), self.assets_path()]:
             pathlib.Path(directory_path).mkdir(exist_ok=True)
 
     def _copy_static(self):
-        for f in self._static_files_names:
-            f_to_copy = pkgutil.get_data(self.package_name, os.path.join(self._static_directory_name, f)).decode("utf-8")
+        """Copy static files to static folder in the output directory."""
+        for f in self._static_files_names:  # predefined static files to copy
+            f_copy = pkgutil.get_data(self.package_name, os.path.join(self._static_directory_name, f)).decode("utf-8")
             with open(os.path.join(self.static_path(), f), "w", newline="") as fw:
-                fw.write(f_to_copy)
+                fw.write(f_copy)
 
     def _path_to_file(self, filename):
+        """Create output directory file path to provided filename.
+
+        Returns:
+            str: output directory file path
+        """
         return os.path.join(self.output_directory, filename)
 
     def _models_view_creator(self, problem_type):
+        """Create appropriate ModelsView based on a problem type.
 
+        Following ModelsViews can be created:
+            - classification: ModelsViewClassification
+            - regression: ModelsViewRegression
+            - multiclass: ModelsViewMulticlass
+
+        Args:
+            problem_type (str): problem type
+
+        Returns:
+            ModelsView: ModelsView specific to a given problem
+
+        Raises:
+            ValueError: when provided problem_type is incorrect
+        """
         kwargs = {
             "template": self.env.get_template(self._view_models_html),
             "css_path": (self._static_directory_name + "/" + self._view_models_css),
@@ -400,6 +576,26 @@ class Output:
         return mv(**kwargs)
 
     def _models_plot_output(self, problem_type):
+        """Create appropriate Plots and/or Data based on a problem type.
+
+        Plot objects are instantiated and appropriately called based on a provided problem_type. Following ModelPlots
+        can be created:
+            - classification: ModelsPlotClassification
+            - regression: ModelsPlotRegression
+            - multiclass: ModelsPlotMulticlass
+
+        Output Plot/data is not restricted to those Plot objects and can be obtained via different methods specific
+        to a problem type.
+
+        Args:
+            problem_type (str): problem type
+
+        Returns:
+            tuple: (models_right Plot/Data, models_left_bottom Plot/Data)
+
+        Raises:
+            ValueError: when provided problem_type is incorrect
+        """
         # Creating Plots based on type of ML problem
         plot_design = self.plot_design
 

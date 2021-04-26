@@ -111,6 +111,12 @@ class Dashboard:
 
     def create_dashboard(self, models=None, scoring=None, mode="quick", logging=True, disable_pairplots=False,
                          force_pairplot=False):
+        """Creates several Views (Subpages) and joins them together to form an interactive WebPage/Dashboard.
+        Every view is static - there is no server communication between html template and provided data. Every
+        possible interaction is created with CSS/HTML or JS. This was a conscious design choice - albeit much slower
+        than emulating server interaction, files can be easily shared between parties of interest.
+        Keep in mind that basically all the data and the calculations are embedded into the files - if you'd wish
+        to post them on the server you have to be aware if the data itself can be posted for public scrutiny."""
         # force_pairplot - useful only when n of features > limit
         # disable_pairplots - disables pairplots in the dashboard, takes precedence over force_pairplot
 
@@ -181,11 +187,11 @@ class Dashboard:
         self.output = Output(
             output_directory=self.output_directory,
             package_name=self._name,
+            pre_transformed_columns=self.already_transformed_columns,
             features=self.features,
             analyzer=self.analyzer,
             transformer=self.transformer_eval,
             model_finder=self.model_finder,
-            transformed_columns=self.already_transformed_columns,
             X_train=self.X_train,
             X_test=self.X_test,
             y_train=self.y_train,
