@@ -32,7 +32,7 @@ class Output:
     # base template
     _base_css = "style.css"
     _time_format = "%d-%b-%Y %H:%M:%S"
-    _logs_time_format ="%d%m%Y%H%M%S"
+    _logs_time_format = "%d%m%Y%H%M%S"
     _footer_note = "Created on {time}"
 
     # output structure
@@ -116,7 +116,6 @@ class Output:
         self.view_overview = Overview(
                     template=self.env.get_template(self._view_overview_html),
                     css_path=(self._static_directory_name + "/" + self._view_overview_css),
-                    max_categories=self.analyzer.max_categories,
                     feature_description_class=self._element_with_description_class
                 )
 
@@ -125,7 +124,7 @@ class Output:
                     css_path=(self._static_directory_name + "/" + self._view_features_css),
                     js_path=(self._static_directory_name + "/" + self._view_features_js),
                     target_name=self.features.target,
-                    transformed_columns=self.transformed_columns
+                    pre_transformed_columns=self.transformed_columns
                 )
 
         self.view_models = self._models_view_creator(
@@ -252,7 +251,7 @@ class Output:
         models_right, models_left_bottom = self._models_plot_output(self.model_finder.problem)
 
         predicted_y = self.model_finder.predictions_X_test(self._view_models_model_limit)
-        table = self.models_data_table.data_table(self.X_test, self.y_test, predicted_y)
+        predictions_table = self.models_data_table.data_table(self.X_test, self.y_test, predicted_y)
 
         # Overview
         overview_rendered = self.view_overview.render(
@@ -274,17 +273,17 @@ class Output:
             base_css=base_css,
             creation_date=created_on,
             hyperlinks=self.hyperlinks,
+            feature_list=feature_list,
             summary_grid=generated_infogrid_summary,
+            X_transformations=self.transformer.transformations(),
+            y_transformations=self.transformer.y_transformations(),
+            test_features_df=original_test_df,
+            test_transformed_features_df=transformed_df,
+            normal_transformations_plots=generated_normal_transformations_plots,
             correlations_plot=generated_correlation_plot,
             do_scatterplot_flag=do_pairplots,
             scatterplot=generated_scattergrid,
-            feature_list=feature_list,
             numerical_features=self.features.numerical_features(),
-            test_features_df=original_test_df,
-            test_transformed_features_df=transformed_df,
-            X_transformations=self.transformer.transformations(),
-            y_transformations=self.transformer.y_transformations(),
-            normal_transformations_plots=generated_normal_transformations_plots,
             initial_feature=first_feature
         )
 
@@ -296,7 +295,7 @@ class Output:
             model_results=self.model_finder.search_results(self._view_models_model_limit),
             models_right=models_right,
             models_left_bottom=models_left_bottom,
-            incorrect_predictions_table=table
+            predictions_table=predictions_table
         )
 
         # Writing files to the HDD
@@ -381,7 +380,6 @@ class Output:
         kwargs = {
             "template": self.env.get_template(self._view_models_html),
             "css_path": (self._static_directory_name + "/" + self._view_models_css),
-            # "js_path": (self._static_directory_name + "/" + self._view_models_js),
             "params_name": self.model_finder.dataframe_params_name(),
             "model_with_description_class": self._element_with_description_class,
         }

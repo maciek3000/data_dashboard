@@ -444,7 +444,8 @@ class MainGrid:
     Attributes:
         features (list): list of features names
         plot_design (PlotDesign): PlotDesign object with predefined style elements
-        feature_description_class (str): HTML (CSS) class shared between different HTML elements
+        feature_description_class (str): HTML (CSS) class shared between different objects indicating HTML element
+            with hidden (hoverable) description
     """
     _features_dropdown = "features-dropdown"
 
@@ -454,7 +455,8 @@ class MainGrid:
         Args:
             features (list): list of features names
             plot_design (PlotDesign): PlotDesign object with predefined style elements
-            feature_description_class (str): HTML (CSS) class shared between different HTML elements
+            feature_description_class (str): HTML (CSS) class shared between different objects indicating HTML element
+                with hidden (hoverable) description
         """
         # Font won't be updated in plots until any change is made (e.g. choosing different Feature).
         # This is a bug in bokeh: https://github.com/bokeh/bokeh/issues/9448
@@ -579,7 +581,8 @@ class InfoGrid(MainGrid):
         Args:
             features (list): list of features names
             plot_design (PlotDesign): PlotDesign object with predefined style elements
-            feature_description_class (str): HTML (CSS) class shared between different HTML elements
+            feature_description_class (str): HTML (CSS) class shared between different objects indicating HTML element
+                with hidden (hoverable) description
         """
         super().__init__(features, plot_design, feature_description_class)
 
@@ -1839,6 +1842,8 @@ class ModelsPlotMulticlass:
         p.add_layout(labels)
 
         # plot specific styling
+        p.yaxis.axis_label = "Actual"
+        p.xaxis.axis_label = "Predicted"
         p.xaxis.major_label_orientation = -0.5  # in radians
 
         return p
