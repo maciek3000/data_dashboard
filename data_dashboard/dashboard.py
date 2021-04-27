@@ -485,7 +485,7 @@ class Dashboard:
             self._create_pairplots_flag = False
             warnings.warn(
                 "Number of features crossed their default limit - pairplots will be turned off to reduce"
-                " runtime and/or to avoid MemoryErrors. To force pairplots to be created, call 'create_html' with"
+                " runtime and/or to avoid MemoryErrors. To force pairplots to be created, call 'create_dashboard' with"
                 " 'force_pairplots=True' argument.")
 
     def _check_transformed_cols(self, transformed_columns):
