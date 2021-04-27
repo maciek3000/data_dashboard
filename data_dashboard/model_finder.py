@@ -264,7 +264,7 @@ class ModelFinder:
             - "quick": search is initially done on all models but with no parameter tuning after which top
                 _quick_search_limit Models are chosen and GridSearched with their param_grids
             - "detailed": GridSearch is done on all default models and their params
-        Provided mode doesn't matter when models are explicitly provided (instead of None).
+        Provided mode doesn't matter when models are explicitly provided (not None).
 
         After initial quicksearch/gridsearch, best model from each class is chosen and have its assessment performed.
         Results of this are set in _search_results and _search_results_dataframe attributes.

@@ -217,6 +217,39 @@ def test_output_write_logs_one_df_missing(output, tmpdir, model_finder_classific
         assert os.path.exists(f)
 
 
+@pytest.mark.parametrize(
+    ("input_directory",),
+    (
+            ("static",),
+            (os.path.join("static", "static2"),),
+            (os.path.join("a", "b", "c"),)
+    )
+)
+def test_output_create_output_directory(output, tmpdir, input_directory):
+    """Testing if creating output_directory works in case it doesn't exist."""
+    directory = os.path.join(tmpdir, input_directory)
+    output.output_directory = directory
+    output._create_output_directory()
+    assert os.path.isdir(directory)
+
+
+@pytest.mark.parametrize(
+    ("input_directory",),
+    (
+            ("static",),
+            (os.path.join("a", "b"),)
+    )
+)
+def test_dashboard_output_directory_exists(output, tmpdir, input_directory):
+    """Testing if create_output_directory does not interfere when the directory already exists."""
+    directory = os.path.join(tmpdir, input_directory)
+    os.makedirs(directory)
+    assert os.path.isdir(directory)
+    output.output_directory = directory
+    output._create_output_directory()
+    assert os.path.isdir(directory)
+
+
 def test_output_create_subdirectories(output, tmpdir):
     """Testing if static and assets subdirectories are created correctly."""
     directories = ["static", "assets"]

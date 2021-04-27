@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     # X = X.drop(["CHAS", "RAD"], axis=1)
 
-    coord = Dashboard(output_directory, X, y, descriptions, os.getcwd(), random_state=42)
+    coord = Dashboard(X, y, output_directory, feature_descriptions_dict=descriptions, random_state=42)
     # coord.set_custom_transformers(numerical_transformers=[SimpleImputer(), PowerTransformer()])
 
     # output = coord.quick_find()

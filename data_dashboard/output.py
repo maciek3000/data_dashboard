@@ -394,6 +394,7 @@ class Output:
         # =============== Writing Files =============== #
         #################################################
 
+        self._create_output_directory()
         self._create_subdirectories()
 
         # HTML files
@@ -464,6 +465,22 @@ class Output:
         """
         return os.path.join(self.output_directory, self._view_models_html)
 
+    def _create_output_directory(self):
+        """Create output directory in case it doesn't exist.
+
+        Include creation of parents directories if they don't exist as well.
+        """
+        pathlib.Path(self.output_directory).mkdir(exist_ok=True, parents=True)
+
+    def _create_subdirectories(self):
+        """Create directories for static and assets in case they don't exist.
+
+        Logs directory is not included as it might not be needed based on flags provided to 'create_html' method.
+        """
+        # creating directories for static and assets files
+        for directory_path in [self.static_path(), self.assets_path()]:
+            pathlib.Path(directory_path).mkdir(exist_ok=True)
+
     def _write_html(self, template_filename, template):
         """Write template HTML content into HTML file in output directory based on template filename.
 
@@ -511,15 +528,6 @@ class Output:
         logs_directory = os.path.join(self.logs_path(), directory)
         pathlib.Path(logs_directory).mkdir(parents=True, exist_ok=True)
         return logs_directory
-
-    def _create_subdirectories(self):
-        """Create directories for static and assets in case they don't exist.
-
-        Logs directory is not included as it might not be needed based on flags provided to 'create_html' method.
-        """
-        # creating directories for static and assets files
-        for directory_path in [self.static_path(), self.assets_path()]:
-            pathlib.Path(directory_path).mkdir(exist_ok=True)
 
     def _copy_static(self):
         """Copy static files to static folder in the output directory."""

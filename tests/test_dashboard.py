@@ -227,36 +227,3 @@ def test_dashboard_check_transformed_cols_error(dashboard, incorrect_transformed
     with pytest.raises(ValueError) as excinfo:
         res = dashboard._check_transformed_cols(incorrect_transformed_columns)
     assert str(set(incorrect_transformed_columns)) in str(excinfo.value)
-
-
-@pytest.mark.parametrize(
-    ("input_directory",),
-    (
-            ("static",),
-            (os.path.join("static", "static2"),),
-            (os.path.join("a", "b", "c"),)
-    )
-)
-def test_dashboard_check_output_directory(dashboard, tmpdir, input_directory):
-    """Testing if creating output_directory works in case it doesn't exist."""
-    directory = os.path.join(tmpdir, input_directory)
-    actual_result = dashboard._check_output_directory(directory)
-    assert os.path.isdir(directory)
-    assert actual_result == directory
-
-
-@pytest.mark.parametrize(
-    ("input_directory",),
-    (
-            ("static",),
-            (os.path.join("a", "b"),)
-    )
-)
-def test_dashboard_output_directory_exists(dashboard, tmpdir, input_directory):
-    """Testing if check_output_directory does not interfere when the directory already exists."""
-    directory = os.path.join(tmpdir, input_directory)
-    os.makedirs(directory)
-    assert os.path.isdir(directory)
-    actual_result = dashboard._check_output_directory(directory)
-    assert os.path.isdir(directory)
-    assert actual_result == directory
