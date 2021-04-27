@@ -1,6 +1,10 @@
+/* Bokeh dropdown */
+
 .features-dropdown {
     display: none !important;
 }
+
+/* View and Menu Button */
 
 .content {
     position: relative;
@@ -249,26 +253,10 @@
     margin-bottom: 4px;
 }
 
-/*
-.transformed-feature-subtitle {
-    font-size: 1.2em;
-    color: var(--gray-title);
-    border-bottom: 1px solid var(--light-gray);
-}
-*/
-
 .single-transformer {
     font-size: 1.2em;
     color: var(--normal-link-color);
 }
-
-/*
-.transformations-table-title {
-    font-size: 1.2em;
-    color: var(--gray-title);
-    border-bottom: 1px solid var(--light-gray);
-}
-*/
 
 .transformations-table {
     margin-right: 16px;
@@ -281,7 +269,6 @@
 .transformations-table table thead th:nth-child(1) {
     color: var(--base-color);
     font-weight: bold;
-    /* padding-right: 80px; */
     text-align: left;
     font-size: 1.05em;
 }
@@ -289,7 +276,6 @@
 .transformations-table table tbody tr td:nth-child(1) {
     color: var(--base-color);
     font-weight: bold;
-    /* padding-right: 80px; */
     border-right: 1px solid var(--light-gray);
     text-align: left;
     font-size: 1.05em;
@@ -330,4 +316,3 @@ tbody tr:nth-child(odd) {
 tbody tr:hover {
     background-color: #ebd5d1;
 }
-

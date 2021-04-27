@@ -8,9 +8,6 @@ for (i=0; i < elems.length; i++) {
             var elem_text = elem.innerText.split(". ")[1];
             // Bokeh included here to make sure that it is loaded by the time the event should fire
             let dropdowns = ["info_grid_dropdown", "scatter_plot_grid_dropdown"];
-            // let dropdown = Bokeh.documents[0].get_model_by_name("features_dropdown");
-            // console.log(dropdown);
-            // var dropdowns = Bokeh.documents[0].select({"name": "features_dropdown"});
             for (j=0; j < dropdowns.length; j++) {
                 var dropdown = Bokeh.documents[j].get_model_by_name(dropdowns[j]);
                 if ( dropdown ) {

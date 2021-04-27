@@ -786,8 +786,8 @@ class ModelsView(BaseView):
     _models_left_bottom = "models_left_bottom"
     _models_left_bottom_script = "bokeh_script_models_left_bottom"
 
-    _predictions_table = "incorrect_predictions_table"
-    _predictions_table_script = "bokeh_script_incorrect_predictions_table"
+    _predictions_table = "predictions_table"
+    _predictions_table_script = "bokeh_script_predictions_table"
 
     # CSS
     _first_model_class = "first-model"

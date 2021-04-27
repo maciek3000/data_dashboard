@@ -1,6 +1,10 @@
+/* Description Box */
+
 .elem-w-desc span {
     left: 10px;
 }
+
+/* Models Results */
 
 .models-comparison {
     display: flex;
@@ -17,6 +21,8 @@
     color: black ;
     font-weight: bold;
 }
+
+/* Left Pane */
 
 .models-left {
     width: 50%;
@@ -40,6 +46,8 @@
     }
 
 }
+
+/* Models Results Table */
 
 .models-left-upper {
     margin-bottom: 48px;
@@ -96,6 +104,8 @@
 .models-left-upper tbody tr th {
     padding-right: 12px;
 }
+
+/* Classification Confusion Matrices */
 
 .confusion-matrices {
     display: flex;
@@ -162,6 +172,6 @@
     padding: 4px;
 }
 
-.incorrect-predictions-table {
+.predictions-table {
     width: 100%;
 }
