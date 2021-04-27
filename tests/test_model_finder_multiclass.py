@@ -5,7 +5,6 @@ from sklearn.linear_model import LogisticRegression, RidgeClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
-
 from sklearn.dummy import DummyClassifier
 
 
@@ -316,7 +315,9 @@ def test_model_finder_predict_X_test_multiclass(model_finder_multiclass_fitted, 
             (DecisionTreeClassifier(max_depth=10, criterion="entropy"),)
     )
 )
-def test_model_finder_calculate_model_score_multiclass_regular_scoring(model_finder_multiclass, split_dataset_multiclass, model):
+def test_model_finder_calculate_model_score_multiclass_regular_scoring(
+        model_finder_multiclass, split_dataset_multiclass, model
+):
     """Testing if calculating model score works correctly in multiclass with scoring != roc_auc_score."""
     scoring = accuracy_score
     X_train = split_dataset_multiclass[0]

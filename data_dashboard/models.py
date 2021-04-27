@@ -1,3 +1,16 @@
+"""Default models and their parameters to be used during search method of ModelFinder.
+
+Note:
+    Models and their parameters were chosen arbitrarily to achieve a good balance between performance and search
+    results. By no means should they be treated as an exhaustive Models list, more as a quick reference for some
+    of the Models available in sklearn.
+
+Attributes:
+    alpha (numpy.ndarray): array of alpha parameter values
+    C (numpy.ndarray): array of C parameter values
+    classifiers (dict): 'Model class': param_grid dict pairs of Models to be used in Classification/Multiclass
+    regressors (dict): 'Model class': param_grid dict pairs of Models to be used in Regression
+"""
 import numpy as np
 # Classification/Multiclass
 from sklearn.linear_model import SGDClassifier, PassiveAggressiveClassifier, RidgeClassifier, Perceptron
@@ -16,19 +29,6 @@ from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, AdaBoos
 from xgboost import XGBRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neural_network import MLPRegressor
-"""Default models and their parameters to be used during search method of ModelFinder.
-
-Note:
-    Models and their parameters were chosen arbitrarily to achieve a good balance between performance and search
-    results. By no means should they be treated as an exhaustive Models list, more as a quick reference for some
-    of the Models available in sklearn.
-
-Attributes:
-    alpha (numpy.ndarray): array of alpha parameter values
-    C (numpy.ndarray): array of C parameter values
-    classifiers (dict): 'Model class': param_grid dict pairs of Models to be used in Classification/Multiclass
-    regressors (dict): 'Model class': param_grid dict pairs of Models to be used in Regression
-"""
 
 
 alpha = np.logspace(-4, 5, 10)

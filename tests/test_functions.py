@@ -6,7 +6,6 @@ from scipy.sparse import csr_matrix
 from sklearn.linear_model import Ridge, PassiveAggressiveClassifier, SGDRegressor, SGDClassifier, LinearRegression
 from sklearn.linear_model import Lasso
 from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, log_loss
-
 from data_dashboard.functions import append_description, assess_models_names, calculate_numerical_bins, make_pandas_data
 from data_dashboard.functions import modify_histogram_edges, obj_name, replace_duplicate_str, reverse_sorting_order
 from data_dashboard.functions import sanitize_input, series_to_dict, sort_strings
@@ -135,6 +134,7 @@ def test_make_pandas_data_error(wrong_input):
     with pytest.raises(Exception):
         make_pandas_data(wrong_input, pd.DataFrame)
 
+
 @pytest.mark.parametrize(
     ("input_edges", "interval_percentage", "expected_right_edge"),
     (
@@ -246,6 +246,7 @@ def test_sanitize_input(input_list, expected_result):
     )
 )
 def test_series_to_dict(param_series, expected_result):
+    """Testing if converting series to dict works correctly."""
     actual_result = series_to_dict(param_series)
     assert actual_result == expected_result
 

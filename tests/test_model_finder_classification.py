@@ -7,7 +7,6 @@ from sklearn.svm import SVC
 from sklearn.metrics import roc_auc_score, accuracy_score, roc_curve, det_curve
 from sklearn.dummy import DummyClassifier
 from sklearn.exceptions import NotFittedError
-
 from data_dashboard.model_finder import ModelsNotSearchedError
 
 
@@ -19,10 +18,10 @@ from data_dashboard.model_finder import ModelsNotSearchedError
             ([12, 13, 14, 15, 16, 17],),
     )
 )
-def test_model_finder_dummy_classification(model_finder_classification, split_dataset_categorical, seed, test_input):
+def test_model_finder_dummy_classification(model_finder_classification, split_dataset_classification, seed, test_input):
     """Testing if DummyModel (for classification) is created correctly."""
-    X_train = split_dataset_categorical[0]
-    y_train = split_dataset_categorical[2]
+    X_train = split_dataset_classification[0]
+    y_train = split_dataset_classification[2]
     expected_model = DummyClassifier(strategy="stratified", random_state=seed)
     expected_model.fit(X_train, y_train)
     expected_model_scores = {"roc_auc_score": 0.41666666666666663, "accuracy_score": 0.48}
@@ -90,9 +89,14 @@ def test_model_finder_classification_search(model_finder_classification, mode, e
             ("detailed", LogisticRegression(tol=0.1), {"roc_auc_score": 0.6666666666666667, "accuracy_score": 0.52})
     )
 )
-def test_model_finder_search_and_fit_classification(model_finder_classification, mode, expected_model, expected_scores, seed):
+def test_model_finder_search_and_fit_classification(
+        model_finder_classification, mode, expected_model, expected_scores, seed
+):
     """Testing if search_and_fit() function correctly searches for and sets and fits chosen model (classification)."""
-    prediction_array = np.array([1.34, -0.25, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0]).reshape(1, -1)
+    prediction_array = np.array(
+        [1.34, -0.25, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0]
+    ).reshape(1, -1)
+
     model_finder_classification._quicksearch_limit = 1
     model_finder_classification.scoring_functions = [roc_auc_score, accuracy_score]
     actual_model = model_finder_classification.search_and_fit(models=None, scoring=roc_auc_score, mode=mode)
@@ -253,14 +257,14 @@ def test_model_finder_classification_search_results_dataframe(model_finder_class
     )
 )
 def test_model_finder_classification_plot_curves(
-        model_finder_classification_fitted, split_dataset_categorical, seed, model, params, response_method, plot_func
+        model_finder_classification_fitted, split_dataset_classification, seed, model, params, response_method,
+        plot_func
 ):
     """Testing if _plot_curves correctly assesses prediction probabilities and calculates the results based on the
     provided plot_func."""
-
     params["random_state"] = seed
     clf = model(**params)
-    X_train, X_test, y_train, y_test = split_dataset_categorical
+    X_train, X_test, y_train, y_test = split_dataset_classification
     clf.fit(X_train, y_train)
     y_scores = getattr(clf, response_method)(X_test)
 
@@ -326,7 +330,7 @@ def test_model_finder_classification_confusion_matrices_error(model_finder_class
     )
 )
 def test_model_finder_predict_X_test_classification(
-        model_finder_classification_fitted, split_dataset_categorical, limit, seed
+        model_finder_classification_fitted, split_dataset_classification, limit, seed
 ):
     """Testing if predictions of X_test split from found models are correct (in classification)."""
     models = [
@@ -335,7 +339,7 @@ def test_model_finder_predict_X_test_classification(
         DecisionTreeClassifier(**{"max_depth": 10, "criterion": "entropy", "random_state": seed})
     ]
     results = []
-    X_train, X_test, y_train, y_test = split_dataset_categorical
+    X_train, X_test, y_train, y_test = split_dataset_classification
     for model in models:
         new_model = model.fit(X_train, y_train)
         results.append((model, new_model.predict(X_test)))
@@ -400,13 +404,15 @@ def test_model_finder_wrap_params_classification(model_finder_classification, te
             (DecisionTreeClassifier(max_depth=10, criterion="entropy"),)
     )
 )
-def test_model_finder_calculate_model_score_classification_regular_scoring(model_finder_classification, split_dataset_categorical, model):
+def test_model_finder_calculate_model_score_classification_regular_scoring(
+        model_finder_classification, split_dataset_classification, model
+):
     """Testing if calculating model score works correctly in classification with scoring != roc_auc_score."""
     scoring = accuracy_score
-    X_train = split_dataset_categorical[0]
-    X_test = split_dataset_categorical[1]
-    y_train = split_dataset_categorical[2]
-    y_test = split_dataset_categorical[3]
+    X_train = split_dataset_classification[0]
+    X_test = split_dataset_classification[1]
+    y_train = split_dataset_classification[2]
+    y_test = split_dataset_classification[3]
 
     model.fit(X_train, y_train)
 
@@ -423,14 +429,16 @@ def test_model_finder_calculate_model_score_classification_regular_scoring(model
             (DecisionTreeClassifier(max_depth=10, criterion="entropy"),),
     )
 )
-def test_model_finder_calculate_model_score_classification_roc_auc_scoring_proba(model_finder_classification, split_dataset_categorical, model):
+def test_model_finder_calculate_model_score_classification_roc_auc_scoring_proba(
+        model_finder_classification, split_dataset_classification, model
+):
     """Testing if calculating model score works correctly in classification with scoring == roc_auc_score
     and with models exposing predict_proba() method."""
     scoring = roc_auc_score
-    X_train = split_dataset_categorical[0]
-    X_test = split_dataset_categorical[1]
-    y_train = split_dataset_categorical[2]
-    y_test = split_dataset_categorical[3]
+    X_train = split_dataset_classification[0]
+    X_test = split_dataset_classification[1]
+    y_train = split_dataset_classification[2]
+    y_test = split_dataset_classification[3]
 
     model.fit(X_train, y_train)
 
@@ -439,6 +447,7 @@ def test_model_finder_calculate_model_score_classification_roc_auc_scoring_proba
 
     assert actual_result, expected_result
 
+
 @pytest.mark.parametrize(
     ("model",),
     (
@@ -446,14 +455,16 @@ def test_model_finder_calculate_model_score_classification_roc_auc_scoring_proba
             (PassiveAggressiveClassifier(),),
     )
 )
-def test_model_finder_calculate_model_score_classification_roc_auc_scoring_decision_func(model_finder_classification, split_dataset_categorical, model):
+def test_model_finder_calculate_model_score_classification_roc_auc_scoring_decision_func(
+        model_finder_classification, split_dataset_classification, model
+):
     """Testing if calculating model score works correctly in classification with scoring == roc_auc_score
     and with models exposing decision_function() method."""
     scoring = roc_auc_score
-    X_train = split_dataset_categorical[0]
-    X_test = split_dataset_categorical[1]
-    y_train = split_dataset_categorical[2]
-    y_test = split_dataset_categorical[3]
+    X_train = split_dataset_classification[0]
+    X_test = split_dataset_classification[1]
+    y_train = split_dataset_classification[2]
+    y_test = split_dataset_classification[3]
 
     model.fit(X_train, y_train)
 

@@ -1,10 +1,9 @@
-import os
 import pytest
-from bokeh.models.layouts import Tabs
-from bokeh.layouts import Row
+import os
 import datetime
 import pandas as pd
-
+from bokeh.models.layouts import Tabs
+from bokeh.layouts import Row
 from data_dashboard.views import ModelsViewClassification, ModelsViewRegression, ModelsViewMulticlass
 
 

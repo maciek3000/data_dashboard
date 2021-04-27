@@ -1,9 +1,8 @@
 import pytest
 import pandas as pd
-import os
-from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
 import numpy as np
 from sklearn import clone
+from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import PowerTransformer, OneHotEncoder, FunctionTransformer
 
@@ -19,7 +18,7 @@ def test_dashboard_assert_classification_pos_label(dashboard, data_classificatio
     """Testing if assessing provided classification_pos_label returns the provided label if its in y values."""
     y = data_classification_balanced[1]
     dashboard.y = y
-    pos_label = 1
+    pos_label = 1  # placeholder value to check if it's actually changed
     pos_label = dashboard._check_classification_pos_label(input_label)
     assert pos_label == input_label
 
@@ -51,7 +50,9 @@ def test_dashboard_assert_classification_pos_label_error(dashboard, data_classif
             ("Sweets",),
     )
 )
-def test_dashboard_assert_classification_pos_label_warning(dashboard, data_multiclass, root_path_to_package, warning_label):
+def test_dashboard_assert_classification_pos_label_warning(
+        dashboard, data_multiclass, root_path_to_package, warning_label
+):
     """Testing if warning is raised when classification_pos_label is explicitly provided for multiclass y."""
     y = data_multiclass[1]
     dashboard.y = y
@@ -71,12 +72,14 @@ def test_dashboard_assert_classification_pos_label_warning(dashboard, data_multi
             ("Sweets",),
     )
 )
-def test_dashboard_assert_classification_pos_label_forced(dashboard, data_multiclass, root_path_to_package, input_label):
+def test_dashboard_assert_classification_pos_label_forced(
+        dashboard, data_multiclass, root_path_to_package, input_label
+):
     """Testing if classification_pos_label is set correctly for multiclass y when flag for forcing it is set to True."""
     y = data_multiclass[1]
     dashboard.y = y
     dashboard._force_classification_pos_label_multiclass_flag = True
-    pos_label = 1
+    pos_label = 1  # placeholder value to check if it's actually changed
     pos_label = dashboard._check_classification_pos_label(input_label)
     assert pos_label == input_label
 

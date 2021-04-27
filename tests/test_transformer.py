@@ -1,14 +1,13 @@
-from data_dashboard.transformer import Transformer
-from sklearn.preprocessing import LabelEncoder, FunctionTransformer, OneHotEncoder, QuantileTransformer, StandardScaler, OrdinalEncoder
-from sklearn.preprocessing import PowerTransformer
-from sklearn.model_selection import train_test_split
-from sklearn.impute import SimpleImputer
-from sklearn.pipeline import make_pipeline
-from sklearn import clone
 import pytest
 import numpy as np
 import pandas as pd
-
+from sklearn import clone
+from sklearn.preprocessing import LabelEncoder, FunctionTransformer, OneHotEncoder, QuantileTransformer, StandardScaler
+from sklearn.preprocessing import PowerTransformer, OrdinalEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import make_pipeline
+from data_dashboard.transformer import Transformer
 from data_dashboard.transformer import WrapperFunctionTransformer
 
 
@@ -68,7 +67,7 @@ def test_transformer_create_preprocessor_X(categorical_features, numerical_featu
     ("target_type", "expected_function"),
     (
             ("Categorical", LabelEncoder()),
-            ("Numerical", WrapperFunctionTransformer("test", lambda x: x))
+            ("Numerical", WrapperFunctionTransformer("test", FunctionTransformer(lambda x: x)))
     )
 )
 def test_transformer_create_preprocessor_y(categorical_features, numerical_features, target_type, expected_function):
@@ -89,8 +88,9 @@ def test_transformer_create_preprocessor_y(categorical_features, numerical_featu
 )
 def test_transformer_preprocessor_X_remainder(
         categorical_features, numerical_features, data_classification_balanced, expected_raw_mapping,
-        transformed_feature):
-
+        transformed_feature
+):
+    """Testing if feature not declared in either categorical or numerical features passes through unchanged."""
     categorical_features.remove("Target")
     categorical_features = [f for f in categorical_features if f != transformed_feature]
     numerical_features = [f for f in numerical_features if f != transformed_feature]
@@ -122,8 +122,10 @@ def test_transformer_preprocessor_X_remainder(
             (["Price", "AgeGroup"],),
     )
 )
-def test_transformer_preprocessor_X_remainder_order(categorical_features, numerical_features, data_classification_balanced, expected_raw_mapping,
-                                                    transformed_features):
+def test_transformer_preprocessor_X_remainder_order(
+        categorical_features, numerical_features, data_classification_balanced, expected_raw_mapping,
+        transformed_features
+):
     """Testing if remainder portion of ColumnTransformer returns the columns in the expected (alphabetical) order."""
     categorical_features.remove("Target")
     categorical_features = [f for f in categorical_features if f not in transformed_features]
@@ -144,7 +146,6 @@ def test_transformer_preprocessor_X_remainder_order(categorical_features, numeri
 
     for col in transformed_features:
         assert np.allclose(actual_result[col].to_numpy(), X[col].to_numpy(), equal_nan=True)
-
 
 
 @pytest.mark.parametrize(
@@ -332,8 +333,9 @@ def test_transformer_transform_X_numerical(data_classification_balanced, feature
             ("Target", [0, 1])
     )
 )
-def test_transformer_y_classes_classification(data_classification_balanced, categorical_features, numerical_features,
-                                              y_column, expected_result, seed):
+def test_transformer_y_classes_classification(
+        data_classification_balanced, categorical_features, numerical_features, y_column, expected_result, seed
+):
     """Testing if classification transformer returns correct classes from y."""
     df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1)
     cat_feats = categorical_features.remove(y_column)
@@ -401,7 +403,9 @@ def test_transformer_custom_transformers(categorical_features, numerical_feature
             ([SimpleImputer(strategy="average"), PowerTransformer()], "numerical")
     )
 )
-def test_transformer_custom_transformer_none_transformers(categorical_features, numerical_features, seed, custom_transformers, tr_type):
+def test_transformer_custom_transformer_none_transformers(
+        categorical_features, numerical_features, seed, custom_transformers, tr_type
+):
     """Testing if setting custom transformers with only one type of transformers provided works correctly."""
     tr = Transformer(categorical_features, numerical_features, "Categorical", seed)
 
@@ -478,7 +482,9 @@ def test_transformer_transformed_columns_names(transformer_classification_fitted
             ("AgeGroup",),
     )
 )
-def test_transformer_transformed_columns_categorical_encoding(transformer_classification_fitted, data_classification_balanced, feature):
+def test_transformer_transformed_columns_categorical_encoding(
+        transformer_classification_fitted, data_classification_balanced, feature
+):
     """Testing if transformed_columns() returns transformed column names in correct order (OneHotEncoding)."""
     categorical_columns = [
         "AgeGroup_18",
@@ -510,21 +516,31 @@ def test_transformer_transformed_columns_categorical_encoding(transformer_classi
     # replacing for SimpleImputer which cant handle bool dtype
     df["bool"] = df["bool"].replace({False: 0, True: 1})
     test_feature = df[feature]
-    expected_result = make_pipeline(SimpleImputer(strategy="most_frequent"), OneHotEncoder(handle_unknown="ignore")).fit_transform(test_feature.to_numpy().reshape(-1, 1)).toarray()
+    expected_result = make_pipeline(
+        SimpleImputer(strategy="most_frequent"),
+        OneHotEncoder(handle_unknown="ignore")
+    ).fit_transform(test_feature.to_numpy().reshape(-1, 1)).toarray()
 
     expected_col_names = [col for col in col_names if feature in col]
-
-    df = pd.DataFrame(data=transformer_classification_fitted.transform(data_classification_balanced[0]).toarray(), columns=col_names)
+    df = pd.DataFrame(
+        data=transformer_classification_fitted.transform(data_classification_balanced[0]).toarray(),
+        columns=col_names
+    )
     actual_result = df[expected_col_names].to_numpy()
 
     assert len(df.columns) == len(col_names)
     assert np.array_equal(actual_result, expected_result)
 
 
-def test_transformer_transformed_columns_no_one_hot_encoder(transformer_classification_fitted, data_classification_balanced):
+def test_transformer_transformed_columns_no_one_hot_encoder(
+        transformer_classification_fitted, data_classification_balanced
+):
     """Testing if columns from transformed_columns() are correctly calculated when there is no OneHotEncoder present
     in the preprocessor."""
-    transformer_classification_fitted.set_custom_preprocessor_X([SimpleImputer(strategy="most_frequent")], [SimpleImputer()])
+    transformer_classification_fitted.set_custom_preprocessor_X(
+        categorical_transformers=[SimpleImputer(strategy="most_frequent")],
+        numerical_transformers=[SimpleImputer()]
+    )
     transformer_classification_fitted.fit(data_classification_balanced[0])
     expected_results = ["Height", "Price", "AgeGroup", "bool", "Product", "Sex"]
     actual_results = transformer_classification_fitted.transformed_columns()
@@ -536,13 +552,13 @@ def test_transformer_transformed_columns_no_one_hot_encoder(transformer_classifi
     ("feature", "category", "expected_columns"),
     (
             ("AgeGroup", "Categorical", ["AgeGroup_18", "AgeGroup_23", "AgeGroup_28", "AgeGroup_33", "AgeGroup_38",
-                                         "AgeGroup_43", "AgeGroup_48", "AgeGroup_53", "AgeGroup_58",]),
+                                         "AgeGroup_43", "AgeGroup_48", "AgeGroup_53", "AgeGroup_58"]),
             ("bool", "Categorical", ["bool_False", "bool_True"]),
             ("Height", "Numerical", ["Height"]),
             ("Price", "Numerical", ["Price"]),
             ("Product", "Categorical", ["Product_Apples", "Product_Bananas", "Product_Bread", "Product_Butter",
                                         "Product_Cheese", "Product_Cookies", "Product_Eggs", "Product_Honey",
-                                        "Product_Ketchup", "Product_Oranges",]),
+                                        "Product_Ketchup", "Product_Oranges"]),
             ("Sex", "Categorical", ["Sex_Female", "Sex_Male"])
     )
 )
@@ -573,7 +589,9 @@ def test_transformer_transformations(transformer_classification_fitted, feature,
             ("Price",),
     )
 )
-def test_transformer_normal_transformations(transformer_classification_fitted, data_classification_balanced, feature, seed):
+def test_transformer_normal_transformations(
+        transformer_classification_fitted, data_classification_balanced, feature, seed
+):
     """Testing if normal_transformations() method returns correct 'normal' transformations for a given feature."""
     expected_transformers = [QuantileTransformer, PowerTransformer]
     X = data_classification_balanced[0][feature]
@@ -602,7 +620,9 @@ def test_transformer_normal_transformations(transformer_classification_fitted, d
             ([1, 1, 2, 3, 4, 6, 5], [0, 1, 2], 2)
     )
 )
-def test_transformer_normal_transformations_negative_input(transformer_classification_fitted, input_train_array, input_test_array, expected_transformers_len, seed):
+def test_transformer_normal_transformations_negative_input(
+        transformer_classification_fitted, input_train_array, input_test_array, expected_transformers_len, seed
+):
     """Testing if normal_transformations are returned correctly when input has negative values."""
     expected_transformers = {
         "QuantileTransformer(output_distribution='normal', random_state={seed})".format(seed=seed),
@@ -618,7 +638,9 @@ def test_transformer_normal_transformations_negative_input(transformer_classific
             assert str(transformer) in expected_transformers
 
 
-def test_transformer_normal_transformations_histogram(transformer_classification_fitted, data_classification_balanced, numerical_features, seed):
+def test_transformer_normal_transformations_histogram(
+        transformer_classification_fitted, data_classification_balanced, numerical_features, seed
+):
     """Testing if histogram data is calculated for expected features and normal transformers."""
     expected_keys = {"Price", "Height"}
     X, y = data_classification_balanced

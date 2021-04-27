@@ -7,6 +7,7 @@ import copy
 # libraries
 import pandas as pd
 import numpy as np
+from jinja2 import Template
 from scipy.stats import truncnorm, skewnorm
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression, Ridge
@@ -17,7 +18,6 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, QuantileTransformer, LabelEncoder, FunctionTransformer
 from sklearn.impute import SimpleImputer
-
 
 # this package
 from data_dashboard.descriptor import FeatureDescriptor
@@ -31,6 +31,7 @@ from data_dashboard.dashboard import Dashboard
 
 @pytest.fixture
 def feature_descriptions():
+    """Descriptions for test data."""
     d = FeatureDescriptor._description
     m = FeatureDescriptor._mapping
     c = FeatureDescriptor._category
@@ -83,12 +84,14 @@ def feature_descriptions():
 
 @pytest.fixture
 def feature_descriptor(feature_descriptions):
+    """Fixture FeatureDescriptor."""
     fd = FeatureDescriptor(feature_descriptions)
     return fd
 
 
 @pytest.fixture
 def feature_descriptor_forced_categories(feature_descriptions):
+    """Fixture FeatureDescriptor with forced categories."""
     c = FeatureDescriptor._category
 
     cat_cols = ["Height", "Price"]
@@ -109,6 +112,7 @@ def feature_descriptor_forced_categories(feature_descriptions):
 
 @pytest.fixture
 def feature_descriptor_broken(feature_descriptions):
+    """Fixture FeatureDescriptor with str keys instead of int."""
     broken_features = ["Target", "AgeGroup"]
     for feat in broken_features:
         internal = feature_descriptions[feat]
@@ -123,6 +127,7 @@ def feature_descriptor_broken(feature_descriptions):
 
 @pytest.fixture
 def data_classification_balanced():
+    """Test data with 'balanced' ratio of 0s and 1s in 'Target' variable."""
     random_seed = 56
 
     columns = ["Sex", "AgeGroup", "Height", "Date", "Product", "Price", "bool", "Target"]
@@ -191,16 +196,19 @@ def data_classification_balanced():
 
 @pytest.fixture
 def categorical_features():
+    """Categorical Features names in data_classification_balanced."""
     return ["AgeGroup", "bool", "Product", "Sex", "Target"]
 
 
 @pytest.fixture
 def numerical_features():
+    """Numerical Features names in data_classification_balanced."""
     return ["Height", "Price"]
 
 
 @pytest.fixture
 def fixture_features(data_classification_balanced, feature_descriptor):
+    """Fixture Features object for data_classification_balanced test data."""
     X, y = data_classification_balanced
     f = Features(X, y, feature_descriptor)
     return f
@@ -208,6 +216,7 @@ def fixture_features(data_classification_balanced, feature_descriptor):
 
 @pytest.fixture
 def expected_raw_mapping():
+    """Expected 'raw' mapping of values in data_classification_balanced test data."""
     expected_raw_mapping = {
         "Product": {
             "Apples": 1,
@@ -250,6 +259,7 @@ def expected_raw_mapping():
 
 @pytest.fixture
 def expected_mapping():
+    """Expected final mapping (from FeaturesDescriptor) for data_classification_balanced test data."""
     expected_mapping = {
         "Product": {
             1: "Apples",
@@ -292,6 +302,7 @@ def expected_mapping():
 
 @pytest.fixture
 def html_test_table():
+    """Test table for data_classification_balanced test_data."""
     _ = """
         <table>
         <thead><tr><th></th><th></th></tr></thead>
@@ -311,11 +322,13 @@ def html_test_table():
 
 @pytest.fixture
 def analyzer_fixture(fixture_features):
+    """Fixture Analyzer for data_classification_balanced test data."""
     return Analyzer(fixture_features)
 
 
 @pytest.fixture
 def root_path_to_package():
+    """Path to modules (package) and modules (package) name."""
     package_name = "data_dashboard"
     root_path = os.path.split(os.getcwd())[0]
 
@@ -324,11 +337,13 @@ def root_path_to_package():
 
 @pytest.fixture
 def seed():
+    "Fixture random seed."
     return 1010
 
 
 @pytest.fixture
 def data_regression(data_classification_balanced):
+    """Test data with Price feature as a target variable."""
     df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1)
     target = "Price"
     feats = df.columns.to_list()
@@ -341,6 +356,7 @@ def data_regression(data_classification_balanced):
 
 @pytest.fixture
 def data_multiclass(data_classification_balanced):
+    """Test data with multiclass 'Product Type' target variable."""
     X = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1)
     y = pd.Series(np.where(
         X["Product"].isin(["Apples", "Oranges", "Bananas"]), "Fruits",
@@ -354,6 +370,7 @@ def data_multiclass(data_classification_balanced):
 
 @pytest.fixture
 def preprocessor_X(categorical_features, numerical_features, seed):
+    """Base Fixture preprocessor X."""
     numeric_transformer = make_pipeline(
         SimpleImputer(strategy="median"),
         QuantileTransformer(output_distribution="normal", random_state=seed),
@@ -376,6 +393,7 @@ def preprocessor_X(categorical_features, numerical_features, seed):
 
 @pytest.fixture
 def transformer_classification(categorical_features, numerical_features, seed, preprocessor_X):
+    """Transformer for data_classification_balanced test data."""
     categorical_features.remove("Target")
     tr = Transformer(
         categorical_features=categorical_features,
@@ -392,6 +410,7 @@ def transformer_classification(categorical_features, numerical_features, seed, p
 
 @pytest.fixture
 def transformer_regression(categorical_features, numerical_features, seed, preprocessor_X):
+    """Transformer for data_regression test data."""
     numerical_features.remove("Price")
     tr = Transformer(
         categorical_features=categorical_features,
@@ -408,6 +427,7 @@ def transformer_regression(categorical_features, numerical_features, seed, prepr
 
 @pytest.fixture
 def transformer_multiclass(categorical_features, numerical_features, seed, preprocessor_X):
+    """Transformer for data_multiclass test data."""
     tr = Transformer(
         categorical_features=categorical_features,
         numerical_features=numerical_features,
@@ -423,6 +443,7 @@ def transformer_multiclass(categorical_features, numerical_features, seed, prepr
 
 @pytest.fixture
 def transformer_classification_fitted(transformer_classification, data_classification_balanced):
+    """Fitted Transformer for data_classification_balanced test data."""
     transformer_classification.fit(data_classification_balanced[0])
     transformer_classification.fit_y(data_classification_balanced[1])
     return transformer_classification
@@ -430,6 +451,7 @@ def transformer_classification_fitted(transformer_classification, data_classific
 
 @pytest.fixture
 def transformed_classification_data(data_classification_balanced, transformer_classification):
+    """Transformed data_classification_balanced test data."""
     X = data_classification_balanced[0]
     y = data_classification_balanced[1]
     X = X.drop(["Date"], axis=1)
@@ -440,6 +462,7 @@ def transformed_classification_data(data_classification_balanced, transformer_cl
 
 @pytest.fixture
 def transformed_regression_data(data_regression, transformer_regression):
+    """Transformed data_regression test data."""
     X = data_regression[0]
     y = data_regression[1]
     X = X.drop(["Date"], axis=1)
@@ -450,6 +473,7 @@ def transformed_regression_data(data_regression, transformer_regression):
 
 @pytest.fixture
 def transformed_multiclass_data(data_multiclass, transformer_multiclass):
+    """Transformed data_multiclass test data."""
     X = data_multiclass[0]
     y = data_multiclass[1]
     X = X.drop(["Date"], axis=1)
@@ -459,7 +483,8 @@ def transformed_multiclass_data(data_multiclass, transformer_multiclass):
 
 
 @pytest.fixture
-def split_dataset_categorical(data_classification_balanced, transformer_classification, seed):
+def split_dataset_classification(data_classification_balanced, transformer_classification, seed):
+    """Train/test split of data_classification_balanced test data."""
     X = data_classification_balanced[0]
     y = data_classification_balanced[1]
     X = X.drop(["Date"], axis=1)
@@ -472,6 +497,7 @@ def split_dataset_categorical(data_classification_balanced, transformer_classifi
 
 @pytest.fixture
 def split_dataset_numerical(data_regression, transformer_regression, seed):
+    """Train/test split of data_regression test data."""
     X = data_regression[0]
     y = data_regression[1]
     X = X.drop(["Date"], axis=1)
@@ -484,6 +510,7 @@ def split_dataset_numerical(data_regression, transformer_regression, seed):
 
 @pytest.fixture
 def split_dataset_multiclass(data_multiclass, transformer_multiclass, seed):
+    """Train/test split of data_multiclass test data."""
     X = data_multiclass[0]
     y = data_multiclass[1]
     X = X.drop(["Date"], axis=1)
@@ -496,6 +523,7 @@ def split_dataset_multiclass(data_multiclass, transformer_multiclass, seed):
 
 @pytest.fixture
 def chosen_classifiers_grid():
+    """Test 'Model': parameters pairs for classification."""
     _ = {
         LogisticRegression: {
             "tol": np.logspace(-1, 0, 2),
@@ -516,6 +544,7 @@ def chosen_classifiers_grid():
 
 @pytest.fixture
 def chosen_regressors_grid():
+    """Test 'Model': parameters pairs for regression."""
     _ = {
         Ridge: {
             "alpha": np.logspace(-7, -4, 4),
@@ -535,6 +564,7 @@ def chosen_regressors_grid():
 
 @pytest.fixture
 def multiclass_scorings():
+    """Wrapped scoring functions for multiclass problem."""
     scorings = [
         (f1_score, {"average": "weighted"}, "f1_score_weighted"),
         (precision_score, {"average": "weighted"}, "precision_score_weighted")
@@ -558,11 +588,13 @@ def multiclass_scorings():
 
 
 @pytest.fixture
-def model_finder_classification(transformed_classification_data, split_dataset_categorical, chosen_classifiers_grid,
-                                seed):
+def model_finder_classification(
+        transformed_classification_data, split_dataset_classification, chosen_classifiers_grid, seed
+):
+    """Fixture ModelFinder for classification problem."""
     X = transformed_classification_data[0]
     y = transformed_classification_data[1]
-    X_train, X_test, y_train, y_test = split_dataset_categorical
+    X_train, X_test, y_train, y_test = split_dataset_classification
     mf = ModelFinder(
         X=X,
         y=y,
@@ -580,6 +612,7 @@ def model_finder_classification(transformed_classification_data, split_dataset_c
 
 @pytest.fixture
 def model_finder_regression(transformed_regression_data, split_dataset_numerical, chosen_regressors_grid, seed):
+    """Fixture ModelFinder for regression problem."""
     X = transformed_regression_data[0]
     y = transformed_regression_data[1]
     X_train, X_test, y_train, y_test = split_dataset_numerical
@@ -602,6 +635,7 @@ def model_finder_regression(transformed_regression_data, split_dataset_numerical
 def model_finder_multiclass(
         transformed_multiclass_data, split_dataset_multiclass, chosen_classifiers_grid, multiclass_scorings, seed
 ):
+    """Fixture ModelFinder for multiclass problem."""
     X = transformed_multiclass_data[0]
     y = transformed_multiclass_data[1]
     X_train, X_test, y_train, y_test = split_dataset_multiclass
@@ -623,18 +657,21 @@ def model_finder_multiclass(
 
 @pytest.fixture
 def model_finder_classification_fitted(model_finder_classification):
+    """Fixture fitted ModelFinder for classification problem."""
     model_finder_classification.search_and_fit(mode="quick")
     return model_finder_classification
 
 
 @pytest.fixture
 def model_finder_regression_fitted(model_finder_regression):
+    """Fixture fitted ModelFinder for regression problem."""
     model_finder_regression.search_and_fit(mode="quick")
     return model_finder_regression
 
 
 @pytest.fixture
 def model_finder_multiclass_fitted(model_finder_multiclass):
+    """Fixture fitted ModelFinder for multiclass problem."""
     model_finder_multiclass.search_and_fit(mode="quick")
     return model_finder_multiclass
 
@@ -642,11 +679,12 @@ def model_finder_multiclass_fitted(model_finder_multiclass):
 @pytest.fixture
 def output(
         analyzer_fixture, transformer_classification, fixture_features, model_finder_classification_fitted,
-        tmpdir, root_path_to_package, data_classification_balanced, split_dataset_categorical, seed
+        tmpdir, root_path_to_package, data_classification_balanced, split_dataset_classification, seed
 ):
+    """Fixture Output object."""
     X, y = data_classification_balanced
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, random_state=seed)
-    transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test = split_dataset_categorical
+    transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test = split_dataset_classification
 
     o = Output(
         output_directory=tmpdir,
@@ -670,7 +708,13 @@ def output(
 
 @pytest.fixture
 def dashboard(data_classification_balanced, tmpdir, seed):
+    """Fixture Dashboard object."""
     X, y = data_classification_balanced
     d = Dashboard(X, y, tmpdir, random_state=seed)
     return d
 
+
+@pytest.fixture
+def template():
+    """Fixture test template."""
+    return Template("Test template")

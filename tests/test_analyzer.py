@@ -1,8 +1,7 @@
+import pytest
+import pandas as pd
 from data_dashboard.analyzer import Analyzer
 from data_dashboard.features import CategoricalFeature, NumericalFeature, Features
-import pandas as pd
-import pytest
-import math
 
 
 def test_analyzer_numeric_describe(fixture_features, numerical_features):

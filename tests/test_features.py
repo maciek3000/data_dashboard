@@ -1,7 +1,7 @@
+import pytest
+import pandas as pd
 from data_dashboard.features import NumericalFeature, CategoricalFeature, Features
 from data_dashboard.descriptor import FeatureDescriptor
-import pandas as pd
-import pytest
 
 
 @pytest.mark.parametrize(
@@ -94,8 +94,7 @@ def test_categorical_features_create_descriptive_mapping_changed_keys(
         data_classification_balanced, feature_descriptor_broken, expected_mapping, column_name
 ):
     """Testing if ._create_descriptive_mapping() creates correct output when the keys are incorrect:
-        descriptions provided as str, yet the data itself is int/float."""
-
+    descriptions provided as str, yet the data itself is int/float."""
     X = data_classification_balanced[0]
     y = data_classification_balanced[1]
     df = pd.concat([X, y], axis=1)
@@ -143,6 +142,7 @@ def test_numerical_features_no_mapping(
     )
 )
 def test_features_impute_column_type(data_classification_balanced, column_name, expected_type):
+    """Testing if imputing column type works correctly."""
     X = data_classification_balanced[0]
     y = data_classification_balanced[1]
     df = pd.concat([X, y], axis=1)
@@ -193,7 +193,7 @@ def test_features_analyze_features(data_classification_balanced, feature_descrip
 
 def test_features_analyze_features_forced_category(data_classification_balanced, feature_descriptor_forced_categories):
     """Testing if .analyze_features() method of Features class returns a dictionary with a correct content
-        when categories are forced by the FeatureDescriptor"""
+    when categories are forced by the FeatureDescriptor"""
     n = NumericalFeature
     c = CategoricalFeature
     expected = {
@@ -225,8 +225,11 @@ def test_features_analyze_features_forced_category(data_classification_balanced,
             (("Product", "AgeGroup", "Height", "bool"),)
     )
 )
-def test_features_analyze_features_transformed_features(data_classification_balanced, feature_descriptor, transformed_features):
-    """Testing if creating features properly assigns Transformed flag based on provided transformed_features sequence."""
+def test_features_analyze_features_transformed_features(
+        data_classification_balanced, feature_descriptor, transformed_features
+):
+    """Testing if creating features properly assigns Transformed flag based on provided transformed_features
+    sequence."""
     X, y = data_classification_balanced
     f = Features(X, y, feature_descriptor, transformed_features)
 
@@ -296,6 +299,7 @@ def test_features_features_list_no_target(
 
     assert actual == expected
 
+
 @pytest.mark.parametrize(
     ("transformed_features",),
     (
@@ -305,7 +309,9 @@ def test_features_features_list_no_target(
             ([],)
     )
 )
-def test_features_features_list_exclude_transformed(data_classification_balanced, feature_descriptor, transformed_features):
+def test_features_features_list_exclude_transformed(
+        data_classification_balanced, feature_descriptor, transformed_features
+):
     """Testing if returning feature list with transformed columns excluded works properly."""
     col_list = ["AgeGroup", "bool", "Height", "Price", "Product", "Sex", "Target"]
     X, y = data_classification_balanced
@@ -381,7 +387,9 @@ def test_features_numerical_features_no_target(
             ([],),
     )
 )
-def test_features_numerical_features_exclude_transformed(data_classification_balanced, feature_descriptor, transformed_features):
+def test_features_numerical_features_exclude_transformed(
+        data_classification_balanced, feature_descriptor, transformed_features
+):
     """Testing if returning numerical features list with transformed columns excluded works properly."""
     col_list = ["Height", "Price"]
     X, y = data_classification_balanced
@@ -458,7 +466,9 @@ def test_features_categorical_features_no_target(
             ([],),
     )
 )
-def test_features_categorical_features_exclude_transformed(data_classification_balanced, feature_descriptor, transformed_features):
+def test_features_categorical_features_exclude_transformed(
+        data_classification_balanced, feature_descriptor, transformed_features
+):
     """Testing if returning categorical features list with transformed columns excluded works properly."""
     col_list = ["AgeGroup", "bool", "Product", "Sex", "Target"]
     X, y = data_classification_balanced
@@ -593,7 +603,9 @@ def test_features_data(data_classification_balanced, feature_descriptor, expecte
             ([],),
     )
 )
-def test_features_data_excluded_transformed(data_classification_balanced, feature_descriptor, transformed_columns, expected_raw_mapping):
+def test_features_data_excluded_transformed(
+        data_classification_balanced, feature_descriptor, transformed_columns, expected_raw_mapping
+):
     """Testing if data returns correctly mapped dataframe without transformed columns when excluded_transformed
     is set to True."""
     X, y = data_classification_balanced

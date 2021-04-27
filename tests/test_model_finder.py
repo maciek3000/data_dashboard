@@ -7,11 +7,9 @@ from sklearn.svm import SVC
 from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, accuracy_score
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.exceptions import NotFittedError
-
 from data_dashboard.model_finder import ModelFinder, ModelNotSetError
 from data_dashboard.model_finder import WrappedModelRegression
 from data_dashboard.models import classifiers, regressors
-
 
 
 @pytest.mark.parametrize(
@@ -63,7 +61,7 @@ def test_wrapped_model_regression_params(test_model, seed):
             ("numerical",),
     )
 )
-def test_model_finder_init(data_classification_balanced, split_dataset_categorical, seed, category_type):
+def test_model_finder_init(data_classification_balanced, split_dataset_classification, seed, category_type):
     """Testing if initialization of ModelFinder's properties works correctly depending on the category_type."""
     if category_type == "categorical":
         expected_problem = ModelFinder._classification
@@ -83,7 +81,7 @@ def test_model_finder_init(data_classification_balanced, split_dataset_categoric
     mf = ModelFinder(
         X,
         y,
-        *split_dataset_categorical,
+        *split_dataset_classification,
         target_type=category_type,
         random_state=seed
     )
@@ -105,7 +103,7 @@ def test_model_finder_init(data_classification_balanced, split_dataset_categoric
     )
 )
 def test_model_finder_init_improper_problem_type(
-        data_classification_balanced, split_dataset_categorical, seed, category_type
+        data_classification_balanced, split_dataset_classification, seed, category_type
 ):
     """Testing if error is raised when incorrect category_type is provided to ModelFinder."""
     X = data_classification_balanced[0]
@@ -115,7 +113,7 @@ def test_model_finder_init_improper_problem_type(
         ModelFinder(
             X,
             y,
-            *split_dataset_categorical,
+            *split_dataset_classification,
             target_type=category_type,
             random_state=seed
         )
@@ -297,8 +295,9 @@ def test_model_finder_create_gridsearch_results_dataframe(model_finder_classific
             )
     )
 )
-def test_model_finder_create_search_results_dataframe(model_finder_classification, input_dict, scoring,
-                                                      expected_result):
+def test_model_finder_create_search_results_dataframe(
+        model_finder_classification, input_dict, scoring, expected_result
+):
     """Testing if creating search results dataframe works correctly."""
     actual_result = model_finder_classification._create_search_results_dataframe(input_dict, scoring)
     assert actual_result.equals(expected_result[actual_result.columns])

@@ -1,9 +1,8 @@
 import pytest
-from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
+from bs4 import BeautifulSoup
 from bokeh.plotting import figure
-
 from data_dashboard.views import Overview, FeatureView, ModelsView, ModelsViewClassification
 
 
@@ -22,12 +21,12 @@ from data_dashboard.views import Overview, FeatureView, ModelsView, ModelsViewCl
             (6, "bool<br/><br/>{header}<br/>1 - False<br/>2 - True</th><td>")
     )
 )
-def test_overview_append_mappings(html_test_table, header_index, fixture_features, expected_html):
+def test_overview_append_mappings(html_test_table, header_index, fixture_features, expected_html, template):
     """Testing if appending mappings (wrapped in HTML) to the element works properly."""
     html_table = BeautifulSoup(html_test_table, "html.parser")
     headers = html_table.table.select("table tbody tr th")
     mapping = fixture_features.mapping()[headers[header_index].string]
-    o = Overview("test_template", "test_css", "test-description")
+    o = Overview(template, "test_css", "test-description")
     o._append_mapping(headers[header_index], mapping, html_table)
 
     header = o._mapping_title
@@ -46,7 +45,9 @@ def test_overview_append_mappings(html_test_table, header_index, fixture_feature
                 "{footer}</th><td>")
     )
 )
-def test_overview_append_mappings_more_than_limit(html_test_table, fixture_features, header_index, expected_html):
+def test_overview_append_mappings_more_than_limit(
+        html_test_table, fixture_features, header_index, expected_html, template
+):
     """Testing if, when the amount of mapped categories exceeds the limit, then the HTML mappings are chopped off
     appropriately. """
     html_table = BeautifulSoup(html_test_table, "html.parser")
@@ -54,7 +55,7 @@ def test_overview_append_mappings_more_than_limit(html_test_table, fixture_featu
     mapping = fixture_features.mapping()[headers[header_index].string]
     mapping[10] = "Test Value"
     mapping[11] = "Test Value"
-    o = Overview("test_template", "test_css", "test-description")
+    o = Overview(template, "test_css", "test-description")
     o._append_mapping(headers[header_index], mapping, html_table)
 
     header = o._mapping_title
@@ -63,7 +64,7 @@ def test_overview_append_mappings_more_than_limit(html_test_table, fixture_featu
     assert expected_html.format(header=header, footer=footer) in str(html_table)
 
 
-def test_stylize_html_table(html_test_table, expected_mapping, fixture_features):
+def test_stylize_html_table(html_test_table, expected_mapping, fixture_features, template):
     """Testing if the ._stylize_html_table() function creates correct HTML output."""
     # text is 'dedented' to match the output provided by the function.
     expected_html = """
@@ -87,7 +88,7 @@ def test_stylize_html_table(html_test_table, expected_mapping, fixture_features)
     test_description = "test-description"
     expected_html = expected_html.format(header=header, footer=footer, test_description=test_description)
 
-    o = Overview("test_template", "test_css", test_description)  # max_categories == 5
+    o = Overview(template, "test_css", test_description)  # max_categories == 5
     o._max_categories_limit = 5
 
     expected_mapping["Price"] = None
@@ -105,9 +106,9 @@ def test_stylize_html_table(html_test_table, expected_mapping, fixture_features)
             (["Test", "test", "TEST"], "<ul><li>Test</li><li>test</li><li>TEST</li></ul>")
     )
 )
-def test_overview_unused_features_html(input_list, expected_string):
+def test_overview_unused_features_html(input_list, expected_string, template):
     """Testing if creating HTML output of unused features works properly."""
-    o = Overview("test_template", "test_css", "test-description")
+    o = Overview(template, "test_css", "test-description")
     actual_html = o._unused_features_html(input_list)
 
     assert actual_html == expected_string
@@ -121,10 +122,10 @@ def test_overview_unused_features_html(input_list, expected_string):
             (["Feature3", "Feature1", "Feature2", "Feature5", "Feature8"],)
     )
 )
-def test_features_view_create_features_menu(input_features):
+def test_features_view_create_features_menu(input_features, template):
     """Testing if Features menu is created properly given the input features."""
 
-    fv = FeatureView("test_template", "test_css", "test_html", "test-target", {})
+    fv = FeatureView(template, "test_css", "test_html", "test-target", [])
     title_template = fv._feature_menu_header
     fv._menu_single_feature_class = "test-class"
     actual_result = fv._create_features_menu(input_features)
@@ -147,15 +148,17 @@ def test_features_view_create_features_menu(input_features):
             ("Feature3", "003. Feature3"),
     )
 )
-def test_features_view_create_features_menu_target_name(target_name, expected_feature_text):
+def test_features_view_create_features_menu_target_name(target_name, expected_feature_text, template):
     """Testing if target-class is being added to the output of features_menu HTML where feature name is a target at
     the same time."""
     features = ["Feature0", "Feature1", "Feature2", "Feature3"]
-    fv = FeatureView("test_template", "test_css", "test_html", target_name, {})
+    fv = FeatureView(template, "test_css", "test_html", target_name, [])
     fv._menu_single_feature_class = "test-class"
     fv._menu_target_feature_class = "test-target-class"
     actual_result = fv._create_features_menu(features)
-    expected_text = "<div class='test-class test-target-class'><span>{text}</span></div>".format(text=expected_feature_text)
+    expected_text = "<div class='test-class test-target-class'><span>{text}</span></div>".format(
+        text=expected_feature_text
+    )
     assert expected_text in actual_result
     assert actual_result.count("test-target-class") == 1
 
@@ -192,13 +195,13 @@ def test_features_view_create_features_menu_target_name(target_name, expected_fe
             )
     )
 )
-def test_features_view_transformed_dataframe_html(input_series, input_df, expected_result):
+def test_features_view_transformed_dataframe_html(input_series, input_df, expected_result, template):
     """Testing if transformed_dataframe_html() method creates correct HTML output."""
     test_subtitle = "test-subtitle-class"
     test_title = "test-title"
     prefix = "test_prefix-"
 
-    fv = FeatureView("test_template", "test_css", "test_html", "test-target", {})
+    fv = FeatureView(template, "test_css", "test_html", "test-target", [])
     fv._transformed_feature_subtitle_div = test_subtitle
     fv._transformed_feature_transformed_df_title = test_title
     fv._transformed_feature_original_prefix = prefix
@@ -246,9 +249,9 @@ def test_features_view_transformed_dataframe_html(input_series, input_df, expect
             )
     )
 )
-def test_features_view_transformers_html(input_transformers, expected_result):
+def test_features_view_transformers_html(input_transformers, expected_result, template):
     """Testing if transformers_html() method returns correct HTML output based on provided list of transformers."""
-    fv = FeatureView("test_template", "test_css", "test_html", "test-target", {})
+    fv = FeatureView(template, "test_css", "test_html", "test-target", [])
     fv._transformed_feature_single_transformer = "test-single-tr"
     fv._transformed_feature_transformer_list = "test-transformer-list"
     fv._transformed_feature_transformers_title = "Test Title For Transformers"
@@ -274,24 +277,37 @@ def test_features_view_transformers_html(input_transformers, expected_result):
             ("Target",)
     )
 )
-def test_features_view_transformed_features_divs(data_classification_balanced, transformed_classification_data, transformer_classification_fitted, numerical_features, input_feature):
+def test_features_view_transformed_features_divs(
+        data_classification_balanced, transformed_classification_data, transformer_classification_fitted,
+        numerical_features, input_feature, template
+):
     """Testing if transformed_features_divs() method creates correct HTML output with appropriate classes set
     to their respective divs."""
     # setting up necessary objects
     df = pd.concat([data_classification_balanced[0], data_classification_balanced[1]], axis=1).drop(["Date"], axis=1)
-    tr_X = pd.DataFrame(transformed_classification_data[0].toarray(), columns=transformer_classification_fitted.transformed_columns())
+    tr_X = pd.DataFrame(
+        transformed_classification_data[0].toarray(),
+        columns=transformer_classification_fitted.transformed_columns()
+    )
     tr_y = pd.Series(transformed_classification_data[1], name="Target")
     transformed_df = pd.concat([tr_X, tr_y], axis=1)
     transformations = transformer_classification_fitted.transformations()
     transformations["Target"] = (transformer_classification_fitted.y_transformations(), ["Target"])
     numerical_features = transformer_classification_fitted.numerical_features
 
-    fv = FeatureView("test_template", "test_css", "test_html", "Target", {})
+    fv = FeatureView(template, "test_css", "test_html", "Target", [])
     fv._first_feature_transformed = "test-chosen-feature"
     fv._transformed_feature_div = "test-div"
     fv._transformed_feature_plots_grid = "test-grid"
     mock_plots = {feature: figure() for feature in numerical_features}
-    actual_result = fv._transformed_features_divs(df.head(), transformed_df.head(), transformations, numerical_features, mock_plots, input_feature)
+    actual_result = fv._transformed_features_divs(
+        df.head(),
+        transformed_df.head(),
+        transformations,
+        numerical_features,
+        mock_plots,
+        input_feature
+    )
 
     expected_str = """<div class="test-div test-chosen-feature" id="{feature}">""".format(feature=input_feature)
 
@@ -330,9 +346,9 @@ def test_features_view_transformed_features_divs(data_classification_balanced, t
             )
     )
 )
-def test_model_view_results_table(input_df, expected_row_number):
+def test_model_view_results_table(input_df, expected_row_number, template):
     """Testing if html output produced by results_table method properly assigns css classes to table rows."""
-    mv = ModelsView("template", "test_css", "params", "test-class")
+    mv = ModelsView(template, "test_css", "params", "test-class")
     first_row_class = mv._first_model_class
     middle_row_class = mv._other_model_class
 
@@ -351,18 +367,18 @@ def test_model_view_results_table(input_df, expected_row_number):
 @pytest.mark.parametrize(
     ("input_array", "expected_string"),
     (
-            (np.array(([1, 0], [2, 3])), "<tr><th>Actual Negative</th><td>1</td><td>0</td></tr>" \
+            (np.array(([1, 0], [2, 3])), "<tr><th>Actual Negative</th><td>1</td><td>0</td></tr>"
                                          "<tr><th>Actual Positive</th><td>2</td><td>3</td></tr>"
              ),
 
-            (np.array(([15, 20], [100, 80])), "<tr><th>Actual Negative</th><td>15</td><td>20</td></tr>" \
+            (np.array(([15, 20], [100, 80])), "<tr><th>Actual Negative</th><td>15</td><td>20</td></tr>"
                                               "<tr><th>Actual Positive</th><td>100</td><td>80</td></tr>")
     )
 )
-def test_models_view_classification_single_matrix_table(input_array, expected_string):
+def test_models_view_classification_single_matrix_table(input_array, expected_string, template):
     """Testing if confusion matrix html table is created correctly."""
     expected_class = "test-class"
-    mv = ModelsViewClassification("template", "test_css", "params", "test-class")
+    mv = ModelsViewClassification(template, "test_css", "params", "test-class")
     mv._confusion_matrices_single_matrix_table = expected_class
     actual_result = mv._single_confusion_matrix_html(input_array)
 
@@ -380,18 +396,18 @@ def test_models_view_classification_single_matrix_table(input_array, expected_st
                     ("Lasso", np.array(([10, 20], [40, 50]))),
                     ("Lasso", np.array(([70, 70], [1, 1]))),
                     ("SGDRegressor", np.array(([0, 0], [0, 0]))),
-                    ("SGDClassifier", np.array(([1, 1,], [1, 1])))
+                    ("SGDClassifier", np.array(([1, 1], [1, 1])))
             ],),
     )
 )
-def test_models_view_classification_confusion_matrices(input_tuple):
+def test_models_view_classification_confusion_matrices(input_tuple, template):
     """Testing if the confusion matrices html is created correctly and classes are assigned to elements
     appropriately."""
     first_model = "test-first-model"
     other_model = "test-other-model"
     title_class = "test-title-class"
     matrix_class = "test-matrix-class"
-    mv = ModelsViewClassification("template", "test_css", "params", "test-class")
+    mv = ModelsViewClassification(template, "test_css", "params", "test-class")
 
     mv._first_model_class = first_model
     mv._other_model_class = other_model

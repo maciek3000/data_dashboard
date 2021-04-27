@@ -1,5 +1,5 @@
-from data_dashboard.descriptor import FeatureDescriptor
 import pytest
+from data_dashboard.descriptor import FeatureDescriptor
 
 
 def test_feature_get(feature_descriptions):

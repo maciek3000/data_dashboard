@@ -1,7 +1,7 @@
 import pytest
+import copy
 import numpy as np
 import pandas as pd
-import copy
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.linear_model import Ridge
@@ -10,7 +10,6 @@ from sklearn.svm import SVR, LinearSVR
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.exceptions import NotFittedError
 from sklearn.dummy import DummyRegressor
-
 from data_dashboard.model_finder import ModelsNotSearchedError
 from data_dashboard.model_finder import WrappedModelRegression
 
@@ -89,21 +88,37 @@ def test_model_finder_regression_search(model_finder_regression, mode, expected_
 @pytest.mark.parametrize(
     ("mode", "expected_model", "expected_scores"),
     (
-            ("quick", SVR(C=0.1, tol=1.0), {"mean_squared_error": 486.38607353926875, "r2_score": -0.002361993009452945}),
-            ("detailed", SVR(C=0.1, tol=1.0), {"mean_squared_error": 486.38607353926875, "r2_score": -0.002361993009452945})
+            ("quick", SVR(C=0.1, tol=1.0),
+             {
+                "mean_squared_error": 486.38607353926875,
+                "r2_score": -0.002361993009452945
+             }
+             ),
+            ("detailed", SVR(C=0.1, tol=1.0),
+             {
+                "mean_squared_error": 486.38607353926875,
+                "r2_score": -0.002361993009452945
+             }
+             )
     )
 )
 def test_model_finder_search_and_fit_regression(model_finder_regression, mode, expected_model, expected_scores, seed):
     """Testing if search_and_fit() function correctly searches for and sets and fits chosen model (regression).
     Additionally checks if the model is correctly wrapped in TransformedTargetRegressor."""
-    prediction_array = np.array([1.34, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1]).reshape(1, -1)
+    prediction_array = np.array(
+        [1.34, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1]
+    ).reshape(1, -1)
+
     model_finder_regression._quicksearch_limit = 1
     model_finder_regression.scoring_functions = [mean_squared_error, r2_score]
     actual_model = model_finder_regression.search_and_fit(models=None, scoring=mean_squared_error, mode=mode)
     expected_model.random_state = seed
     t_X = model_finder_regression.X
     t_y = model_finder_regression.y
-    m = TransformedTargetRegressor(regressor=expected_model, transformer=QuantileTransformer(output_distribution="normal", random_state=seed))
+    m = TransformedTargetRegressor(
+        regressor=expected_model,
+        transformer=QuantileTransformer(output_distribution="normal", random_state=seed)
+    )
     m.fit(t_X, t_y)
     expected_array = m.predict(prediction_array)
 
@@ -427,7 +442,9 @@ def test_model_finder_wrap_params_regression(model_finder_regression, test_param
             (SVR(C=1000),)
     )
 )
-def test_model_finder_calculate_model_score_multiclass_regular_scoring(model_finder_regression, split_dataset_numerical, model):
+def test_model_finder_calculate_model_score_multiclass_regular_scoring(
+        model_finder_regression, split_dataset_numerical, model
+):
     """Testing if calculating model score works correctly in multiclass with scoring != roc_auc_score."""
     scoring = mean_squared_error
     X_train = split_dataset_numerical[0]
