@@ -171,7 +171,7 @@ def replace_duplicate_str(duplicate_list_of_str):
     duplicate element it is. Return unchanged duplicate_list_of_str if there are no duplicates.
 
     Examples:
-        [a, b, a, b, c, a] --> [a, b, a #1, b #1, c, a #2] \n
+        [a, b, a, b, c, a] --> [a #1, b #1, a #2, b #2, c, a #3] \n
         [a, b] --> [a, b]
 
     Args:
