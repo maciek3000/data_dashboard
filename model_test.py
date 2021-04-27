@@ -42,8 +42,8 @@ if __name__ == "__main__":
     # X, y, descriptions = iris()
     # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
-    X, y, descriptions = wine()
-    # X, y, descriptions = breast_cancer()  # 30 features
+    # X, y, descriptions = wine()
+    X, y, descriptions = breast_cancer()  # 30 features
     # X, y, descriptions = digits()
 
     # X = X.drop(["CHAS", "RAD"], axis=1)

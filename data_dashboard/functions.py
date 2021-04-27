@@ -6,7 +6,7 @@ from scipy.sparse import csr_matrix
 
 
 def sanitize_input(input_str_list):
-    r"""Replace all instances of 'weird' characters in string elements of a input_str_list sequence with '_'.
+    r"""Replace all instances of 'weird' characters and spaces in string elements of a input_str_list sequence with '_'.
 
     Examples:
         [a/?, b\\t, c] --> [a__, b_, c]
@@ -18,7 +18,7 @@ def sanitize_input(input_str_list):
         list: list of newly created strings
 
     """
-    p = r'["/\\.,?!:;\n\t\r\a\f\v\b]'
+    p = r'["/\\.,?!:;\n\t\r\a\f\v\b ]'
     new_input = [re.sub(p, "_", x) for x in input_str_list]
     return new_input
 

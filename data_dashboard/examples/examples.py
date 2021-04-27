@@ -3,6 +3,11 @@ import pandas as pd
 
 
 def iris():
+    """Return iris dataset with custom descriptions.
+
+    Returns:
+        tuple: X, y, descriptions
+    """
     _ = load_iris(as_frame=True)
 
     X = _["data"]
@@ -32,6 +37,11 @@ def iris():
 
 
 def boston():
+    """Return boston dataset with custom descriptions.
+
+    Returns:
+        tuple: X, y, descriptions
+    """
     _ = load_boston()
 
     X = pd.DataFrame(_["data"], columns=_["feature_names"])
@@ -88,6 +98,11 @@ def boston():
 
 
 def diabetes():
+    """Return diabetes dataset with custom descriptions.
+
+    Returns:
+        tuple: X, y, descriptions
+    """
     _ = load_diabetes(as_frame=True)
 
     X = _["data"]
@@ -129,6 +144,14 @@ def diabetes():
 
 
 def digits(n_class=10):
+    """Return digits dataset. Descriptions are None.
+
+    Args:
+        n_class (int, optional): number of classes to return, defaults to 10
+
+    Returns:
+        tuple: X, y, descriptions
+    """
     _ = load_digits(n_class=n_class, as_frame=True)
     X = _["data"]
     y = _["target"]
@@ -138,6 +161,11 @@ def digits(n_class=10):
 
 
 def wine():
+    """Return wine dataset. Descriptions are None.
+
+    Returns:
+        tuple: X, y, descriptions
+    """
     _ = load_wine(as_frame=True)
 
     X = _["data"]
@@ -148,11 +176,15 @@ def wine():
 
 
 def breast_cancer():
+    """Return breast cancer dataset. Descriptions are None.
+
+    Returns:
+        tuple: X, y, descriptions
+    """
     _ = load_breast_cancer(as_frame=True)
 
     X = _["data"]
     y = _["target"]
-    X.columns = [col.replace(" ", "_") for col in X.columns]
 
     descriptions = None
 

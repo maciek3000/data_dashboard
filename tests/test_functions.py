@@ -217,8 +217,9 @@ def test_reverse_sorting_order(input_str, expected_result):
     ("input_list", "expected_result"),
     (
             (["test\n", "test\b", "aa\aaa"], ["test_", "test_", "aa_aa"]),
-            (["tes?t", "ano/ther t\fres\v\t", "target..."], ["tes_t", "ano_ther t_res__", "target___"]),
-            (["\\hey", "!test", ":hello:", "hel;o"], ["_hey", "_test", "_hello_", "hel_o"])
+            (["tes?t", "ano/ther t\fres\v\t", "target..."], ["tes_t", "ano_ther_t_res__", "target___"]),
+            (["\\hey", "!test", ":hello:", "hel;o"], ["_hey", "_test", "_hello_", "hel_o"]),
+            (["test 1", "test2 \b", ":tes t3 "], ["test_1", "test2__", "_tes_t3_"])
     )
 )
 def test_sanitize_input(input_list, expected_result):
