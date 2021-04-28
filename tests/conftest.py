@@ -369,6 +369,14 @@ def data_multiclass(data_classification_balanced):
 
 
 @pytest.fixture
+def fixture_features_multiclass(data_multiclass, feature_descriptor):
+    """Fixture Features for multiclass problem."""
+    X, y = data_multiclass
+    f = Features(X, y, feature_descriptor)
+    return f
+
+
+@pytest.fixture
 def preprocessor_X(categorical_features, numerical_features, seed):
     """Base Fixture preprocessor X."""
     numeric_transformer = make_pipeline(
@@ -694,6 +702,38 @@ def output(
         analyzer=analyzer_fixture,
         transformer=transformer_classification,
         model_finder=model_finder_classification_fitted,
+        X_train=X_train,
+        X_test=X_test,
+        y_train=y_train,
+        y_test=y_test,
+        transformed_X_train=transformed_X_train,
+        transformed_X_test=transformed_X_test,
+        transformed_y_train=transformed_y_train,
+        transformed_y_test=transformed_y_test
+    )
+    return o
+
+
+@pytest.fixture
+def output_multiclass(
+        analyzer_fixture, transformer_multiclass, fixture_features_multiclass, model_finder_multiclass_fitted,
+        tmpdir, root_path_to_package, data_multiclass, split_dataset_multiclass, seed
+):
+    """Fixture Output object for multiclass problem."""
+    X, y = data_multiclass
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, random_state=seed)
+    transformed_X_train, transformed_X_test, transformed_y_train, transformed_y_test = split_dataset_multiclass
+
+    analyzer_fixture.features = fixture_features_multiclass
+
+    o = Output(
+        output_directory=tmpdir,
+        package_name=root_path_to_package[1],
+        pre_transformed_columns=[],
+        features=fixture_features_multiclass,
+        analyzer=analyzer_fixture,
+        transformer=transformer_multiclass,
+        model_finder=model_finder_multiclass_fitted,
         X_train=X_train,
         X_test=X_test,
         y_train=y_train,

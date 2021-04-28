@@ -5,7 +5,7 @@ from bokeh.core.validation.warnings import MISSING_RENDERERS
 from bokeh.core.validation import silence
 from .functions import append_description, series_to_dict, replace_duplicate_str, assess_models_names
 
-placeholder_features_limit_crossed = "<div>Plot was turned off because of too many features present in the data." \
+placeholder_features_limit_crossed = "<div>Plot was turned off because of too many features present in the data. " \
                                      "Reduce the number of features or call 'create_dashboard' with " \
                                      "'force_pairplot=True' argument.</div>"
 """str: hardcoded HTML element to be used when a given Plot is turned off with a bool flag."""

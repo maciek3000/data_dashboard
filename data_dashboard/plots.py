@@ -1734,25 +1734,35 @@ class ModelsPlotMulticlass:
     ModelsPlotMulticlass creates Confusion Matrices with labels present in target variable. Confusion Matrices
     are represented as HeatMaps, with higher values being colored more intensively.
 
+    As confusion matrices come as arrays with the same ordering as labels (i-th row corresponds to i-th class), mapping
+    between indices and values is created. If the original mapping (from features_descriptions_dict) is present then
+    it is used. Otherwise, simple conversion of classes to their str counterparts is done.
+
     Attributes:
         plot_design (PlotDesign): PlotDesign object with predefined style elements
         labels (list): list of string labels present in y variable.
+        label_mapping (dict): i-th index number: str mapping pairs between confusion matrix and corresponding values
     """
     _x = "x"
     _y = "y"
     _values = "values"
 
-    def __init__(self, plot_design, label_classes):
+    def __init__(self, plot_design, label_classes, original_label_mapping):
         """Create ModelsPlotMulticlass object.
 
-        Change all labels provided in label_classes to strings.
+        labels and label_mapping are assessed and created to allow changing indices of confusion matrices to
+        corresponding values.
 
         Args:
-           plot_design (PlotDesign): PlotDesign object with predefined style elements
-            labels (list, numpy.ndarray): sequence of label classes present in target variable
+            plot_design (PlotDesign): PlotDesign object with predefined style elements
+            label_classes (list, numpy.ndarray): sequence of label classes present in target variable
+            original_label_mapping (dict, None): label: corresponding label value pairs of target variable, can be None
         """
         self.plot_design = plot_design
-        self.labels = list(map(str, label_classes))
+        self.labels, self.label_mapping = self._create_labels_and_mapping(label_classes, original_label_mapping)
+
+        print(self.labels)
+        print(self.label_mapping)
 
     def confusion_matrices_plot(self, confusion_matrices):
         """Create bokeh Row of Confusion Matrices (HeatMaps).
@@ -1844,7 +1854,7 @@ class ModelsPlotMulticlass:
         # plot specific styling
         p.yaxis.axis_label = "Actual"
         p.xaxis.axis_label = "Predicted"
-        p.xaxis.major_label_orientation = -0.5  # in radians
+        p.xaxis.major_label_orientation = -1.57  # in radians
 
         return p
 
@@ -1852,7 +1862,8 @@ class ModelsPlotMulticlass:
         """Create ColumnDataSource from confusion matrix.
 
         Confusion Matrix is converted to pandas.DataFrame, from which different levels of index are taken for easy
-        mapping between Axes ranges and values.
+        mapping between Axes ranges and values. Every index is mapped with label_mapping attribute to it's corresponding
+        string value.
 
         Args:
             confusion_array (numpy.ndarray): confusion matrix numpy.ndarray
@@ -1862,8 +1873,10 @@ class ModelsPlotMulticlass:
         """
         cds = ColumnDataSource()
         df = pd.DataFrame(confusion_array).stack()
-        x = df.index.droplevel(0).astype(str).to_list()  # one of the indexes
-        y = df.index.droplevel(1).astype(str).to_list()  # second of the indexes
+        old_x = df.index.droplevel(0).to_list()  # one of the indexes  astype(str).
+        x = [self.label_mapping[ind] for ind in old_x]
+        old_y = df.index.droplevel(1).to_list()  # second of the indexes  astype(str).
+        y = [self.label_mapping[ind] for ind in old_y]
         values = df.to_list()
 
         cds.data = {
@@ -1873,6 +1886,31 @@ class ModelsPlotMulticlass:
         }
 
         return cds
+
+    def _create_labels_and_mapping(self, labels, mapping):
+        """Create string counterparts of labels and appropriate label mapping to be used in Figure axes.
+
+        Keys of mapping are simple enumerations of labels list (corresponding to indices in confusion matrix). Values
+        of mapping are either labels converted to string (if mapping is None) or their corresponding values (converted
+        to strings as well) from mapping.
+
+        Labels are values from that newly created mapping in order.
+
+        Args:
+            labels (numpy.ndarray): array of target classes (labels)
+            mapping (dict, None): original mapping of labels (external)
+
+        Returns:
+            tuple: (list of string labels, dict of mapping between indices and string labels)
+        """
+        numbered_classes = list(enumerate(list(labels), start=0))
+        if mapping:
+            new_mapping = {number: str(mapping[label]) for number, label in numbered_classes}
+        else:
+            new_mapping = {number: str(label) for number, label in numbered_classes}
+        new_labels = [new_mapping[numbered[0]] for numbered in numbered_classes]
+
+        return new_labels, new_mapping
 
 
 class ModelsDataTable:

@@ -126,8 +126,8 @@ class CategoricalFeature(BaseFeature):
     def _create_descriptive_mapping(self):
         """Create and return dictionary mapping for unique values present in series.
 
-        Key is the "new" value provided with enumerating unique values in raw_mapping. Value is either the
-        description of the category taken from original descriptions or the original value (if descriptions are None).
+        Key is the "new" value provided with enumerating unique values in raw_mapping. Value is either the description
+        of the category taken from original descriptions or the original value (if description dict is None).
 
         Returns:
             dict: new mapping between 'unique number' -> original mapping

@@ -92,7 +92,7 @@ def test_models_view_creator_error(output, incorrect_problem_type):
 )
 def test_models_plot_output(
         output, model_finder_classification_fitted, model_finder_regression_fitted, model_finder_multiclass_fitted,
-        problem_type, expected_result
+        problem_type, expected_result, fixture_features_multiclass, output_multiclass
 ):
     """Testing if output creates output of a correct type based on a provided problem type."""
     if problem_type == "classification":
@@ -102,7 +102,7 @@ def test_models_plot_output(
         output.model_finder = model_finder_regression_fitted
         problem = output.model_finder._regression
     else:
-        output.model_finder = model_finder_multiclass_fitted
+        output = output_multiclass
         problem = output.model_finder._multiclass
 
     actual_result = output._models_plot_output(problem)
