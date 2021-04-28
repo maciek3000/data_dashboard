@@ -18,9 +18,30 @@ def sanitize_input(input_str_list):
         list: list of newly created strings
 
     """
-    p = r'["/\\.,?!:;\n\t\r\a\f\v\b ]'
+    p = r'["/\\.,?!:;\n\t\r\a\f\v\b \{\}\[\]\(\)]'
     new_input = [re.sub(p, "_", x) for x in input_str_list]
     return new_input
+
+
+def sanitize_keys_in_dict(dictionary):
+    """Sanitize keys in a dictionary so they are JS friendly.
+
+    All keys in a dictionary are converted to strings and they are sanitized from any 'weird' characters present.
+
+    Args:
+        dictionary (dict): dictionary
+
+    Returns:
+        dict: new dict with sanitized keys
+
+    """
+    old_keys = list(dictionary.keys())
+    new_keys = sanitize_input([str(key) for key in old_keys])
+    new_dict = {}
+    for old_key, new_key in zip(old_keys, new_keys):
+        new_dict[new_key] = dictionary[old_key]
+
+    return new_dict
 
 
 def calculate_numerical_bins(series):

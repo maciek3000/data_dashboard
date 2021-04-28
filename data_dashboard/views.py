@@ -643,11 +643,12 @@ class FeatureView(BaseView):
                 plot_row=plot_row
             )
 
+        col_id = "_" + col  # adding underscore to mitigate scenarios when JS doesnt work, e.g. #1
         html = self._transformed_feature_template.format(
             feature_class=col_class,
             title=col,
             content=content,
-            feature_name=col
+            feature_name=col_id
         )
         return html
 
@@ -670,11 +671,12 @@ class FeatureView(BaseView):
             transformations_table_class=self._transformed_feature_transformations_table,
             df_html=""  # empty table
         )
+        col_id = "_" + col  # adding underscore to mitigate scenarios when JS doesnt work, e.g. #1
         html = self._transformed_feature_template.format(
             feature_class=col_class,
             title=col,
             content=content,
-            feature_name=col
+            feature_name=col_id
         )
         return html
 

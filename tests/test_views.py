@@ -309,7 +309,7 @@ def test_features_view_transformed_features_divs(
         input_feature
     )
 
-    expected_str = """<div class="test-div test-chosen-feature" id="{feature}">""".format(feature=input_feature)
+    expected_str = """<div class="test-div test-chosen-feature" id="{feature}">""".format(feature="_" + input_feature)
 
     assert expected_str in actual_result
     assert actual_result.count("test-chosen-feature") == 1

@@ -13,23 +13,13 @@ def iris():
     X = _["data"]
     y = _["target"]
 
-    X = X.rename(
-        {
-            "sepal width (cm)": "sepal_width",
-            "sepal length (cm)": "sepal_length",
-            "petal width (cm)": "petal_width",
-            "petal length (cm)": "petal_length"
-        },
-        axis=1
-    )
-
     descriptions = {
         "target": {
             "mapping": {
                 0: "Iris-Setosa",
                 1: "Iris-Versicolour",
                 2: "Iris-Virginica"
-            }
+            },
         }
     }
 

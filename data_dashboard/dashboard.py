@@ -10,7 +10,7 @@ from .output import Output
 from .transformer import Transformer
 from .model_finder import ModelFinder
 from .descriptor import FeatureDescriptor
-from .functions import sanitize_input, make_pandas_data, obj_name
+from .functions import sanitize_input, make_pandas_data, obj_name, sanitize_keys_in_dict
 
 
 class Dashboard:
@@ -94,6 +94,11 @@ class Dashboard:
         """
         self.X, self.y = self._check_provided_data(X, y)
         self.output_directory = output_directory
+
+        # making sure that keys (feature names) are sanitized in the same manner as column names in data
+        if feature_descriptions_dict is not None:
+            feature_descriptions_dict = sanitize_keys_in_dict(feature_descriptions_dict)
+
         self.already_transformed_columns = self._check_transformed_cols(already_transformed_columns)
 
         if classification_pos_label is not None:
@@ -436,8 +441,8 @@ class Dashboard:
         new_X = make_pandas_data(X, pd.DataFrame)
         new_y = make_pandas_data(y, pd.Series)
 
-        new_X.columns = sanitize_input(new_X.columns)
-        new_y.name = sanitize_input([new_y.name])[0]
+        new_X.columns = sanitize_input([str(col) for col in new_X.columns])
+        new_y.name = sanitize_input([str(new_y.name)])[0]
 
         return new_X, new_y
 

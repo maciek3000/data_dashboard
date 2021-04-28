@@ -8,7 +8,7 @@ from sklearn.linear_model import Lasso
 from sklearn.metrics import roc_auc_score, mean_squared_error, r2_score, log_loss
 from data_dashboard.functions import append_description, assess_models_names, calculate_numerical_bins, make_pandas_data
 from data_dashboard.functions import modify_histogram_edges, obj_name, replace_duplicate_str, reverse_sorting_order
-from data_dashboard.functions import sanitize_input, series_to_dict, sort_strings
+from data_dashboard.functions import sanitize_input, sanitize_keys_in_dict, series_to_dict, sort_strings
 
 
 @pytest.mark.parametrize(
@@ -227,6 +227,21 @@ def test_sanitize_input(input_list, expected_result):
     actual_result = sanitize_input(input_list)
     assert actual_result == expected_result
 
+
+@pytest.mark.parametrize(
+    ("input_dict", "input_keys", "expected_keys"),
+    (
+            ({1: ["a", "a"], "a": "test"}, ["a", 1], ["a", "1"]),
+            ({"1()a": True, True: ["bb", "cc"]}, ["1()a", True], ["1__a", "True"]),
+            ({1: 1, (1, 2): 2, "3": 3}, [1, (1, 2), "3"], ["1", "_1__2_", "3"])
+    )
+)
+def test_sanitize_keys_in_dict(input_dict, input_keys, expected_keys):
+    actual_result = sanitize_keys_in_dict(input_dict)
+
+    assert set(actual_result.keys()) == set(expected_keys)
+    for old_key, new_key in zip(input_keys, expected_keys):
+        assert actual_result[new_key] == input_dict[old_key]
 
 @pytest.mark.parametrize(
     ("param_series", "expected_result"),
