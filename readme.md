@@ -53,13 +53,13 @@ There is also an educational twist to ``data_dashboard``, as explanations on cor
 alleviate pains that beginner Data Scientists might encounter (e.g. what do Transformers really do with my features?). 
 Furthermore, provided visualizations might also assist in manual feature engineering.
 
-Last but not least, ``data_dashboard`` tries to be consistent with the design of both HTML and Visualization 
+Last but not least, ``data_dashboard`` tries to put more emphasis on the design of both HTML and Visualization 
 elements. If you are not the biggest fan of default matplotlib plots, then you can give ``data_dashboard`` a try - 
-perhaps the styling will suit your needs!
+perhaps the styling will suit your taste!
 
 ### Documentation
 
-Documentation can be found here: 
+Documentation can be found here: <https://data-dashboard.readthedocs.io/>
 
 ### Author
 

@@ -7,7 +7,9 @@ Introduction
 ``data_dashboard`` library allows you to build HTML Dashboard visualizing not only the data and relationships between
 features but also automatically search for the best 'baseline' sklearn compatible Model.
 
-You can install data_dashboard with pip::
+.. image:: screenshots/dashboard.gif
+
+You can install ``data_dashboard`` with pip::
 
    pip install data-dashboard
 
@@ -29,13 +31,11 @@ You can use toy datasets from :doc:`examples` (e.g. ``iris`` dataset) included i
 .. note::
    Depending on the size of your data, fitting process might take some time. Please be patient!
 
-Created HTML Dashboard will contain 3 subpages for you to look:
+Created HTML Dashboard will contain 3 subpages for you to investigate:
 
-    * Overview with summary statistics of the data
-    * Features where you can dig deeper into each feature in the data
-    * Models showing search results and models performances
-
-.. image:: screenshots/dashboard.gif
+    * ``Overview`` with summary statistics of the data;
+    * ``Features`` where you can dig deeper into each feature in the data;
+    * ``Models`` showing search results and models performances.
 
 .. toctree::
    :maxdepth: 3

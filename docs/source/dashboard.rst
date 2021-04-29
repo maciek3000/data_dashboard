@@ -8,14 +8,14 @@ Features Descriptions Dictionary
 --------------------------------
 
 ``Dashboard`` instance can be created with just ``X``, ``y`` and ``output_directory`` arguments, but it doesn't mean
-it cannot be customized. The most notable optional argument that can augment the Dashboard is
+it cannot be customized. The most notable optional argument that can augment the HTML Dashboard is
 ``feature_descriptions_dict`` dictionary-like object. Structure of the dict should be::
 
     feature_descriptions_dict = {
 
         "Feature1": {
 
-            "description": "description of feature1, what does it represent in a human friendly way",
+            "description": "description of feature1, e.g. height in cm",
             "category": "cat" OR "num",
             "mapping": {
                 "value1": "better name or explanation for value1",
@@ -32,18 +32,18 @@ it cannot be customized. The most notable optional argument that can augment the
     }
 
 
-* ``"description"`` describes what the feature is about - whats the story behind numbers and values.
-* ``"category"`` defines what kind of a data you want the feature to be treated as
+* ``"description"`` describes what the feature is about - what's the story behind numbers and values.
+* ``"category"`` defines what kind of a data you want the feature to be treated as:
 
-    * ``"num"`` stands for numerical values
-    * ``"cat"`` is for categorical variables
+    * ``"num"`` stands for Numerical values;
+    * ``"cat"`` is for Categorical variables;
 
-* ``"mapping"`` represents what do every number mean in your data - e.g. 0: "didn't buy a product", 1: "bought a product".
+* ``"mapping"`` represents what do every value in your data mean - e.g. 0 - "didn't buy a product", 1 - "bought a product".
 
-This external information is fed to the Dashboard and it will be included in HTML files (where appropriate)
-for your convenience. Last but not least, by providing a specific ``"category"`` you are forcing the Dashboard to
+This external information is fed to the ``Dashboard`` and it will be included in HTML files (where appropriate)
+for your convenience. Last but not least, by providing a specific ``"category"`` you are also forcing the ``Dashboard`` to
 interpret a given feature the way you want, e.g.: you could provide ``"num"`` to a binary variable (only 0 and 1s) and
-Dashboard will treat that feature as Numerical (which means that, for example, Normal Transformations will be applied).
+``Dashboard`` will treat that feature as Numerical (which means that, for example, Normal Transformations will be applied).
 
 .. note::
     Please keep in mind that every argument in ``feature_descriptions_dict`` is optional: you can provide all Features
@@ -54,28 +54,29 @@ Other Dashboard instance arguments
 ----------------------------------
 
 ``already_transformed_columns`` can be a list of features that are already transformed and won't need additional
-transformations from the Dashboard::
+transformations from the ``Dashboard``::
 
     Dashboard(X, y, output_directory,
               already_transformed_columns=["Feature1", "pre-transformed Feature4"]
               )
 
-``classification_pos_label`` forces the Dashboard to treat provided label as a positive (1) label::
+``classification_pos_label`` forces the ``Dashboard`` to treat provided label as a positive (1) label (*classification*
+problem type)::
 
     Dashboard(X, y, output_directory,
               classification_pos_label="Not Survived"
               )
 
-``force_classification_pos_label_multiclass`` is a ``bool`` flag useful when you provide classification_pos_label in a
-multiclass problem (essentially turning it into classification problem) - without it classification_pos_label will be
-ignored::
+``force_classification_pos_label_multiclass`` is a ``bool`` flag useful when you also provide
+``classification_pos_label`` in a *multiclass* problem type (essentially turning it into *classification problem*)
+- without it, ``classification_pos_label`` will be ignored::
 
     Dashboard(X, y, output_directory,
               classification_pos_label="Iris-Setosa",
               force_classification_pos_label_multiclass=True
               )
 
-``random_state`` can be provided for reproducibility::
+``random_state`` can be provided for results reproducibility::
 
     Dashboard(X, y, output_directory,
               random_state=13,
@@ -100,7 +101,7 @@ Example
 Creating HTML Dashboard
 =======================
 
-To create HTML Dashboard from Dashboard instance, you need to call ``create_dashboard()`` method::
+To create HTML Dashboard from ``Dashboard`` instance, you need to call ``create_dashboard`` method::
 
     dsh.create_dashboard()
 
@@ -109,11 +110,11 @@ You can customize the process further by providing appropriate arguments to the 
 Models
 ------
 
-``models`` can be provided in different ways
+``models`` stands for collection of sklearn Models that will be fit on provided data. They can be provided in different ways:
 
-* list of Models instances
-* dict of Model class: param_grid attributes to do GridSearch on
-* None - in which case default set will be used
+* ``list`` of Models instances;
+* ``dict`` of Model class: param_grid attributes to do GridSearch on;
+* ``None`` - in which case default Models will be used.
 
 ::
 
@@ -132,26 +133,23 @@ Models
 Scoring
 -------
 
-``scoring`` should be an sklearn scoring function appropriate for a given X, y problem. It can also be None, in which
-case default scoring for a given problem will be used::
+``scoring`` should be a sklearn scoring function appropriate for a given problem type (e.g. ``roc_auc_score`` for
+*classification*). It can also be ``None``, in which case default scoring for a given problem will be used::
 
     scoring = precision_score
 
 .. note::
-    Some functions might not work right for some type of problems (e.g. roc_auc_score for multiclass)
-
-.. create-dashboard-mode:
+    Some functions might not work for some type of problems (e.g. ``roc_auc_score`` for *multiclass*)
 
 Mode
 ----
 
 ``mode`` should be provided as either ``"quick"`` or ``"detailed"`` string literal. Argument is useful only
-when *models=None*.
+when ``models=None``.
 
-* if ``"quick"``, then the initial search is done only on default instances of Models (similar to ``LazyPredict`` library) and top scoring Models are GridSearched
-* if ``"detailed"``, then all available combinations of default Models are GridSearched
-
-.. create-dashboard-logging:
+* if ``"quick"``, then the initial search is done only on default instances of Models (for example ``SVC()``, ``LogisticRegression()``,
+  etc.) as Models are simply scored with scoring function. Top scoring Models are then GridSearched;
+* if ``"detailed"``, then all available combinations of default Models are GridSearched.
 
 Logging
 -------
@@ -159,12 +157,11 @@ Logging
 ``logging`` is a ``bool`` flag indicating if you want to have .csv files (search logs) included in your output
 directory in logs subdirectory.
 
-
 Disabling Pairplots
 -------------------
 
-Both Seaborn PairPlot in Overview subpage and bokeh-driven ScatterPlot Grid in Features subpage were identified to be
-the biggest bottlenecks in creating HTML Dashboard. If you feel like speeding up the process, set
+Both ``seaborn`` PairPlot in ``Overview`` subpage and ScatterPlot Grid in ``Features`` subpage were identified to be
+the biggest time/resource bottlenecks in creating HTML Dashboard. If you feel like speeding up the process, set
 ``disable_pairplots=True``.
 
 .. note::
@@ -176,18 +173,16 @@ the biggest bottlenecks in creating HTML Dashboard. If you feel like speeding up
 Forcing Pairplots
 -----------------
 
-When number of features in X and y crosses a certain threshold, creation of both Seaborn PairPlot and bokeh-driven
+When number of features in X and y crosses a certain threshold, creation of both ``seaborn`` PairPlot and
 ScatterPlot Grid is disabled. This was a conscious decision, as not only it extremely slows down the process (and
-might even lead to raising Exceptions), PairPlots are getting so enormous that the insight gained from them is
-minuscule.
+might even lead to raising Exceptions or running out of memory), PairPlots are getting so enormous that the insight
+gained from them is minuscule.
 
-If you know what you're doing, provide ``force_pairplot=True``.
+If you know what you're doing, set ``force_pairplot=True``.
 
 .. note::
     If ``disable_pairplots=True`` and ``force_pairplot=True`` are both provided, ``disable_pairplots``
     takes precedence and pairplots **will be disabled**.
-
-.. _create-dashboard-example:
 
 Example
 -------
@@ -206,14 +201,14 @@ Example
 Setting Custom Preprocessors in Dashboard
 =========================================
 
-``set_custom_transformers`` is a method to provide your own Transformers to Dashboard pipeline. Dashboard's
+``set_custom_transformers`` is a method to provide your own Transformers to ``Dashboard`` pipeline. ``Dashboard``
 preprocessing is simple, so you are free to change it to your liking. There are 3 arguments (all optional):
 
 * *categorical_transformers*
 * *numerical_transformers*
 * *y_transformer*
 
-Both ``categorical_transformers`` and ``numerical_transformers`` should be a list-like object of instantiated
+Both ``categorical_transformers`` and ``numerical_transformers`` should be list-like objects of instantiated
 Transformers. As names suggest, ``categorical_transformers`` will be used to transform Categorical features, whereas
 ``numerical_transformers`` will transform Numerical features.
 
@@ -228,15 +223,15 @@ Transformers. As names suggest, ``categorical_transformers`` will be used to tra
     )
 
 .. note::
-    Keep in mind that in *regression* problems, Dashboard already wraps the target in TransformedTargetRegressor object
-    (with QuantileTransformer as a transformer). See also `sklearn documentation <https://scikit-learn.org/stable/modules/generated/sklearn.compose.TransformedTargetRegressor.html>`_.
+    Keep in mind that in *regression* problems, ``Dashboard`` already wraps the target in ``TransformedTargetRegressor``
+    object (with ``QuantileTransformer`` as a transformer). See also `sklearn documentation <https://scikit-learn.org/stable/modules/generated/sklearn.compose.TransformedTargetRegressor.html>`_.
 
 
 Using Dashboard as sklearn pipeline
 ===================================
 
-Dashboard can also be used as a simpler version of sklearn.pipelines - methods such as transform, predict, etc. are
-expoded and available. Please refer to :ref:`dashboard-documentation` for more information.
+``Dashboard`` can also be used as a simpler version of ``sklearn.pipeline`` - methods such as ``transform``, ``predict``,
+etc. are exposed and available. Please refer to :ref:`dashboard-documentation` for more information.
 
 
 .. _dashboard-documentation:

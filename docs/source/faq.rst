@@ -1,15 +1,15 @@
 Questions and Answers
 =====================
 
-* *What types of Machine Learning problems does it work on?*
+* *What types of Machine Learning problems does data_dashboard work on?*
 
     Currently *classification*, *regression* and *multiclass* problems are viable. *Multilabel* problem is
     **not available**.
 
 * *How are the Model results calculated?*
 
-    Provided data is split into train and tests split. Every time any Models search is initiated, Models are fit on
-    train portion of the data, but the scores are calculated on test splits. However, the chosen Model (or the one set
+    Provided data is split into train and tests splits. Every time any Models search is initiated, Models are fit on
+    a train portion of the data, but the scores are calculated on the test portion. However, the chosen Model (or the one set
     by you with ``set_and_fit`` method) is fit on **all** data.
 
 * *What are the default models used for searches?*
@@ -29,10 +29,10 @@ Questions and Answers
     * ``QuantileTransformer(output_distribution="normal")``
     * ``StandardScaler()``
 
-* *Can I provide my own default models to GridSearch?*
+* *Can I provide my own default models to GridSearch instead of those defined in models.py module?*
 
     Yes! You can do it with ``models`` argument in ``create_dashboard`` method - you just need to provide your own
-    dictionary object with ``Model class: param_grid`` pairs.
+    dictionary object with *Model class: param_grid* pairs.
 
 * *What to do when I am working on a NLP-related problem?*
 
@@ -44,7 +44,7 @@ Questions and Answers
 
     Two main reasons:
 
-    * I wanted to have a lightweight HTML output that doesn't rely on any server process (either localhost or regular);
+    * I wanted to have a lightweight HTML output that doesn't rely on any server processes (either localhost or regular ones);
     * I have done something similar in my `other project <https://github.com/maciek3000/GnuCash-Expenses-Vis>`_
       and I wanted to try something new.
 
@@ -54,5 +54,5 @@ Known Issues / Problems
     * *Multilabel* problem type is currently not supported.
     * ``Features`` subpage might get laggy when trying to change feature selection and when number of all features in
       the data is high.
-    * CSS/HTML might get *wonky* sometimes
+    * CSS/HTML might get *wonky* sometimes.
 
