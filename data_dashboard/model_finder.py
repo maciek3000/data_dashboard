@@ -622,7 +622,7 @@ class ModelFinder:
         Args:
             models (dict, None): dictionary of 'Model class': param_grid dict pairs or None
             mode ("quick", "detailed"): mode determining the manner in which search should happen, only relevant when
-                models is None
+                models is None or dict
             scoring (function): sklearn scoring function
 
         Returns:

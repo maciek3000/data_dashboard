@@ -1761,9 +1761,6 @@ class ModelsPlotMulticlass:
         self.plot_design = plot_design
         self.labels, self.label_mapping = self._create_labels_and_mapping(label_classes, original_label_mapping)
 
-        print(self.labels)
-        print(self.label_mapping)
-
     def confusion_matrices_plot(self, confusion_matrices):
         """Create bokeh Row of Confusion Matrices (HeatMaps).
 

@@ -18,6 +18,7 @@ class FeatureDescriptor:
                     (...)
                     }
                 }
+
     """
     _description = "description"
     _mapping = "mapping"

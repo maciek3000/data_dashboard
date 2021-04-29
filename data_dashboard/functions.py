@@ -16,7 +16,6 @@ def sanitize_input(input_str_list):
 
     Returns:
         list: list of newly created strings
-
     """
     p = r'["/\\.,?!:;\n\t\r\a\f\v\b \{\}\[\]\(\)]'
     new_input = [re.sub(p, "_", x) for x in input_str_list]
@@ -33,7 +32,6 @@ def sanitize_keys_in_dict(dictionary):
 
     Returns:
         dict: new dict with sanitized keys
-
     """
     old_keys = list(dictionary.keys())
     new_keys = sanitize_input([str(key) for key in old_keys])

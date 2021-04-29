@@ -92,6 +92,18 @@ class Dashboard:
                 multiclass problem should be forced, de facto changing the problem to classification
             random_state (int, None): integer for reproducibility on fitting and transformations, defaults to None
         """
+        #########################################
+        # =============== Flags =============== #
+        #########################################
+
+        self._create_pairplots_flag = True  # pairplot flag is True by default
+
+        ########################################
+        # =============== Args =============== #
+        ########################################
+
+        self._force_classification_pos_label_multiclass_flag = force_classification_pos_label_multiclass
+
         self.X, self.y = self._check_provided_data(X, y)
         self.output_directory = output_directory
 
@@ -111,13 +123,6 @@ class Dashboard:
         self.transformed_y = None
         self.model_finder = None
         self.output = None
-
-        #########################################
-        # =============== Flags =============== #
-        #########################################
-
-        self._force_classification_pos_label_multiclass_flag = force_classification_pos_label_multiclass
-        self._create_pairplots_flag = True  # pairplot flag is True by default
 
         ###########################################
         # =============== Objects =============== #
@@ -514,6 +519,7 @@ class Dashboard:
             ValueError: when transformed_columns is not a subset of X columns
         """
         if transformed_columns is not None:
+            transformed_columns = sanitize_input(transformed_columns)
             cols_in_data = set(self.X.columns)
             transformed = set(transformed_columns)
 
