@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # titanic
     data_directory = os.path.join(os.getcwd(), "data", "titanic")
-    output_directory = os.path.join(os.getcwd(), "output")
+    output_directory = os.path.join(os.getcwd(), "output", "new_output")
     train_file = os.path.join(data_directory, "train.csv")
     test_file = os.path.join(data_directory, "test.csv")
 
@@ -39,16 +39,16 @@ if __name__ == "__main__":
     # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
     # X, y, descriptions = wine()
-    X, y, descriptions = breast_cancer()  # 30 features
+    # X, y, descriptions = breast_cancer()  # 30 features
     # X, y, descriptions = digits()
 
     coord = Dashboard(X, y, output_directory, feature_descriptions_dict=descriptions, random_state=42)
 
-    models = [SVC(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
-              SVC(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
-              SVC(C=10.0, kernel="linear"),
-              SVC(C=100.0)
-              ]
+    # models = [SVC(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
+    #           SVC(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
+    #           SVC(C=10.0, kernel="linear"),
+    #           SVC(C=100.0)
+    #           ]
 
     # models = [SVR(C=1000.0, gamma='auto', tol=0.1, kernel="rbf"),
     #           SVR(C=1.0, gamma='auto', tol=10.0, kernel="linear"),
@@ -56,5 +56,5 @@ if __name__ == "__main__":
     #           SVR(C=100.0)
     #           ]
 
-    # models = None
+    models = None
     coord.create_dashboard(models=models, mode="quick")

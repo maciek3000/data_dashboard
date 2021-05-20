@@ -1,0 +1,344 @@
+<link rel="stylesheet" href="static/overview.css">
+<!doctype html>
+<head>
+<title>Overview</title>
+<link href="https://fonts.googleapis.com/css?family=Lato&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/style.css">
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-2.3.0.min.js"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.3.0.min.js"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.3.0.min.js"
+        crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <div class="main">
+        <div class="menu">
+            <div>
+Overview
+</div>
+            <div><a href="overview.html">Overview</a></div>
+            <div><a href="features.html">Features</a></div>
+            <div><a href="models.html">Models</a></div>
+        </div>
+        <div class="content">
+            
+
+<div class="describe-tables">
+    <div class="describe">
+        <div class="section-title">Numeric</div>
+        <div><table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>count</th>
+<th>mean</th>
+<th>std</th>
+<th>min</th>
+<th>25%</th>
+<th>50%</th>
+<th>75%</th>
+<th>max</th>
+<th>missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th><p class="elem-w-desc">Age<span>Age of the Passenger (in years).<br/>Age is fractional if less than 1. If the age is estimated, is it in the form of xx.5</span></p></th>
+<td>714.00</td>
+<td>29.70</td>
+<td>14.53</td>
+<td>0.42</td>
+<td>20.12</td>
+<td>28.00</td>
+<td>38.00</td>
+<td>80.00</td>
+<td>0.20</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Fare<span>Price of the ticket</span></p></th>
+<td>891.00</td>
+<td>32.20</td>
+<td>49.69</td>
+<td>0.00</td>
+<td>7.91</td>
+<td>14.45</td>
+<td>31.00</td>
+<td>512.33</td>
+<td>0.00</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">PassengerId<span>No explanation available</span></p></th>
+<td>891.00</td>
+<td>446.00</td>
+<td>257.35</td>
+<td>1.00</td>
+<td>223.50</td>
+<td>446.00</td>
+<td>668.50</td>
+<td>891.00</td>
+<td>0.00</td>
+</tr>
+</tbody>
+</table></div>
+    </div>
+    <div class="describe">
+        <div class="section-title">Categorical</div>
+        <div><table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>count</th>
+<th>mean</th>
+<th>std</th>
+<th>min</th>
+<th>25%</th>
+<th>50%</th>
+<th>75%</th>
+<th>max</th>
+<th>missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th><p class="elem-w-desc">Cabin<span>Cabin Number<br/><br/>Category - Original<br/>1 - A10<br/>2 - A14<br/>3 - A16<br/>4 - A19<br/>5 - A20<br/>6 - A23<br/>7 - A24<br/>8 - A26<br/>9 - A31<br/>10 - A32<br/>(...) Showing only first 10 categories</span></p></th>
+<td>204.00</td>
+<td>77.00</td>
+<td>42.23</td>
+<td>1.00</td>
+<td>41.00</td>
+<td>76.00</td>
+<td>114.25</td>
+<td>147.00</td>
+<td>0.77</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Embarked<span>Port of Embarkation<br/><br/>Category - Original<br/>1 - Cherbourg<br/>2 - Queenstown<br/>3 - Southampton</span></p></th>
+<td>889.00</td>
+<td>2.54</td>
+<td>0.79</td>
+<td>1.00</td>
+<td>2.00</td>
+<td>3.00</td>
+<td>3.00</td>
+<td>3.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Name<span>No explanation available<br/><br/>Category - Original<br/>1 - Abbing, Mr. Anthony<br/>2 - Abbott, Mr. Rossmore Edward<br/>3 - Abbott, Mrs. Stanton (Rosa Hunt)<br/>4 - Abelson, Mr. Samuel<br/>5 - Abelson, Mrs. Samuel (Hannah Wizosky)<br/>6 - Adahl, Mr. Mauritz Nils Martin<br/>7 - Adams, Mr. John<br/>8 - Ahlin, Mrs. Johan (Johanna Persdotter Larsson)<br/>9 - Aks, Mrs. Sam (Leah Rosen)<br/>10 - Albimona, Mr. Nassef Cassem<br/>(...) Showing only first 10 categories</span></p></th>
+<td>891.00</td>
+<td>446.00</td>
+<td>257.35</td>
+<td>1.00</td>
+<td>223.50</td>
+<td>446.00</td>
+<td>668.50</td>
+<td>891.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Parch<span># of parents / children aboard the Titanic.<br/>The dataset defines family relations in this way:<br/>Parent = mother, father<br/>Child = daughter, son, stepdaughter, stepson<br/>Some children travelled only with a nanny, therefore parch=0 for them.<br/><br/>Category - Original<br/>1 - 0<br/>2 - 1<br/>3 - 2<br/>4 - 3<br/>5 - 4<br/>6 - 5<br/>7 - 6</span></p></th>
+<td>891.00</td>
+<td>1.38</td>
+<td>0.81</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>7.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Pclass<span>A proxy for socio-economic status (SES)<br/><br/>Category - Original<br/>1 - Upper<br/>2 - Middle<br/>3 - Lower</span></p></th>
+<td>891.00</td>
+<td>2.31</td>
+<td>0.84</td>
+<td>1.00</td>
+<td>2.00</td>
+<td>3.00</td>
+<td>3.00</td>
+<td>3.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Sex<span>Sex<br/><br/>Category - Original<br/>1 - female<br/>2 - male</span></p></th>
+<td>891.00</td>
+<td>1.65</td>
+<td>0.48</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>2.00</td>
+<td>2.00</td>
+<td>2.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">SibSp<span># of siblings / spouses aboard the Titanic.<br/>The dataset defines family relations in this way:<br/>Sibling = brother, sister, stepbrother, stepsister;<br/>Spouse = husband, wife (mistresses and fiancés were ignored)<br/><br/>Category - Original<br/>1 - 0<br/>2 - 1<br/>3 - 2<br/>4 - 3<br/>5 - 4<br/>6 - 5<br/>7 - 8</span></p></th>
+<td>891.00</td>
+<td>1.51</td>
+<td>1.01</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>2.00</td>
+<td>7.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Survived<span>Survival of the Passenger<br/><br/>Category - Original<br/>1 - No<br/>2 - Yes</span></p></th>
+<td>891.00</td>
+<td>1.38</td>
+<td>0.49</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>2.00</td>
+<td>2.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Ticket<span>Ticket number<br/><br/>Category - Original<br/>1 - 110152<br/>2 - 110413<br/>3 - 110465<br/>4 - 110564<br/>5 - 110813<br/>6 - 111240<br/>7 - 111320<br/>8 - 111361<br/>9 - 111369<br/>10 - 111426<br/>(...) Showing only first 10 categories</span></p></th>
+<td>891.00</td>
+<td>339.53</td>
+<td>200.85</td>
+<td>1.00</td>
+<td>159.50</td>
+<td>338.00</td>
+<td>520.50</td>
+<td>681.00</td>
+<td>0.00</td>
+</tr>
+</tbody>
+</table></div>
+    </div>
+    <div class="describe-unused">
+        <div class="section-title">Unused Columns</div>
+        <div><ul></ul></div>
+    </div>
+</div>
+<div class="head">
+    <div class="section-title">First 5 rows of data (transposed)</div>
+    <div><table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>0</th>
+<th>1</th>
+<th>2</th>
+<th>3</th>
+<th>4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th><p class="elem-w-desc">Age<span>Age of the Passenger (in years).<br/>Age is fractional if less than 1. If the age is estimated, is it in the form of xx.5</span></p></th>
+<td>22.0</td>
+<td>38.0</td>
+<td>26.0</td>
+<td>35.0</td>
+<td>35.0</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Cabin<span>Cabin Number<br/><br/>Category - Original<br/>1 - A10<br/>2 - A14<br/>3 - A16<br/>4 - A19<br/>5 - A20<br/>6 - A23<br/>7 - A24<br/>8 - A26<br/>9 - A31<br/>10 - A32<br/>(...) Showing only first 10 categories</span></p></th>
+<td>NaN</td>
+<td>C85</td>
+<td>NaN</td>
+<td>C123</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Embarked<span>Port of Embarkation<br/><br/>Category - Original<br/>1 - Cherbourg<br/>2 - Queenstown<br/>3 - Southampton</span></p></th>
+<td>S</td>
+<td>C</td>
+<td>S</td>
+<td>S</td>
+<td>S</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Fare<span>Price of the ticket</span></p></th>
+<td>7.25</td>
+<td>71.28</td>
+<td>7.92</td>
+<td>53.1</td>
+<td>8.05</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Name<span>No explanation available<br/><br/>Category - Original<br/>1 - Abbing, Mr. Anthony<br/>2 - Abbott, Mr. Rossmore Edward<br/>3 - Abbott, Mrs. Stanton (Rosa Hunt)<br/>4 - Abelson, Mr. Samuel<br/>5 - Abelson, Mrs. Samuel (Hannah Wizosky)<br/>6 - Adahl, Mr. Mauritz Nils Martin<br/>7 - Adams, Mr. John<br/>8 - Ahlin, Mrs. Johan (Johanna Persdotter Larsson)<br/>9 - Aks, Mrs. Sam (Leah Rosen)<br/>10 - Albimona, Mr. Nassef Cassem<br/>(...) Showing only first 10 categories</span></p></th>
+<td>Braund, Mr. Owen Harris</td>
+<td>Cumings, Mrs. John Bradley (Florence Briggs Thayer)</td>
+<td>Heikkinen, Miss. Laina</td>
+<td>Futrelle, Mrs. Jacques Heath (Lily May Peel)</td>
+<td>Allen, Mr. William Henry</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Parch<span># of parents / children aboard the Titanic.<br/>The dataset defines family relations in this way:<br/>Parent = mother, father<br/>Child = daughter, son, stepdaughter, stepson<br/>Some children travelled only with a nanny, therefore parch=0 for them.<br/><br/>Category - Original<br/>1 - 0<br/>2 - 1<br/>3 - 2<br/>4 - 3<br/>5 - 4<br/>6 - 5<br/>7 - 6</span></p></th>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">PassengerId<span>No explanation available</span></p></th>
+<td>1</td>
+<td>2</td>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Pclass<span>A proxy for socio-economic status (SES)<br/><br/>Category - Original<br/>1 - Upper<br/>2 - Middle<br/>3 - Lower</span></p></th>
+<td>3</td>
+<td>1</td>
+<td>3</td>
+<td>1</td>
+<td>3</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Sex<span>Sex<br/><br/>Category - Original<br/>1 - female<br/>2 - male</span></p></th>
+<td>male</td>
+<td>female</td>
+<td>female</td>
+<td>female</td>
+<td>male</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">SibSp<span># of siblings / spouses aboard the Titanic.<br/>The dataset defines family relations in this way:<br/>Sibling = brother, sister, stepbrother, stepsister;<br/>Spouse = husband, wife (mistresses and fiancés were ignored)<br/><br/>Category - Original<br/>1 - 0<br/>2 - 1<br/>3 - 2<br/>4 - 3<br/>5 - 4<br/>6 - 5<br/>7 - 8</span></p></th>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Survived<span>Survival of the Passenger<br/><br/>Category - Original<br/>1 - No<br/>2 - Yes</span></p></th>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<th><p class="elem-w-desc">Ticket<span>Ticket number<br/><br/>Category - Original<br/>1 - 110152<br/>2 - 110413<br/>3 - 110465<br/>4 - 110564<br/>5 - 110813<br/>6 - 111240<br/>7 - 111320<br/>8 - 111361<br/>9 - 111369<br/>10 - 111426<br/>(...) Showing only first 10 categories</span></p></th>
+<td>A/5 21171</td>
+<td>PC 17599</td>
+<td>STON/O2. 3101282</td>
+<td>113803</td>
+<td>373450</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="pairplot">
+    <div class="section-title">Pairplot of Features</div>
+    <div class="pairplot-img"><a href=D:\projects\create_model\output\new_output\assets\pairplot.png><img src=D:\projects\create_model\output\new_output\assets\pairplot.png title='Click to open larger version'></img></a></div>
+</div>
+
+
+        </div>
+        <div class="footer">
+            Created on 20-May-2021 11:40:43
+        </div>
+    </div>
+</body>

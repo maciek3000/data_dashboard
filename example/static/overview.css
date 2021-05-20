@@ -1,0 +1,104 @@
+/* Description box */
+
+.elem-w-desc span {
+    right: -100px;
+}
+
+/* Tables */
+
+table {
+    border-collapse: collapse;
+    border: 0px solid black;
+    color: var(--table-text);
+    font-size: 13px;
+    width: 100%;
+}
+
+th {
+    border: 0px solid black;
+    text-align: right;
+    font-weight: bold;
+}
+
+thead th {
+    border-width: 0px 0px 1px 0px;
+    border-color: black;
+    text-align: center;
+}
+
+td {
+    border: 0px solid black;
+    text-align: right;
+    padding: 4px;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #f2f2f2;
+}
+
+tbody tr:hover {
+    background-color: #ebd5d1;
+}
+
+
+.describe-tables {
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 28px;
+}
+
+.describe-tables div {
+    margin-right: 8px;
+}
+
+@media screen and (max-width: 1850px) {
+    body {
+        margin-left: 16px;
+    }
+
+    .describe-tables {
+        flex-direction: column;
+    }
+
+    .describe-tables div {
+        width: 100%;
+        margin-bottom: 28px;
+    }
+
+    .section-title {
+        width: 100%;
+    }
+
+}
+
+.describe {
+    width: 45%;
+}
+
+.describe-unused {
+    width: 10%;
+}
+
+.section-title {
+    font-size: 1.3em;
+    color: black;
+    margin-bottom: 16px;
+    border-style: solid;
+    border-width: 0px 0px 2px 0px;
+    border-color: var(--light-gray);
+    font-weight: bold;
+}
+
+
+.head {
+    width: 100%;
+    margin-bottom: 28px;
+}
+
+.pairplot {
+    width: 100%;
+}
+
+.pairplot-img img {
+    width: 100%;
+}
