@@ -18,6 +18,11 @@ Library comes with few defined *toy datasets* that you can use if you don't have
     X, y, descriptions = wine()  # multiclass
     X, y, descriptions = breast_cancer()  # classification
 
+Example Dashboard
+=================
+
+Deployed Dashboard example can be found `here <https://example-data-dashboard.herokuapp.com/>`_.
+
 Documentation
 =============
 

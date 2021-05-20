@@ -37,6 +37,11 @@ Created HTML Dashboard will contain 3 subpages for you to investigate:
     * ``Features`` where you can dig deeper into each feature in the data;
     * ``Models`` showing search results and models performances.
 
+Example Dashboard
+=================
+
+You can access an example Dashboard with Titanic dataset here: https://example-data-dashboard.herokuapp.com
+
 .. toctree::
    :maxdepth: 3
    :caption: Contents:

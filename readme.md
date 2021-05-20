@@ -57,6 +57,10 @@ Last but not least, ``data_dashboard`` tries to put more emphasis on the design 
 elements. If you are not the biggest fan of default matplotlib plots, then you can give ``data_dashboard`` a try - 
 perhaps the styling will suit your taste!
 
+### Working Example
+
+Example with Titanic dataset can be found here: https://example-data-dashboard.herokuapp.com/
+
 ### Documentation
 
 Documentation can be found here: <https://data-dashboard.readthedocs.io/>
