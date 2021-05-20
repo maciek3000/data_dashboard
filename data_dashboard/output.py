@@ -88,6 +88,7 @@ class Output:
     _view_models_css = "models.css"
 
     # directories
+    _assets_directory_name = "assets"
     _static_directory_name = "static"
     _templates_directory_name = "templates"
 
@@ -355,7 +356,7 @@ class Output:
             unused_features=self.analyzer.unused_features(),
             head_df=self.analyzer.df_head(),
             do_pairplot_flag=do_pairplots,
-            pairplot_path=pairplot_path,
+            pairplot_path=(self._assets_directory_name + "/" + self._pairplot_name),
             mapping=self.analyzer.features_mapping(),
             descriptions=self.analyzer.features_descriptions()
         )
