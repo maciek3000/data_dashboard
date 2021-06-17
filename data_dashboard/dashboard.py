@@ -104,7 +104,9 @@ class Dashboard:
 
         self._force_classification_pos_label_multiclass_flag = force_classification_pos_label_multiclass
 
-        self.X, self.y = self._check_provided_data(X, y)
+        self.X = self._check_provided_X(X)
+        self.y = self._check_provided_y(y)
+
         self.output_directory = output_directory
 
         # making sure that keys (feature names) are sanitized in the same manner as column names in data
@@ -277,10 +279,14 @@ class Dashboard:
         Returns:
             numpy.ndarray, scipy.csr_matrix: transformed X
         """
-        return self.transformer.transform(X)
+        new_X = self._check_provided_X(X)
+        return self.transformer.transform(new_X)
 
     def predict(self, transformed_X):
         """Predict target from provided X with the best scoring Model.
+
+        Provided transformed_X should conform to the transformed input data used to train the model (e.g. column names
+        should be 'sanitized' beforehand, as those names are what Transformer is working on).
 
         Args:
             transformed_X (pandas.DataFrame, numpy.ndarray, scipy.csr_matrix): transformed X feature space to predict
@@ -301,7 +307,8 @@ class Dashboard:
         Returns:
                numpy.ndarray: predicted y target variable
         """
-        transformed = self.transform(X)
+        new_X = self._check_provided_X(X)
+        transformed = self.transform(new_X)
         return self.predict(transformed)
 
     def best_model(self):
@@ -433,23 +440,33 @@ class Dashboard:
         self.transformer.fit(X)
         self.transformer.fit_y(y)
 
-    def _check_provided_data(self, X, y):
-        """Convert X and y to pandas object and change their column names to be JS friendly.
+    def _check_provided_X(self, X):
+        """Convert X to pandas object and change its' column names to be JS friendly.
 
         Args:
             X (pandas.DataFrame, numpy.ndarray, scipy.csr_matrix): X data
+
+        Returns:
+            pd.DataFrame: transformed X
+        """
+        new_X = make_pandas_data(X, pd.DataFrame)
+        new_X.columns = sanitize_input([str(col) for col in new_X.columns])
+
+        return new_X
+
+    def _check_provided_y(self, y):
+        """Convert y to pandas object and change its' name to be JS friendly.
+
+        Args:
             y (pd.Series, numpy.ndarray): target variable
 
         Returns:
-            tuple: (converted X, converted y)
+            pd.Series: transformed y
         """
-        new_X = make_pandas_data(X, pd.DataFrame)
         new_y = make_pandas_data(y, pd.Series)
-
-        new_X.columns = sanitize_input([str(col) for col in new_X.columns])
         new_y.name = sanitize_input([str(new_y.name)])[0]
 
-        return new_X, new_y
+        return new_y
 
     def _check_classification_pos_label(self, label):
         """Check if label is in unique target variable values.
