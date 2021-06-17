@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # titanic
     data_directory = os.path.join(os.getcwd(), "data", "titanic")
-    output_directory = os.path.join(os.getcwd(), "output", "new_output")
+    output_directory = os.path.join(os.getcwd(), "output")
     train_file = os.path.join(data_directory, "train.csv")
     test_file = os.path.join(data_directory, "test.csv")
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     # examples
 
-    # X, y, descriptions = iris()
+    X, y, descriptions = iris()
     # X, y, descriptions = boston()
     # X, y, descriptions = diabetes()
     # X, y, descriptions = wine()

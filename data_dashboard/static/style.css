@@ -36,7 +36,7 @@ html {
     margin: 0 auto;
     color: var(--normal-text-color);
     background: white;
-    border-width: 2px 2px 2px 2px;
+    border-width: 2px 0px 0px 0px;
     border-color: #D1DCEB;
     border-style: solid;
     box-shadow: -4px 4px 2px #E8EDF5;
